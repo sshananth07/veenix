@@ -1,0 +1,393 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite has no native enum support in Prisma, so status fields are plain
+// strings. The allowed values live as TS unions in lib/types.ts.
+
+// Singleton row (id "default"): company-wide pricing defaults and the
+// letterhead every PDF is rendered with.
+model Settings {
+  id               String @id @default("default")
+  companyName      String @default("Wawasan Interior Sdn Bhd")
+  companyReg       String @default("SST W10-1808-31000123")
+  companyAddress   String @default("Jalan Rimbayu, Bandar Rimbayu, Selangor")
+  companyPhone     String @default("+60 3-1234 5678")
+  bankName         String  @default("Maybank")
+  bankAccountName  String  @default("Wawasan Interior Sdn Bhd")
+  bankAccount      String  @default("5123 4567 8901")
+  swiftCode        String?
+  logoPath         String?
+  defaultMarkupPct Int     @default(40)
+  minMarkupPct     Int     @default(20)
+}
+
+model Lead {
+  id           String         @id @default(cuid())
+  code         String         @unique
+  name         String
+  phone        String
+  email        String?
+  source       String
+  campaign     String?
+  propertyType String?
+  builtUpArea  String?
+  budgetMin    Int?
+  budgetMax    Int?
+  // Malaysian address: lines, 5-digit postcode, city, state. siteAddress is
+  // the same address composed onto one line for PDFs and lists.
+  addressLine1 String?
+  addressLine2 String?
+  addressLine3 String?
+  postcode     String?
+  city         String?
+  state        String?
+  siteAddress  String?
+  targetStart  String?
+  assignedTo   String?
+  status       String         @default("NEW")
+  surveyAt     DateTime?
+  createdAt    DateTime       @default(now())
+  activities   LeadActivity[]
+  project      Project?
+}
+
+model LeadActivity {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  note      String
+  author    String   @default("You")
+  createdAt DateTime @default(now())
+}
+
+model Project {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  name           String
+  clientName     String
+  clientPhone    String?
+  clientEmail    String?
+  addressLine1   String?
+  addressLine2   String?
+  addressLine3   String?
+  postcode       String?
+  city           String?
+  state          String?
+  siteAddress    String
+  propertyType   String?
+  builtUpArea    String?
+  budgetMin      Int?
+  budgetMax      Int?
+  campaign       String?
+  surveyAt       DateTime?
+  photoPath      String?
+  contractValue  Int          @default(0)
+  targetStart    DateTime?
+  targetHandover DateTime?
+  pmName         String?
+  siteName       String?
+  stage          String       @default("SITE_VISIT")
+  stageEnteredAt DateTime     @default(now())
+  cancelReason   String?
+  createdAt      DateTime     @default(now())
+
+  leadId String? @unique
+  lead   Lead?   @relation(fields: [leadId], references: [id])
+
+  workItems       WorkItem[]
+  bomItems        BomItem[]
+  rfqs            Rfq[]
+  purchaseOrders  PurchaseOrder[]
+  quotations      Quotation[]
+  variationOrders VariationOrder[]
+  milestones      PaymentMilestone[]
+  files           ProjectFile[]
+}
+
+// The scope grouping a client thinks in ("Kitchen", "Master Bathroom"),
+// containing priced BOM lines.
+model WorkItem {
+  id        String    @id @default(cuid())
+  projectId String
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  seq         Int
+  name        String
+  description String?
+  bomItems    BomItem[]
+}
+
+// One priced line of work. qty x unitCost is the labour / package price;
+// self-performed lines add BomMaterial rows on top. estTotal is the stored
+// roll-up so every screen reads a single number.
+model BomItem {
+  id          String        @id @default(cuid())
+  projectId   String
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workItemId  String?
+  workItem    WorkItem?     @relation(fields: [workItemId], references: [id])
+  seq         Int
+  workPackage String
+  description String?
+  qty         Float         @default(1)
+  unit        String        @default("lot")
+  unitCost    Float         @default(0)
+  estTotal    Int           @default(0)
+  // OUTSOURCED runs RFQ -> quotes -> PO -> payment milestones. SELF is the
+  // contractor's own crew: no vendor, cost = labour + materials.
+  performedBy String        @default("OUTSOURCED")
+  materials   BomMaterial[]
+  rfqs        Rfq[]
+  quotationLineItems QuotationLineItem[]
+  variationOrders    VariationOrder[]
+}
+
+model BomMaterial {
+  id        String  @id @default(cuid())
+  bomItemId String
+  bomItem   BomItem @relation(fields: [bomItemId], references: [id], onDelete: Cascade)
+  name      String
+  qty       Float   @default(1)
+  unit      String  @default("nos")
+  unitCost  Float   @default(0)
+  total     Int     @default(0)
+}
+
+model Vendor {
+  id             String           @id @default(cuid())
+  name           String
+  type           String?
+  registrationNo String?
+  contactPerson  String?
+  phone          String?
+  email          String?
+  location       String?
+  experienceYears Int?
+  active         Boolean          @default(true)
+  jobsCount      Int              @default(0)
+  notes          String?
+  rfqQuotes      RfqVendorQuote[]
+  purchaseOrders PurchaseOrder[]
+}
+
+// One RFQ per outsourced package; any number of vendors can be invited to
+// quote on it so prices can be compared side by side.
+model Rfq {
+  id             String           @id @default(cuid())
+  code           String           @unique
+  projectId      String
+  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  bomItemId      String
+  bomItem        BomItem          @relation(fields: [bomItemId], references: [id], onDelete: Cascade)
+  quantity       String
+  respondBy      DateTime?
+  note           String?
+  createdAt      DateTime         @default(now())
+  quotes         RfqVendorQuote[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model RfqVendorQuote {
+  id             String    @id @default(cuid())
+  rfqId          String
+  rfq            Rfq       @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  vendorId       String
+  vendor         Vendor    @relation(fields: [vendorId], references: [id])
+  requestedAt    DateTime  @default(now())
+  receivedAt     DateTime?
+  quotedPrice    Int       @default(0)
+  leadTimeDays   Int       @default(0)
+  warrantyMonths Int       @default(0)
+  notes          String?
+  attachmentPath String?
+  attachmentName String?
+  selected       Boolean   @default(false)
+  revisions      RfqQuoteRevision[]
+
+  @@unique([rfqId, vendorId])
+}
+
+// A vendor's earlier quote for the same package. When a vendor sends a
+// revised quote the previous one is filed here, so the negotiation history is
+// kept and the fields on RfqVendorQuote always hold the latest offer.
+model RfqQuoteRevision {
+  id             String         @id @default(cuid())
+  quoteId        String
+  quote          RfqVendorQuote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  round          Int
+  quotedPrice    Int
+  leadTimeDays   Int            @default(0)
+  warrantyMonths Int            @default(0)
+  notes          String?
+  attachmentPath String?
+  attachmentName String?
+  receivedAt     DateTime
+  createdAt      DateTime       @default(now())
+}
+
+model PurchaseOrder {
+  id          String        @id @default(cuid())
+  code        String        @unique
+  projectId   String
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  rfqId       String?
+  rfq         Rfq?          @relation(fields: [rfqId], references: [id], onDelete: SetNull)
+  vendorId    String
+  vendor      Vendor        @relation(fields: [vendorId], references: [id])
+  description String
+  qty         String
+  amount      Int
+  issueDate   DateTime      @default(now())
+  deliveryBy  DateTime?
+  remarks     String?
+  status      String        @default("ISSUED")
+  milestones  PoMilestone[]
+}
+
+// A vendor payment term, its vendor invoice and its payment in one row.
+// PENDING -> INVOICED (vendor invoice attached) -> PAID.
+model PoMilestone {
+  id          String        @id @default(cuid())
+  poId        String
+  po          PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  seq         Int
+  label       String
+  pct         Int
+  amount      Int
+  status      String        @default("PENDING")
+  invoiceNo   String?
+  invoiceDate DateTime?
+  invoicePath String?
+  invoiceName String?
+  paidAmount  Int?
+  paidDate    DateTime?
+  method      String?
+  bankRef     String?
+  paidFrom    String?
+}
+
+// A project can hold many quotation versions. Only one is ever a DRAFT,
+// sending one supersedes the previous offer, and the ACCEPTED one is the
+// final quotation the contract is built on.
+model Quotation {
+  id         String              @id @default(cuid())
+  code       String              @unique
+  revision   Int                 @default(1)
+  projectId  String
+  project    Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status     String              @default("DRAFT")
+  createdAt  DateTime            @default(now())
+  sentAt     DateTime?
+  viewedAt   DateTime?
+  acceptedAt DateTime?
+  signedBy   String?
+  lineItems  QuotationLineItem[]
+  events     QuotationEvent[]
+  terms      QuotationTerm[]
+
+  @@unique([projectId, revision])
+}
+
+// A client payment term on a quotation: what triggers it and its share of
+// the contract sum. Once the quotation is signed these become the project's
+// payment milestones.
+model QuotationTerm {
+  id          String    @id @default(cuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  seq         Int
+  name        String
+  trigger     String
+  pct         Int
+}
+
+// A frozen snapshot once the quotation is sent: name, work item, qty and
+// unit are copied here so later BOM edits or deletions cannot alter what
+// the client was offered.
+model QuotationLineItem {
+  id           String    @id @default(cuid())
+  quotationId  String
+  quotation    Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  bomItemId    String?
+  bomItem      BomItem?  @relation(fields: [bomItemId], references: [id], onDelete: SetNull)
+  workItemName String?
+  workPackage  String
+  qty          Float     @default(1)
+  unit         String    @default("lot")
+  bomCost      Int
+  markupPct    Int
+  clientPrice  Int
+  seq          Int       @default(0)
+}
+
+model QuotationEvent {
+  id          String    @id @default(cuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  type        String
+  note        String?
+  createdAt   DateTime  @default(now())
+}
+
+model VariationOrder {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title           String?
+  description     String
+  reason          String?
+  raisedBy        String?
+  amount          Int
+  status          String   @default("DRAFT")
+  raisedAt        DateTime @default(now())
+  bomItemId       String?
+  bomItem         BomItem? @relation(fields: [bomItemId], references: [id], onDelete: SetNull)
+  programmeImpact String?
+  attachmentPath  String?
+  attachmentName  String?
+}
+
+model PaymentMilestone {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  seq       Int
+  name      String
+  trigger   String
+  pct       Int?
+  amount    Int
+  status    String   @default("NOT_YET_DUE")
+  invoice   Invoice?
+}
+
+model Invoice {
+  id                  String           @id @default(cuid())
+  code                String           @unique
+  milestoneId         String           @unique
+  milestone           PaymentMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  invoiceDate         DateTime         @default(now())
+  dueDate             DateTime?
+  amount              Int
+  sstAmount           Int
+  status              String           @default("ISSUED")
+  eInvoiceUuid        String?
+  eInvoiceValidatedAt DateTime?
+}
+
+// A document, drawing, photo or other file attached to a project (Files tab).
+model ProjectFile {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  path        String
+  size        Int
+  contentType String
+  createdAt   DateTime @default(now())
+}

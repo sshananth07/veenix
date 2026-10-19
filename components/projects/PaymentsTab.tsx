@@ -1,0 +1,263 @@
+import Link from "next/link";
+import { Building2, CheckCircle2, CircleDollarSign, Download, Hourglass, QrCode, Smartphone } from "lucide-react";
+import type { ProjectDetail } from "@/lib/projectQuery";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { ActionButton } from "@/components/ActionButton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { MilestoneScheduleDialog } from "@/components/projects/payments/MilestoneScheduleDialog";
+import { generateInvoiceForMilestone, markInvoicePaid } from "@/actions/milestones";
+import { quotationTotals } from "@/lib/quotation";
+
+type Milestone = ProjectDetail["milestones"][number];
+
+const MILESTONE_STATUS: Record<string, { label: string; pill: string }> = {
+  NOT_YET_DUE: { label: "Not yet due", pill: "bg-muted text-muted-foreground" },
+  AWAITING_PAYMENT: { label: "Awaiting invoice", pill: "bg-amber-100 text-amber-800" },
+  PAID: { label: "Paid", pill: "bg-emerald-100 text-emerald-800" },
+  HELD: { label: "Held", pill: "bg-slate-200 text-slate-800" },
+  PENDING_SIGNOFF: { label: "Pending sign-off", pill: "bg-amber-100 text-amber-800" },
+};
+
+export function PaymentsTab({ project, selectedInvoiceId }: { project: ProjectDetail; selectedInvoiceId: string | null }) {
+  const collected = project.milestones.filter((m) => m.status === "PAID").reduce((s, m) => s + m.amount, 0);
+  const outstanding = project.milestones.filter((m) => m.status === "AWAITING_PAYMENT").reduce((s, m) => s + m.amount, 0);
+  const notYetDue = project.milestones.filter((m) => m.status === "NOT_YET_DUE" || m.status === "HELD" || m.status === "PENDING_SIGNOFF").reduce((s, m) => s + m.amount, 0);
+  const contract = project.contractValue || collected + outstanding + notYetDue;
+  const pct = (n: number) => (contract > 0 ? Math.round((n / contract) * 100) : 0);
+
+  if (project.milestones.length === 0) {
+    const signed = project.quotations.find((q) => q.status === "ACCEPTED");
+    if (!signed) {
+      return (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            Payment milestones are set up once the client has signed a quotation. Head to the Quotation tab first.
+          </CardContent>
+        </Card>
+      );
+    }
+    const contractSum = quotationTotals(signed.lineItems).total;
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            The signed quotation has no payment terms, so there is no schedule yet. Define what triggers each invoice (deposit, progress stages, retention) and what
+            share of the contract it collects.
+          </p>
+          <MilestoneScheduleDialog projectId={project.id} contractSum={contractSum} initial={signed.terms} />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // The most useful invoice to show on the right: whichever one the address
+  // bar asked for, else the newest one still awaiting payment, else the
+  // newest invoice of any status.
+  const milestonesWithInvoice = project.milestones.filter((m) => m.invoice);
+  const selected =
+    (selectedInvoiceId && milestonesWithInvoice.find((m) => m.invoice!.id === selectedInvoiceId)) ||
+    [...milestonesWithInvoice].reverse().find((m) => m.invoice!.status !== "PAID") ||
+    milestonesWithInvoice[milestonesWithInvoice.length - 1];
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard icon={CheckCircle2} tint="bg-emerald-100 text-emerald-700" label="Collected" value={formatCurrency(collected)} sub={`${pct(collected)}% of contract`} />
+        <StatCard icon={Hourglass} tint="bg-amber-100 text-amber-700" label="Outstanding" value={formatCurrency(outstanding)} sub={`${pct(outstanding)}% of contract`} />
+        <StatCard icon={CircleDollarSign} tint="bg-slate-100 text-slate-700" label="Not yet due" value={formatCurrency(notYetDue)} sub={`${pct(notYetDue)}% of contract`} />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+        <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div className="border-b px-5 py-4">
+            <h3 className="font-semibold">Payment milestones</h3>
+            <p className="text-xs text-muted-foreground">From the payment terms on the signed quotation. Each milestone raises its own invoice.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="bg-muted/30 text-left text-xs font-medium text-muted-foreground">
+                  <th className="px-5 py-2.5 font-medium">Milestone</th>
+                  <th className="px-2 py-2.5 font-medium">Trigger</th>
+                  <th className="px-2 py-2.5 text-right font-medium">%</th>
+                  <th className="px-2 py-2.5 text-right font-medium">Amount (RM)</th>
+                  <th className="px-2 py-2.5 font-medium">Invoice No.</th>
+                  <th className="px-2 py-2.5 font-medium">Status</th>
+                  <th className="px-5 py-2.5 text-right font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {project.milestones.map((m) => (
+                  <MilestoneRow key={m.id} m={m} projectId={project.id} active={selected?.id === m.id} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div>{selected?.invoice ? <TaxInvoiceCard project={project} milestone={selected} /> : <NoInvoiceCard />}</div>
+      </div>
+    </div>
+  );
+}
+
+function MilestoneRow({ m, projectId, active }: { m: Milestone; projectId: string; active: boolean }) {
+  const status = MILESTONE_STATUS[m.status] ?? MILESTONE_STATUS.NOT_YET_DUE;
+  return (
+    <tr className={active ? "bg-primary/5" : undefined}>
+      <td className="px-5 py-3 font-medium">{m.name}</td>
+      <td className="px-2 py-3 text-xs text-muted-foreground">{m.trigger}</td>
+      <td className="px-2 py-3 text-right tabular-nums">{m.pct != null ? `${m.pct}%` : "-"}</td>
+      <td className="px-2 py-3 text-right tabular-nums">{formatCurrency(m.amount).replace("RM ", "")}</td>
+      <td className="px-2 py-3">
+        {m.invoice ? (
+          <Link href={`/projects/${projectId}?tab=payments&invoice=${m.invoice.id}`} replace scroll={false} className="font-medium text-primary hover:underline">
+            {m.invoice.code}
+          </Link>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      <td className="px-2 py-3">
+        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${status.pill}`}>{status.label}</span>
+      </td>
+      <td className="px-5 py-3 text-right">
+        {!m.invoice && m.status === "AWAITING_PAYMENT" && (
+          <ActionButton size="sm" action={generateInvoiceForMilestone.bind(null, m.id)} pendingLabel="Generating...">
+            Generate Invoice
+          </ActionButton>
+        )}
+        {m.invoice && m.invoice.status !== "PAID" && (
+          <ActionButton size="sm" variant="outline" action={markInvoicePaid.bind(null, m.invoice.id)}>
+            Mark Paid
+          </ActionButton>
+        )}
+        {m.invoice && m.invoice.status === "PAID" && (
+          <Link href={`/projects/${projectId}?tab=payments&invoice=${m.invoice.id}`} replace scroll={false} className="text-sm font-medium text-primary hover:underline">
+            View
+          </Link>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function TaxInvoiceCard({ project, milestone }: { project: ProjectDetail; milestone: Milestone }) {
+  const invoice = milestone.invoice!;
+  const total = invoice.amount + invoice.sstAmount;
+  return (
+    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="flex items-start justify-between gap-3 border-b px-5 py-4">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tax Invoice</div>
+          <div className="text-lg font-bold">{invoice.code}</div>
+        </div>
+        <Button variant="outline" size="icon" asChild aria-label="Download PDF" title="Download PDF">
+          <a href={`/api/documents/invoice/${invoice.id}`} target="_blank" rel="noreferrer">
+            <Download className="h-4 w-4" />
+          </a>
+        </Button>
+      </div>
+
+      <div className="space-y-4 px-5 py-4 text-sm">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Invoice No." value={invoice.code} />
+          <Field label="Issue date" value={formatDate(invoice.invoiceDate)} />
+          <Field label="Due date" value={formatDate(invoice.dueDate)} />
+          <Field label="Milestone" value={milestone.name} />
+        </div>
+
+        {invoice.eInvoiceUuid && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-800">
+              <CheckCircle2 className="h-4 w-4" />
+              MyInvois Validated
+            </div>
+            <div className="mt-1 text-xs text-emerald-800">UUID {invoice.eInvoiceUuid}</div>
+          </div>
+        )}
+
+        <div>
+          <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">SST breakdown</div>
+          <dl className="space-y-1.5">
+            <Row label="Taxable amount (RM)" value={formatCurrency(invoice.amount).replace("RM ", "")} />
+            <Row label="SST 8% (RM)" value={formatCurrency(invoice.sstAmount).replace("RM ", "")} />
+            <Row label="Total amount (RM)" value={formatCurrency(total).replace("RM ", "")} bold />
+          </dl>
+        </div>
+
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">How the client pays</div>
+          <div className="grid grid-cols-3 gap-2">
+            <PayMethod icon={QrCode} label="DuitNow QR" sub="Scan and pay" />
+            <PayMethod icon={Smartphone} label="FPX" sub="Online banking" />
+            <PayMethod icon={Building2} label="Bank transfer" sub="RHB / Maybank / CIMB" />
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Bank transfer to {project.name.split(",")[0]}&apos;s account, quoting {invoice.code} as the reference.
+          </p>
+        </div>
+
+        {invoice.status !== "PAID" && (
+          <ActionButton size="sm" variant="outline" className="w-full" action={markInvoicePaid.bind(null, invoice.id)}>
+            Mark Paid
+          </ActionButton>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NoInvoiceCard() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed bg-card px-6 py-10 text-center">
+      <CircleDollarSign className="h-8 w-8 text-muted-foreground" />
+      <p className="mt-2 text-sm font-medium">No invoice generated yet</p>
+      <p className="mt-1 text-xs text-muted-foreground">Generate an invoice for a due milestone to see it here.</p>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, tint, label, value, sub }: { icon: typeof CheckCircle2; tint: string; label: string; value: string; sub: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3.5 shadow-sm">
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${tint}`}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <div className="min-w-0">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="whitespace-nowrap text-xl font-bold tabular-nums">{value}</div>
+        <div className="text-xs text-muted-foreground">{sub}</div>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-medium">{value}</div>
+    </div>
+  );
+}
+
+function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className={bold ? "font-semibold tabular-nums" : "tabular-nums"}>{value}</dd>
+    </div>
+  );
+}
+
+function PayMethod({ icon: Icon, label, sub }: { icon: typeof QrCode; label: string; sub: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 rounded-lg border bg-muted/30 px-2 py-3 text-center">
+      <Icon className="h-4 w-4 text-primary" />
+      <span className="text-xs font-medium">{label}</span>
+      <span className="text-[10px] text-muted-foreground">{sub}</span>
+    </div>
+  );
+}
