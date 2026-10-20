@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "veenix",
+      "credentials": [{ "accessKey": "veenix", "secretKey": "veenix-dev-secret" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

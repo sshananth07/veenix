@@ -1,0 +1,40 @@
+name: veenix
+
+services:
+  mongo:
+    # Single-node replica set (transactions work) with Atlas Search built in.
+    image: mongodb/mongodb-atlas-local:8.0
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: veenix
+      MONGODB_INITDB_ROOT_PASSWORD: veenix-dev-only
+    ports: ["27017:27017"]
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+
+  redis:
+    image: valkey/valkey:8
+    ports: ["6379:6379"]
+    volumes:
+      - redis-data:/data
+
+  storage:
+    # S3-compatible object store. Production swaps in Cloudflare R2 through env vars only.
+    image: chrislusf/seaweedfs:4.48
+    command: "server -dir=/data -ip.bind=0.0.0.0 -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json"
+    ports: ["8333:8333"]
+    volumes:
+      - storage-data:/data
+      - ./docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+
+  mail:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # web inbox
+
+volumes:
+  mongo-data:
+  mongo-config:
+  redis-data:
+  storage-data:

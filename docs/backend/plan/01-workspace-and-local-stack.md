@@ -156,7 +156,7 @@ git commit -m "chore: pnpm workspace with the Next.js app in apps/web"
   - `S3_ENDPOINT=http://localhost:8333`, `S3_ACCESS_KEY_ID=veenix`, `S3_SECRET_ACCESS_KEY=veenix-dev-secret`, `S3_REGION=us-east-1`, `S3_BUCKET=veenix-dev`, `S3_FORCE_PATH_STYLE=true`
   - `SMTP_URL=smtp://localhost:1025`, with the Mailpit UI at http://localhost:8025
 
-- [ ] **Step 1: Write `docker-compose.yml`**
+- [x] **Step 1: Write `docker-compose.yml`**
 
 ```yaml
 name: veenix
@@ -201,7 +201,7 @@ volumes:
   storage-data:
 ```
 
-- [ ] **Step 2: Write `docker/seaweedfs/s3.json`**
+- [x] **Step 2: Write `docker/seaweedfs/s3.json`**
 
 ```json
 {
@@ -215,7 +215,7 @@ volumes:
 }
 ```
 
-- [ ] **Step 3: Write `.env.example`** (documentation only; each app gets its own `.env` in later tasks)
+- [x] **Step 3: Write `.env.example`** (documentation only; each app gets its own `.env` in later tasks)
 
 ```bash
 # Local service endpoints from docker-compose.yml
@@ -230,7 +230,7 @@ S3_FORCE_PATH_STYLE=true
 SMTP_URL=smtp://localhost:1025
 ```
 
-- [ ] **Step 4: Start the services and check each one**
+- [x] **Step 4: Start the services and check each one**
 
 ```bash
 pnpm services:up
@@ -255,14 +255,14 @@ Expected: an HTTP status line, usually `403` (the S3 gateway is up and refusing 
 
 Open http://localhost:8025. Expected: an empty Mailpit inbox.
 
-- [ ] **Step 5: Pin the SeaweedFS version**
+- [x] **Step 5: Pin the SeaweedFS version**
 
 ```bash
 docker compose exec storage weed version
 ```
 Replace `chrislusf/seaweedfs:latest` in `docker-compose.yml` with the version printed, e.g. `chrislusf/seaweedfs:3.xx`, so later pulls don't change behaviour.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add docker-compose.yml docker/ .env.example
