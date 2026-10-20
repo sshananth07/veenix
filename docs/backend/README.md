@@ -46,7 +46,7 @@ Concretely:
 ## Progress
 
 ### 01 Workspace and local stack
-- [ ] 1.1 pnpm workspace; app moved to `apps/web`; still runs on Prisma
+- [x] 1.1 pnpm workspace; app moved to `apps/web`; still runs on Prisma
 - [ ] 1.2 Docker services up (Mongo + Search, Valkey, SeaweedFS, Mailpit)
 
 ### 02 Shared package

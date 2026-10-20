@@ -35,7 +35,7 @@
   - the root scripts `dev`, `build`, `test`, `typecheck`, `check`, `services:up`, `services:down` (later tasks add to them)
   - the web package name `web`
 
-- [ ] **Step 1: Install pnpm**
+- [x] **Step 1: Install pnpm**
 
 ```bash
 npm install -g pnpm@10
@@ -43,7 +43,7 @@ pnpm --version
 ```
 Expected: `10.x.x`
 
-- [ ] **Step 2: Move the app**
+- [x] **Step 2: Move the app**
 
 ```bash
 mkdir -p apps/web packages
@@ -54,11 +54,11 @@ rm -rf node_modules .next package-lock.json
 git rm --cached package-lock.json 2>/dev/null || true
 ```
 
-- [ ] **Step 3: Rename the web package**
+- [x] **Step 3: Rename the web package**
 
 In `apps/web/package.json`, change `"name": "veenix"` to `"name": "web"`. Add `"typecheck": "tsc --noEmit"` to its scripts.
 
-- [ ] **Step 4: Create the root files**
+- [x] **Step 4: Create the root files**
 
 `pnpm-workspace.yaml`:
 ```yaml
@@ -124,7 +124,7 @@ apps/web/prisma/dev.db
 apps/web/prisma/dev.db-journal
 ```
 
-- [ ] **Step 5: Install and run the web app**
+- [x] **Step 5: Install and run the web app**
 
 ```bash
 pnpm install
@@ -135,7 +135,7 @@ Expected: `Ready` on port 3100. Open http://localhost:3100 and the sample data s
 
 If it fails with `Cannot find module 'X'`, run `pnpm --filter web add X` and retry.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
