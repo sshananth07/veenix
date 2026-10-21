@@ -50,9 +50,9 @@ Concretely:
 - [x] 1.2 Docker services up (Mongo + Search, Valkey, SeaweedFS, Mailpit)
 
 ### 02 Shared package
-- [ ] 2.1 Package scaffold and build
-- [ ] 2.2 Money, formatting, time (with tests)
-- [ ] 2.3 Enums, address, payment terms, permissions
+- [x] 2.1 Package scaffold and build
+- [x] 2.2 Money, formatting, time (with tests)
+- [x] 2.3 Enums, address, payment terms, permissions
 - [ ] 2.4 Domain functions: BOM, quotation, procurement, attention (with tests)
 - [ ] 2.5 Zod input schemas
 - [ ] 2.6 DTO types

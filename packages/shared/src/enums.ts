@@ -19,7 +19,7 @@ export const OPEN_QUOTATION_STATUSES: readonly QuotationStatus[] = ["SENT", "VIE
 export const VO_STATUSES = ["DRAFT", "CLIENT_REVIEW", "ACCEPTED"] as const;
 export type VoStatus = (typeof VO_STATUSES)[number];
 
-export const MILESTONE_STATUSES = ["NOT_YET_DUE", "AWAITTING_PAYMENT", "PAID", "HELD", "PENDING_SIGNOFF"] as const; 
+export const MILESTONE_STATUSES = ["NOT_YET_DUE", "AWAITING_PAYMENT", "PAID", "HELD", "PENDING_SIGNOFF"] as const; 
 export type MilestoneStatus = (typeof MILESTONE_STATUSES)[number]; 
 
 export const INVOICE_STATUSES = ["ISSUED", "SENT", "PAID"] as const; 

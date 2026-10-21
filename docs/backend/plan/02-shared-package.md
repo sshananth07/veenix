@@ -33,7 +33,7 @@
 **Interfaces:**
 - Produces: the package `@veenix/shared`, built to `packages/shared/dist`, with scripts `build`, `dev`, `test`, `typecheck`.
 
-- [ ] **Step 1: Write `packages/shared/package.json`**
+- [x] **Step 1: Write `packages/shared/package.json`**
 
 ```json
 {
@@ -51,14 +51,14 @@
 }
 ```
 
-- [ ] **Step 2: Install the dependencies**
+- [x] **Step 2: Install the dependencies**
 
 ```bash
 pnpm --filter @veenix/shared add zod@^4 big.js@^6
 pnpm --filter @veenix/shared add -D typescript@^5.8 vitest@^3 @types/big.js@^6 @types/node@^24
 ```
 
-- [ ] **Step 3: Write `packages/shared/tsconfig.json`**
+- [x] **Step 3: Write `packages/shared/tsconfig.json`**
 
 ```json
 {
@@ -72,18 +72,18 @@ pnpm --filter @veenix/shared add -D typescript@^5.8 vitest@^3 @types/big.js@^6 @
 }
 ```
 
-- [ ] **Step 4: Write a placeholder `packages/shared/src/index.ts`**
+- [x] **Step 4: Write a placeholder `packages/shared/src/index.ts`**
 
 ```ts
 export const SHARED_OK = true;
 ```
 
-- [ ] **Step 5: Build it**
+- [x] **Step 5: Build it**
 
 Run: `pnpm --filter @veenix/shared build && ls packages/shared/dist`
 Expected: `index.d.ts  index.js  index.js.map`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/shared pnpm-lock.yaml
@@ -112,7 +112,7 @@ git commit -m "chore(shared): package scaffold"
   - `MY_TZ`, `mytYear(d?)`, `mytStartOfDay(d?)`, `addDays(d, n)`, `toDateInput(d)`, `daysBetween(a, b)`
   - `formatCurrency(sen)`, `formatMoney2(sen)`, `formatNumber(n, maxFractionDigits?)`, `formatBudget(minSen, maxSen)`, `formatDate(d)`, `formatDateTime(d)`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `packages/shared/src/money.test.ts`:
 ```ts
@@ -191,12 +191,12 @@ describe("Malaysia time", () => {
 });
 ```
 
-- [ ] **Step 2: Run them to confirm they fail**
+- [x] **Step 2: Run them to confirm they fail**
 
 Run: `pnpm --filter @veenix/shared test`
 Expected: FAIL. `Failed to resolve import "./money"`.
 
-- [ ] **Step 3: Write `packages/shared/src/money.ts`**
+- [x] **Step 3: Write `packages/shared/src/money.ts`**
 
 ```ts
 import Big from "big.js";
@@ -259,7 +259,7 @@ export function allocate(totalSen: Sen, rows: { pct: number }[]): Sen[] {
 }
 ```
 
-- [ ] **Step 4: Write `packages/shared/src/time.ts`**
+- [x] **Step 4: Write `packages/shared/src/time.ts`**
 
 ```ts
 export const MY_TZ = "Asia/Kuala_Lumpur";
@@ -295,7 +295,7 @@ export function daysBetween(from: Date, to: Date): number {
 }
 ```
 
-- [ ] **Step 5: Write `packages/shared/src/format.ts`**
+- [x] **Step 5: Write `packages/shared/src/format.ts`**
 
 These are moved from `apps/web/lib/utils.ts`. Money now takes sen, and dates format in Malaysian time.
 
@@ -351,12 +351,12 @@ export function formatDateTime(value: Date | string | null | undefined): string 
 }
 ```
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `pnpm --filter @veenix/shared test`
 Expected: PASS (all tests in both files).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/shared
@@ -380,7 +380,7 @@ git commit -m "feat(shared): money in sen, Malaysian time, formatting"
   - `TERM_TEMPLATES`, `TermRow`
   - `ROLES`, `Role`, `PERMISSIONS`, `Permission`, `ROLE_PERMISSIONS`, `PROJECT_SCOPED_ROLES`, `ASSIGNABLE_ROLES`, `can(role, permission)`, `isProjectScoped(role)`
 
-- [ ] **Step 1: Write the failing test** `packages/shared/src/permissions.test.ts`
+- [x] **Step 1: Write the failing test** `packages/shared/src/permissions.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -409,12 +409,12 @@ describe("permission matrix", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter @veenix/shared test permissions`
 Expected: FAIL. `Failed to resolve import "./permissions"`.
 
-- [ ] **Step 3: Write `packages/shared/src/enums.ts`**
+- [x] **Step 3: Write `packages/shared/src/enums.ts`**
 
 Copy `PROPERTY_TYPES`, `LEAD_SOURCES`, `WORK_UNIT_GROUPS`, `WORK_UNITS` and `MATERIAL_UNITS` **unchanged** from `apps/web/lib/types.ts`. Replace the union types with `as const` tuples so Zod can use them:
 
@@ -501,15 +501,15 @@ export const UPLOAD_RULES: Record<UploadPurpose, { exts: string[]; label: string
 };
 ```
 
-- [ ] **Step 4: Write `packages/shared/src/address.ts`**
+- [x] **Step 4: Write `packages/shared/src/address.ts`**
 
 Copy `MY_STATES`, `AddressParts`, `addressLines`, `composeAddress`, `hasStructuredAddress` and `isPostcode` **unchanged** from `apps/web/lib/address.ts`. Leave `parseAddress(formData, …)` out: it reads `FormData`, so it stays in the web app.
 
-- [ ] **Step 5: Write `packages/shared/src/payment-terms.ts`**
+- [x] **Step 5: Write `packages/shared/src/payment-terms.ts`**
 
 Copy `TermRow` and `TERM_TEMPLATES` unchanged from `apps/web/lib/paymentTerms.ts`. `allocate` now lives in `money.ts`, and term validation is in the Zod schemas (Task 2.5).
 
-- [ ] **Step 6: Write `packages/shared/src/permissions.ts`**
+- [x] **Step 6: Write `packages/shared/src/permissions.ts`**
 
 ```ts
 export const ROLES = ["owner", "admin", "sales", "project_manager", "site_staff", "procurement", "finance"] as const;
@@ -590,12 +590,12 @@ export function isProjectScoped(role: Role): boolean {
 }
 ```
 
-- [ ] **Step 7: Run the tests**
+- [x] **Step 7: Run the tests**
 
 Run: `pnpm --filter @veenix/shared test`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/shared
