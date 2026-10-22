@@ -625,7 +625,7 @@ git commit -m "feat(shared): enums, address, payment terms, permission matrix"
   - `type PackageStage`, `getPackageStage(rfq, po)`, `getPackages(project)`
   - `type Priority`, `type AttentionItem`, `PRIORITY_ORDER`, `getAttention(project, readiness)`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `packages/shared/src/bom.test.ts`:
 ```ts
@@ -687,12 +687,12 @@ describe("quotationTotals", () => {
 });
 ```
 
-- [ ] **Step 2: Run them to confirm they fail**
+- [x] **Step 2: Run them to confirm they fail**
 
 Run: `pnpm --filter @veenix/shared test`
 Expected: FAIL on the missing `./bom` and `./quotation`.
 
-- [ ] **Step 3: Write `packages/shared/src/bom.ts`**
+- [x] **Step 3: Write `packages/shared/src/bom.ts`**
 
 ```ts
 import { lineTotal, type Sen } from "./money";
@@ -741,7 +741,7 @@ export function quotationReadiness(workItems: WorkItemDto[], bomItems: BomItemDt
 }
 ```
 
-- [ ] **Step 4: Write `packages/shared/src/quotation.ts`**
+- [x] **Step 4: Write `packages/shared/src/quotation.ts`**
 
 Move `groupByWorkItem`, `unitPrice` and `markupToMarginPct` unchanged from `apps/web/lib/quotation.ts`. Delete `SST_RATE`, and replace `quotationTotals` with:
 
@@ -759,7 +759,7 @@ export function quotationTotals(lines: { bomCost: Sen; clientPrice: Sen }[], sst
 }
 ```
 
-- [ ] **Step 5: Write `packages/shared/src/procurement.ts`**
+- [x] **Step 5: Write `packages/shared/src/procurement.ts`**
 
 Copy from `apps/web/lib/procurement.ts` and change only the types:
 
@@ -789,7 +789,7 @@ export function getPackages(project: ProjectCore) {
 }
 ```
 
-- [ ] **Step 6: Write `packages/shared/src/attention.ts`**
+- [x] **Step 6: Write `packages/shared/src/attention.ts`**
 
 Copy `apps/web/lib/attention.ts` line for line, with these changes only:
 - `import type { ProjectCore } from "./dto";` and `import type { Blocker } from "./bom";` replace the Prisma imports.
@@ -798,12 +798,12 @@ Copy `apps/web/lib/attention.ts` line for line, with these changes only:
 - The signature becomes `getAttention(project: ProjectCore, readiness: { ready: boolean; blockers: Blocker[] }): AttentionItem[]`.
 - The body is unchanged. Amounts are already sen and `formatCurrency` now takes sen, so the texts read the same.
 
-- [ ] **Step 7: Run the tests**
+- [x] **Step 7: Run the tests**
 
 Run: `pnpm --filter @veenix/shared test`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/shared
@@ -831,7 +831,7 @@ git commit -m "feat(shared): BOM costing, readiness, quotation totals, procureme
   - files: `presignInput`, `projectFilesInput`
   - org: `createOrgInput`, `letterheadInput`, `bankInput`, `pricingInput`, `taxInput`, `inviteInput`, `roleInput`, `acceptInviteInput`, `searchQuery`, `documentEmailInput`, `documentShareInput`
 
-- [ ] **Step 1: Write the failing test** `packages/shared/src/schemas/schemas.test.ts`
+- [x] **Step 1: Write the failing test** `packages/shared/src/schemas/schemas.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -861,12 +861,12 @@ describe("schemas", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter @veenix/shared test schemas`
 Expected: FAIL (module not found).
 
-- [ ] **Step 3: Write `schemas/common.ts`**
+- [x] **Step 3: Write `schemas/common.ts`**
 
 ```ts
 import { z } from "zod";
@@ -930,7 +930,7 @@ export const requiredAddress = {
 };
 ```
 
-- [ ] **Step 4: Write the module schemas**
+- [x] **Step 4: Write the module schemas**
 
 `schemas/leads.ts`:
 ```ts
@@ -1268,12 +1268,12 @@ export * from "./org";
 
 ⚠ Verify: in Zod 4, `z.int()`, `z.email()`, `z.strictObject()`, `{ error: "…" }` params and string messages on `.min()` behave as written. If an issue message comes out as Zod's default text, check the installed version's error-customization guide.
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `pnpm --filter @veenix/shared test`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/shared
@@ -1291,7 +1291,7 @@ git commit -m "feat(shared): Zod input schemas with the app's messages"
 **Interfaces:**
 - Produces the response shapes the API returns and the web components read. Field names copy the Prisma models, so components keep compiling. Dates are `Date` (the web client turns ISO strings back into dates) and ids are `string`.
 
-- [ ] **Step 1: Write `packages/shared/src/dto.ts`**
+- [x] **Step 1: Write `packages/shared/src/dto.ts`**
 
 ```ts
 import type { AttentionItem } from "./attention";
@@ -1453,7 +1453,7 @@ export interface DashboardDto {
 export interface SearchResultDto { kind: "lead" | "project" | "vendor" | "quotation" | "po" | "invoice"; refId: Id; projectId: Id | null; title: string; subtitle: string }
 ```
 
-- [ ] **Step 2: Write `packages/shared/src/index.ts`**
+- [x] **Step 2: Write `packages/shared/src/index.ts`**
 
 ```ts
 export * from "./money";
@@ -1471,12 +1471,12 @@ export * from "./dto";
 export * from "./schemas";
 ```
 
-- [ ] **Step 3: Build, type-check and test**
+- [x] **Step 3: Build, type-check and test**
 
 Run: `pnpm --filter @veenix/shared build && pnpm --filter @veenix/shared test`
 Expected: the build exits 0 with no errors, and all tests PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/shared

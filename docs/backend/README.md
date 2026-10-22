@@ -53,9 +53,9 @@ Concretely:
 - [x] 2.1 Package scaffold and build
 - [x] 2.2 Money, formatting, time (with tests)
 - [x] 2.3 Enums, address, payment terms, permissions
-- [ ] 2.4 Domain functions: BOM, quotation, procurement, attention (with tests)
-- [ ] 2.5 Zod input schemas
-- [ ] 2.6 DTO types
+- [x] 2.4 Domain functions: BOM, quotation, procurement, attention (with tests)
+- [x] 2.5 Zod input schemas
+- [x] 2.6 DTO types
 
 ### 03 API foundation
 - [ ] 3.1 NestJS scaffold, env, health endpoint, toolchain smoke test

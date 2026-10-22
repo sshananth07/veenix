@@ -1,41 +1,40 @@
-export const LEAD_STATUSES =["NEW", "CONTACTED", "SITE_SURVEY", "QUOTED", "CONVERTED", "LOST"] as const; 
-export type LeadStatus = (typeof LEAD_STATUSES)[number]; 
+export const LEAD_STATUSES = ["NEW", "CONTACTED", "SITE_SURVEY", "QUOTED", "CONVERTED", "LOST"] as const;
+export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
-export const PROJECT_STAGES = ["SITE_VISIT", "QUOTING",
-"WORK_IN_PROGRESS", "COMPLETED", "CANCELLED"] as const; 
+export const PROJECT_STAGES = ["SITE_VISIT", "QUOTING", "WORK_IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
 export type ProjectStage = (typeof PROJECT_STAGES)[number];
 
-export const PO_STATUSES = ["ISSUED", "PAID"] as const; 
+export const PO_STATUSES = ["ISSUED", "PAID"] as const;
 export type PoStatus = (typeof PO_STATUSES)[number];
 
 export const PO_MILESTONE_STATUSES = ["PENDING", "INVOICED", "PAID"] as const;
 export type PoMilestoneStatus = (typeof PO_MILESTONE_STATUSES)[number];
 
-export const QUOTATION_STATUSES = ["DRAFT", "SENT", "VIEWED", "QUESTIONED", "ACCEPTED", "SUPERSEDED"] as const; 
+export const QUOTATION_STATUSES = ["DRAFT", "SENT", "VIEWED", "QUESTIONED", "ACCEPTED", "SUPERSEDED"] as const;
 export type QuotationStatus = (typeof QUOTATION_STATUSES)[number];
-/** versions that are with the client and waiting on them.  */
+/** Versions that are with the client and waiting on them. */
 export const OPEN_QUOTATION_STATUSES: readonly QuotationStatus[] = ["SENT", "VIEWED", "QUESTIONED"];
 
 export const VO_STATUSES = ["DRAFT", "CLIENT_REVIEW", "ACCEPTED"] as const;
 export type VoStatus = (typeof VO_STATUSES)[number];
 
-export const MILESTONE_STATUSES = ["NOT_YET_DUE", "AWAITING_PAYMENT", "PAID", "HELD", "PENDING_SIGNOFF"] as const; 
-export type MilestoneStatus = (typeof MILESTONE_STATUSES)[number]; 
+export const MILESTONE_STATUSES = ["NOT_YET_DUE", "AWAITING_PAYMENT", "PAID", "HELD", "PENDING_SIGNOFF"] as const;
+export type MilestoneStatus = (typeof MILESTONE_STATUSES)[number];
 
-export const INVOICE_STATUSES = ["ISSUED", "SENT", "PAID"] as const; 
-export type InvoiceStatus = (typeof INVOICE_STATUSES)[number]; 
+export const INVOICE_STATUSES = ["ISSUED", "SENT", "PAID"] as const;
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
-export const PERFORMED_BY = ["OUTSOURCED", "SELF"] as const; 
-export type PerformedBy = (typeof PERFORMED_BY)[number]; 
+export const PERFORMED_BY = ["OUTSOURCED", "SELF"] as const;
+export type PerformedBy = (typeof PERFORMED_BY)[number];
 
 export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
-    NEW: "New", 
-    CONTACTED: "Contacted", 
-    SITE_SURVEY: "Site Survey", 
-    QUOTED: "Quoted", 
-    CONVERTED: "Converted",
-    LOST: "Lost",
-}
+  NEW: "New",
+  CONTACTED: "Contacted",
+  SITE_SURVEY: "Site Survey",
+  QUOTED: "Quoted",
+  CONVERTED: "Converted",
+  LOST: "Lost",
+};
 
 export const PROJECT_STAGE_LABEL: Record<ProjectStage, string> = {
   SITE_VISIT: "Site Visit",
@@ -92,9 +91,9 @@ export const WORK_UNITS = WORK_UNIT_GROUPS.flatMap((g) => g.units.map((u) => u.v
 
 export const MATERIAL_UNITS = ["sq ft", "sq m", "ft run", "m run", "pcs", "nos", "box", "bag", "kg", "litre", "pail", "roll", "set", "lot"];
 
-export const VO_REASONS = ["Client request", "Design change", "Site condition", "Additional scope", "Other"]; 
+export const VO_REASONS = ["Client request", "Design change", "Site condition", "Additional scope", "Other"];
 
-// --- uploads (rules moved from apps/web/lib/uploads.ts) ---
+// ---- Uploads (rules moved from apps/web/lib/uploads.ts) --------------------
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 

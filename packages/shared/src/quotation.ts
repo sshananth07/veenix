@@ -7,7 +7,7 @@ type Line = {
   seq: number;
 };
 
-export type QuotationTotals ={ cost: Sen; subtotal: Sen; sst: Sen; total: Sen; profit: Sen; marginPct: number };
+export type QuotationTotals = { cost: Sen; subtotal: Sen; sst: Sen; total: Sen; profit: Sen; marginPct: number };
 
 export function quotationTotals(lines: { bomCost: Sen; clientPrice: Sen }[], sstBps: number): QuotationTotals {
   const cost = lines.reduce((s, l) => s + l.bomCost, 0);

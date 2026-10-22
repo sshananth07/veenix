@@ -1,20 +1,19 @@
-import { describe, expect, it } from "vitest"; 
-import { allocate, lineTotal, parseRinggit, senToInput,
-splitSstInclusive, sstOn, withMarkup } from "./money";
+import { describe, expect, it } from "vitest";
+import { allocate, lineTotal, parseRinggit, senToInput, splitSstInclusive, sstOn, withMarkup } from "./money";
 import { formatCurrency, formatBudget } from "./format";
 
 describe("parseRinggit", () => {
-    it("reads ringgit text into sen", () => {
-        expect(parseRinggit("1,234.50")).toBe(123450); 
-        expect(parseRinggit("RM 12")).toBe(1200); 
-        expect(parseRinggit("0.05")).toBe(5); 
-    });
-    it("rejects blanks, negatives and fractions of a sen", () => {
-        expect(parseRinggit("")).toBeNull(); 
-        expect(parseRinggit("-5")).toBeNull();
-        expect(parseRinggit("1.234")).toBeNull();
-        expect(parseRinggit("abc")).toBeNull(); 
-    });
+  it("reads ringgit text into sen", () => {
+    expect(parseRinggit("1,234.50")).toBe(123450);
+    expect(parseRinggit("RM 12")).toBe(1200);
+    expect(parseRinggit("0.05")).toBe(5);
+  });
+  it("rejects blanks, negatives and fractions of a sen", () => {
+    expect(parseRinggit("")).toBeNull();
+    expect(parseRinggit("-5")).toBeNull();
+    expect(parseRinggit("1.234")).toBeNull();
+    expect(parseRinggit("abc")).toBeNull();
+  });
 });
 
 describe("rounding", () => {

@@ -5,6 +5,6 @@ export * from "./vendors";
 export * from "./procurement";
 export * from "./quotations";
 export * from "./variations";
-export * from "./billings";
+export * from "./billing";
 export * from "./files";
 export * from "./org";

@@ -57,4 +57,3 @@ export const requiredAddress = {
   city: z.string().trim().min(1, "City is required").max(80),
   state: z.enum(MY_STATES, { error: "Choose a state" }),
 };
-
