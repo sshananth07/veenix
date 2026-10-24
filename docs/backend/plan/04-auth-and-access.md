@@ -420,13 +420,13 @@ git commit -m "feat(web): sign-up, email verification, MFA setup and sign-in pag
   - `UserModel` (collection `app_users`)
   - `userFor(identity): Promise<CurrentUser>`
 
-- [ ] **Step 1: Install**
+- [x] **Step 1: Install**
 
 ```bash
 pnpm --filter api add jose@^6 ioredis
 ```
 
-- [ ] **Step 2: Write the failing test** `src/auth/identity.test.ts`
+- [x] **Step 2: Write the failing test** `src/auth/identity.test.ts`
 
 ```ts
 import { beforeAll, describe, expect, it } from "vitest";
@@ -458,12 +458,12 @@ describe("verifyIdentity", () => {
 });
 ```
 
-- [ ] **Step 3: Run it to confirm it fails**
+- [x] **Step 3: Run it to confirm it fails**
 
 Run: `pnpm --filter api test identity`
 Expected: FAIL (module missing).
 
-- [ ] **Step 4: Write `src/auth/identity.ts`**
+- [x] **Step 4: Write `src/auth/identity.ts`**
 
 ```ts
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
@@ -504,7 +504,7 @@ export async function verifyIdentity(token: string): Promise<Identity> {
 }
 ```
 
-- [ ] **Step 5: Write `src/users/user.model.ts` and `src/users/users.ts`**
+- [x] **Step 5: Write `src/users/user.model.ts` and `src/users/users.ts`**
 
 ```ts
 // user.model.ts
@@ -543,12 +543,12 @@ export async function userFor(identity: Identity): Promise<CurrentUser> {
 }
 ```
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `pnpm --filter api test identity`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api pnpm-lock.yaml
