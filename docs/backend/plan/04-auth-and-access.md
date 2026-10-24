@@ -585,7 +585,7 @@ git commit -m "feat(api): verify Better Auth JWTs and map them to app users"
 
   - `toOrgDto(org): OrgDto`
 
-- [ ] **Step 1: Write the models**
+- [x] **Step 1: Write the models**
 
 ```ts
 // org.model.ts
@@ -659,10 +659,11 @@ export const InvitationModel = model("Invitation", invitationSchema);
 
 These three collections are **not** under the tenant plugin. Every query on them names `orgId` explicitly.
 
-- [ ] **Step 2: Write the failing test** `src/orgs/orgs.service.test.ts`
+- [x] **Step 2: Write the failing test** `src/orgs/orgs.service.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
+import { Types } from "mongoose";
 import { OrgsService } from "./orgs.service";
 import { MembershipModel } from "./membership.model";
 import { runWithCtx, setUser } from "../common/context";
@@ -683,7 +684,7 @@ describe("OrgsService", () => {
   });
 
   it("enforces invitation email and owner rules", async () => {
-    const { orgId } = await asUser(owner, () => svc.create({ companyName: "Org 2" }));
+    const orgId = new Types.ObjectId((await asUser(owner, () => svc.create({ companyName: "Org 2" }))).orgId);
     const { link } = await asUser(owner, () => asOrg(orgId, () => svc.invite({ email: "admin@x.my", role: "admin" }), { userId: owner.id, role: "owner" }));
     const token = link!.split("/").pop()!;
 
@@ -703,12 +704,12 @@ describe("OrgsService", () => {
 
 `runWithCtx(undefined as never, …)` opens a context with no organization, the same state as a `@NoOrg` route.
 
-- [ ] **Step 3: Run it to confirm it fails**
+- [x] **Step 3: Run it to confirm it fails**
 
 Run: `pnpm --filter api test orgs`
 Expected: FAIL (module missing).
 
-- [ ] **Step 4: Write `src/orgs/orgs.service.ts`**
+- [x] **Step 4: Write `src/orgs/orgs.service.ts`**
 
 ```ts
 import { createHash, randomBytes } from "node:crypto";
@@ -779,8 +780,9 @@ export class OrgsService {
     const c = ctx();
     const target = await MembershipModel.findOne({ _id: membershipId, orgId: c.orgId, status: "active" }).lean();
     if (!target) throw notFound("Member");
-    if (target.userId.equals(c.userId!)) throw rule("You can't change your own role");
+    // Owner check first: an admin promoting themselves hears about the owner rule.
     if ((target.role === "owner" || nextRole === "owner") && c.role !== "owner") throw forbidden("Only an owner can grant or remove the owner role");
+    if (target.userId.equals(c.userId!)) throw rule("You can't change your own role");
     if (target.role === "owner" && nextRole !== "owner") {
       const owners = await MembershipModel.countDocuments({ orgId: c.orgId, role: "owner", status: "active" });
       if (owners <= 1) throw rule("An organization needs at least one owner");
@@ -851,7 +853,7 @@ export class OrgsService {
 
 `acceptInvitation` runs on a `@NoOrg` route, so there's no tenant context and these writes aren't in a transaction. Accepting the same token twice is harmless: the membership upsert is idempotent and `acceptedAt` blocks the second try.
 
-- [ ] **Step 5: Write `src/orgs/orgs.controller.ts`**
+- [x] **Step 5: Write `src/orgs/orgs.controller.ts`**
 
 ```ts
 import { Controller, Delete, Get, Patch, Post } from "@nestjs/common";
@@ -881,12 +883,12 @@ export class OrgsController {
 
 Register `OrgsController` in `AppModule.controllers` and `OrgsService` in `AppModule.providers`.
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `pnpm --filter api test orgs`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api

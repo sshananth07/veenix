@@ -101,9 +101,9 @@ General rules:
 | Collection | Fields | Indexes |
 |---|---|---|
 | `app_users` | `authSubject` (the auth provider's user id), `email`, `name`, `platformRole: 'superadmin' \| null` | unique `authSubject`; `email` |
-| `organizations` | `name`, `companyReg`, `companyAddress`, `companyPhone`, `logoPath`, `bankName`, `bankAccountName`, `bankAccount`, `swiftCode`, `defaultMarkupPct` (40), `minMarkupPct` (20), `sstBps` (800), `einvoice` (§16), `status: 'active' \| 'suspended'`, `createdBy` | — |
+| `organizations` | `companyName`, `companyReg`, `companyAddress`, `companyPhone`, `logoPath`, `bankName`, `bankAccountName`, `bankAccount`, `swiftCode`, `defaultMarkupPct` (40), `minMarkupPct` (20), `sstBps` (800), `einvoice` (§16), `status: 'active' \| 'suspended'`, `createdBy` | — |
 | `memberships` | `orgId`, `userId`, `role`, `status: 'active' \| 'removed'`, `invitedBy` | unique `{orgId, userId}`; `{userId, status}` |
-| `invitations` | `orgId`, `email` (lower-case), `role`, `tokenHash`, `expiresAt`, `invitedBy`, `acceptedAt` | unique `tokenHash`; `{orgId, email}` |
+| `invitations` | `orgId`, `email` (lower-case), `role`, `tokenHash`, `expiresAt`, `invitedBy`, `acceptedAt`, `revokedAt` | unique `tokenHash`; `{orgId, email}` |
 | `counters` | `_id: "<orgId>:<key>:<year>"`, `seq` | — |
 | `jobs` | `orgId`, `type`, `payload`, `status`, `attempts`, `runAt`, `lockedUntil`, `lastError`, `doneAt` | `{status, runAt}`; TTL 30 d on `doneAt` |
 
