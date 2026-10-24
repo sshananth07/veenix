@@ -69,7 +69,7 @@ Concretely:
 - [x] 4.3 API identity check, `app_users`
 - [x] 4.4 Organizations, memberships, invitations, `/me`
 - [x] 4.5 AccessGuard, `@Can`, project scope, rate limit (with tests)
-- [ ] 4.6 Web session helpers, onboarding, organization switcher
+- [x] 4.6 Web session helpers, onboarding, organization switcher
 
 ### 05 Platform services
 - [ ] 5.1 Redis, storage service, bucket init, uploads endpoint (with tests)

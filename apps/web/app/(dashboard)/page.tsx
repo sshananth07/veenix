@@ -20,7 +20,7 @@ import { getAttention, PRIORITY_ORDER, type Priority } from "@/lib/attention";
 import { projectDetailInclude } from "@/lib/projectQuery";
 import { quotationTotals } from "@/lib/quotation";
 import { LEAD_STATUS_LABEL, LEAD_STATUSES, type LeadStatus } from "@/lib/types";
-import { CURRENT_USER } from "@/lib/user";
+import { requireSession } from "@/lib/session";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +77,7 @@ function greeting(hour: number) {
 }
 
 export default async function HomePage() {
+  const { user } = await requireSession();
   const now = new Date();
   const week = new Date(now.getTime() - 7 * DAY);
   const month = new Date(now.getTime() - 30 * DAY);
@@ -185,7 +186,7 @@ export default async function HomePage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {greeting(now.getHours())}, {CURRENT_USER.name}
+            {greeting(now.getHours())}, {user.name}
           </h1>
           <p className="mt-1 text-muted-foreground">Here&apos;s what&apos;s happening with your renovation business today.</p>
         </div>

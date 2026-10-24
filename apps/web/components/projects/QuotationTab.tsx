@@ -5,7 +5,7 @@ import type { BomCost, Blocker } from "@/lib/bom";
 import { allocate } from "@/lib/paymentTerms";
 import { groupByWorkItem, quotationTotals } from "@/lib/quotation";
 import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
-import { CURRENT_USER } from "@/lib/user";
+import { requireSession } from "@/lib/session";
 import { createRevision, sendQuotation, recordClientResponse } from "@/actions/quotation";
 import { ActionButton } from "@/components/ActionButton";
 import { Button } from "@/components/ui/button";
@@ -218,7 +218,8 @@ function ConversationSection({ quotation, clientName, open }: { quotation: Quota
   );
 }
 
-function ThreadEntry({ event, clientName }: { event: QuotationEvent; clientName: string }) {
+async function ThreadEntry({ event, clientName }: { event: QuotationEvent; clientName: string }) {
+  const userName = (await requireSession()).user.name;
   if (event.type === "QUESTIONED" || event.type === "REPLIED") {
     const client = event.type === "QUESTIONED";
     return (
@@ -226,7 +227,7 @@ function ThreadEntry({ event, clientName }: { event: QuotationEvent; clientName:
         <div className={cn("max-w-[85%] rounded-2xl px-4 py-2.5 text-sm", client ? "rounded-tl-sm bg-muted" : "rounded-tr-sm bg-primary/10")}>
           <div className="mb-0.5 flex items-center gap-2 text-xs text-muted-foreground">
             {client ? <MessageCircleQuestion className="h-3.5 w-3.5" /> : <Reply className="h-3.5 w-3.5" />}
-            <span className="font-medium text-foreground">{client ? clientName : CURRENT_USER.name}</span>
+            <span className="font-medium text-foreground">{client ? clientName : userName}</span>
             <span>{formatDateTime(event.createdAt)}</span>
           </div>
           <p className="whitespace-pre-line">{event.note}</p>

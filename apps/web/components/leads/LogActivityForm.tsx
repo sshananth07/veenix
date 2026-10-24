@@ -3,18 +3,19 @@
 import { useRef, useTransition } from "react";
 import { Send } from "lucide-react";
 import { logLeadActivity } from "@/actions/leads";
-import { CURRENT_USER } from "@/lib/user";
+import { authClient } from "@/lib/auth-client";
 
 export function LogActivityForm({ leadId }: { leadId: string }) {
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const userName = authClient.useSession().data?.user.name ?? "";
 
   return (
     <form
       action={(formData) => {
         const note = String(formData.get("note") ?? "");
         startTransition(async () => {
-          await logLeadActivity(leadId, note, CURRENT_USER.name);
+          await logLeadActivity(leadId, note);
           if (inputRef.current) inputRef.current.value = "";
         });
       }}
@@ -22,7 +23,7 @@ export function LogActivityForm({ leadId }: { leadId: string }) {
     >
       <div className="flex items-start gap-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-          {CURRENT_USER.name.slice(0, 2).toUpperCase()}
+          {userName.slice(0, 2).toUpperCase()}
         </span>
         <textarea
           ref={inputRef}

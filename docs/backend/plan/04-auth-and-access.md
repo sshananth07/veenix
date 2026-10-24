@@ -1115,7 +1115,7 @@ git commit -m "feat(api): access guard with membership, permission matrix, proje
   - the `veenix_org` cookie
   - `<OrgSwitcher />`
 
-- [ ] **Step 1: Write `apps/web/middleware.ts`** (a cheap cookie check; the real checks happen in `requireSession`)
+- [x] **Step 1: Write `apps/web/middleware.ts`** (a cheap cookie check; the real checks happen in `requireSession`)
 
 ```ts
 import { NextResponse, type NextRequest } from "next/server";
@@ -1132,7 +1132,7 @@ export function middleware(req: NextRequest) {
 export const config = { matcher: ["/((?!_next/|favicon.ico).*)"] };
 ```
 
-- [ ] **Step 2: Write `apps/web/lib/session.ts`**
+- [x] **Step 2: Write `apps/web/lib/session.ts`**
 
 ```ts
 import "server-only";
@@ -1192,7 +1192,7 @@ export const requireOrg = cache(async (): Promise<{ me: MeDto; orgId: string; ro
 
 ⚠ Verify: `auth.api.getToken` is the server-side name for the JWT plugin's `/token` endpoint in the installed version.
 
-- [ ] **Step 3: Onboarding and invitations**
+- [x] **Step 3: Onboarding and invitations**
 
 `app/(auth)/onboarding/actions.ts`:
 ```ts
@@ -1231,7 +1231,7 @@ export async function switchOrganization(orgId: string) {
 
 Don't add `/invite` to the middleware's `PUBLIC` list: accepting an invitation needs a signed-in user.
 
-- [ ] **Step 4: Use the real user in the dashboard shell**
+- [x] **Step 4: Use the real user in the dashboard shell**
 
 `app/(dashboard)/layout.tsx`:
 ```tsx
@@ -1254,15 +1254,17 @@ In `components/NavBar.tsx`:
 - Accept `userName`, `orgs` and `currentOrgId` props.
 - Replace every use of `CURRENT_USER.name` with `userName`.
 - Render `<OrgSwitcher orgs={orgs} currentOrgId={currentOrgId} />` next to the user menu when `orgs.length > 1`.
-- Add a "Sign out" menu item calling `authClient.signOut()` then `window.location.href = "/login"`.
+- Make the avatar a `DropdownMenu` trigger (there's no user menu yet) and add a "Sign out" item calling `authClient.signOut()` then `window.location.href = "/login"`.
 
 `components/OrgSwitcher.tsx`: a `DropdownMenu` listing `orgs[].companyName`. Each item is a `<form action={switchOrganization.bind(null, org.orgId)}>` with a submit button.
 
 Delete `lib/user.ts`. Then `grep -rn "CURRENT_USER" apps/web` and replace each use:
 - On the home page greeting, use `(await requireSession()).user.name`.
-- In `actions/leads.ts` (the activity author), the API stamps the author in plan 06, so drop the argument.
+- In `actions/leads.ts` (the activity author), the API stamps the author in plan 06, so drop the argument; until then the action uses `(await requireSession()).user.name`.
+- `components/leads/LogActivityForm.tsx` (a client component): the initials come from `authClient.useSession()`.
+- `components/projects/QuotationTab.tsx` (a server component): `ThreadEntry` becomes async and uses `(await requireSession()).user.name`.
 
-- [ ] **Step 5: Check it end to end**
+- [x] **Step 5: Check it end to end**
 
 With the API (`pnpm --filter api dev`) and web (`pnpm --filter web dev`) both running:
 1. Sign up and set up MFA.
@@ -1272,7 +1274,7 @@ With the API (`pnpm --filter api dev`) and web (`pnpm --filter web dev`) both ru
 
 Expected: no redirect loops, and the nav shows your name.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/web

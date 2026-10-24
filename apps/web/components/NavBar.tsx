@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, FolderKanban, Home, Settings, Truck, Users } from "lucide-react";
+import { BarChart3, FolderKanban, Home, LogOut, Settings, Truck, Users } from "lucide-react";
+import type { MeDto } from "@veenix/shared";
 import { Avatar } from "@/components/ui/avatar";
-import { CURRENT_USER } from "@/lib/user";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { OrgSwitcher } from "@/components/OrgSwitcher";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -16,7 +19,7 @@ const LINKS = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function NavBar() {
+export function NavBar({ userName, orgs, currentOrgId }: { userName: string; orgs: MeDto["memberships"]; currentOrgId: string }) {
   const pathname = usePathname();
   return (
     <header className="border-b bg-card">
@@ -55,7 +58,27 @@ export function NavBar() {
             placeholder="Search..."
             className="hidden h-9 w-56 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring xl:block"
           />
-          <Avatar name={CURRENT_USER.name} className="h-9 w-9" />
+          {orgs.length > 1 && <OrgSwitcher orgs={orgs} currentOrgId={currentOrgId} />}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button aria-label="Account menu" className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <Avatar name={userName} className="h-9 w-9" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{userName}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={async () => {
+                  await authClient.signOut();
+                  window.location.href = "/login";
+                }}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

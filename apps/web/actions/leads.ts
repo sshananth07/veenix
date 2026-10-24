@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { hasStructuredAddress, parseAddress, composeAddress } from "@/lib/address";
-import { CURRENT_USER } from "@/lib/user";
+import { requireSession } from "@/lib/session";
 import { date, fail, num, ok, optStr, str, uniqueCode, type ActionResult } from "@/lib/actionResult";
 
 function parseLead(formData: FormData) {
@@ -80,9 +80,10 @@ export async function updateLead(leadId: string, formData: FormData): Promise<Ac
   return ok();
 }
 
-export async function logLeadActivity(leadId: string, note: string, author?: string) {
+export async function logLeadActivity(leadId: string, note: string) {
   if (!note.trim()) return;
-  await prisma.leadActivity.create({ data: { leadId, note: note.trim(), author: author?.trim() || CURRENT_USER.name } });
+  const { user } = await requireSession();
+  await prisma.leadActivity.create({ data: { leadId, note: note.trim(), author: user.name } });
   revalidatePath(`/leads/${leadId}`);
 }
 
