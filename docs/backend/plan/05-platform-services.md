@@ -45,13 +45,13 @@
   - `newKey(purpose: UploadPurpose | 'documents', ext): string`
   - `ensureBucket()`
 
-- [ ] **Step 1: Install**
+- [x] **Step 1: Install**
 
 ```bash
 pnpm --filter api add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
 ```
 
-- [ ] **Step 2: Write `src/storage/storage.ts`**
+- [x] **Step 2: Write `src/storage/storage.ts`**
 
 ```ts
 import { randomUUID } from "node:crypto";
@@ -168,7 +168,7 @@ export async function ensureBucket() {
 }
 ```
 
-- [ ] **Step 3: Write the uploads controller and the init script**
+- [x] **Step 3: Write the uploads controller and the init script**
 
 `src/storage/uploads.controller.ts`:
 ```ts
@@ -200,16 +200,16 @@ ensureBucket().then(() => console.log("bucket ready"), (e) => { console.error(e)
 
 Add `"storage:init": "tsx scripts/storage-init.ts"` to `apps/api/package.json`, and register `UploadsController` in `AppModule`.
 
-- [ ] **Step 4: Create the bucket**
+- [x] **Step 4: Create the bucket**
 
 Run: `pnpm --filter api storage:init`
 Expected: `bucket ready`. A CORS warning may also print; handle it in Step 5.
 
-- [ ] **Step 5: If CORS can't be set on SeaweedFS**
+- [x] **Step 5: If CORS can't be set on SeaweedFS**
 
-Change the storage `command` in `docker-compose.yml` to add `-s3.allowedOrigins=http://localhost:3100`, then run `docker compose up -d storage`. ⚠ Verify the flag name with `docker compose exec storage weed server -h | grep -i origin`. R2 supports `PutBucketCors` normally.
+Not needed with SeaweedFS 4.48: `PutBucketCors` works, and a preflight from another origin gets 403. Otherwise: change the storage `command` in `docker-compose.yml` to add `-s3.allowedOrigins=http://localhost:3100`, then run `docker compose up -d storage`. ⚠ Verify the flag name with `docker compose exec storage weed server -h | grep -i origin`. R2 supports `PutBucketCors` normally.
 
-- [ ] **Step 6: Write the test** `src/storage/storage.test.ts`
+- [x] **Step 6: Write the test** `src/storage/storage.test.ts`
 
 ```ts
 import { beforeAll, describe, expect, it } from "vitest";
@@ -242,12 +242,12 @@ describe("storage claim", () => {
 });
 ```
 
-- [ ] **Step 7: Run the tests**
+- [x] **Step 7: Run the tests**
 
 Run: `pnpm --filter api test storage`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/api pnpm-lock.yaml docker-compose.yml

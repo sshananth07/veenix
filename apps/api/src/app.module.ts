@@ -6,11 +6,12 @@ import { AccessGuard } from "./auth/access.guard";
 import { ErrorFilter } from "./common/error.filter";
 import { OrgsController } from "./orgs/orgs.controller";
 import { OrgsService } from "./orgs/orgs.service";
+import { UploadsController } from "./storage/uploads.controller";
 
 // One module for the whole API. Later tasks append to `controllers` and `providers`.
 @Module({
   imports: [ClsModule.forRoot({ global: true, middleware: { mount: true } })],
-  controllers: [HealthController, OrgsController],
+  controllers: [HealthController, OrgsController, UploadsController],
   providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService],
 })
 export class AppModule {}

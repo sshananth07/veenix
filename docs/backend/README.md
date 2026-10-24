@@ -72,7 +72,7 @@ Concretely:
 - [x] 4.6 Web session helpers, onboarding, organization switcher
 
 ### 05 Platform services
-- [ ] 5.1 Redis, storage service, bucket init, uploads endpoint (with tests)
+- [x] 5.1 Redis, storage service, bucket init, uploads endpoint (with tests)
 - [ ] 5.2 Jobs: outbox, runner, cron endpoint (with tests)
 - [ ] 5.3 Mail service
 - [ ] 5.4 Live updates: `changed()`, SSE, tickets (with tests)
