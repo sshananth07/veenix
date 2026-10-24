@@ -152,7 +152,7 @@ git commit -m "chore: pnpm workspace with the Next.js app in apps/web"
 **Interfaces:**
 - Produces these local endpoints, which later tasks put in `.env` files:
   - `MONGODB_URI=mongodb://veenix:veenix-dev-only@localhost:27017/veenix?authSource=admin&directConnection=true`
-  - `REDIS_URL=redis://localhost:6379`
+  - `REDIS_URL=redis://localhost:6380`
   - `S3_ENDPOINT=http://localhost:8333`, `S3_ACCESS_KEY_ID=veenix`, `S3_SECRET_ACCESS_KEY=veenix-dev-secret`, `S3_REGION=us-east-1`, `S3_BUCKET=veenix-dev`, `S3_FORCE_PATH_STYLE=true`
   - `SMTP_URL=smtp://localhost:1025`, with the Mailpit UI at http://localhost:8025
 
@@ -177,7 +177,7 @@ services:
 
   redis:
     image: valkey/valkey:8
-    ports: ["6379:6379"]
+    ports: ["6380:6379"] # 6380 on the host: a native Windows Redis may already hold 6379
     volumes:
       - redis-data:/data
 
@@ -222,7 +222,7 @@ volumes:
 ```bash
 # Local service endpoints from docker-compose.yml
 MONGODB_URI=mongodb://veenix:veenix-dev-only@localhost:27017/veenix?authSource=admin&directConnection=true
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6380
 S3_ENDPOINT=http://localhost:8333
 S3_REGION=us-east-1
 S3_BUCKET=veenix-dev

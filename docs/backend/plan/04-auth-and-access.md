@@ -58,7 +58,7 @@ pnpm --filter web add -D @types/nodemailer @types/qrcode
 BETTER_AUTH_URL=http://localhost:3100
 BETTER_AUTH_SECRET=<random 32 bytes base64>
 MONGODB_URI=mongodb://veenix:veenix-dev-only@localhost:27017/veenix?authSource=admin&directConnection=true
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6380
 SMTP_URL=smtp://localhost:1025
 MAIL_FROM="Veenix <no-reply@veenix.local>"
 API_URL=http://localhost:4000
