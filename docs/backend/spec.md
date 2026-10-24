@@ -124,7 +124,7 @@ Better Auth owns its own collections (`user`, `session`, `account`, `verificatio
 | `files` | — | `uploadedBy` | `{projectId, createdAt}` |
 | `documents` | `sends[] {channel, to, status, error, at}` | `type`, `refId`, `projectId`, `key`, `sha256` | `{type, refId}` |
 | `search_entries` | — | `kind`, `refId`, `projectId`, `title`, `subtitle`, `keywords` | unique `{kind, refId}` + Atlas Search index `search_entries` |
-| `audit_events` | — | `actorId`, `action`, `entity {type, id}`, `projectId`, `data` | `{createdAt}`; `{entity.id}` |
+| `audit_events` | — | `actorId`, `action`, `entityType`, `entityId`, `projectId`, `data` | `{createdAt}`; `{entityId}` |
 
 Why each thing is embedded or kept separate:
 - **Embedded in the project:** the BOM (work items, lines, materials) and the client milestones. They are always edited and read together, so readiness, costing and the payment schedule are computed from one document, and multi-part edits are atomic.

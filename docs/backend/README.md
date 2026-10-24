@@ -58,10 +58,10 @@ Concretely:
 - [x] 2.6 DTO types
 
 ### 03 API foundation
-- [ ] 3.1 NestJS scaffold, env, health endpoint, toolchain smoke test
-- [ ] 3.2 Mongo connection, request context, errors, Zod pipe, `plain()`
-- [ ] 3.3 Tenant plugin and `Sen` type (with isolation tests)
-- [ ] 3.4 Transactions, `afterCommit`, counters, audit
+- [x] 3.1 NestJS scaffold, env, health endpoint, toolchain smoke test
+- [x] 3.2 Mongo connection, request context, errors, Zod pipe, `plain()`
+- [x] 3.3 Tenant plugin and `Sen` type (with isolation tests)
+- [x] 3.4 Transactions, `afterCommit`, counters, audit
 
 ### 04 Auth and access
 - [ ] 4.1 Better Auth in web: config, route handler, mail

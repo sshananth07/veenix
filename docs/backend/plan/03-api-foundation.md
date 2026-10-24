@@ -41,7 +41,7 @@
   - decorators `@Public()`, `@NoOrg()`, `@Can(...permissions)`, `@RateLimit(perMinute)` and their metadata keys `IS_PUBLIC`, `NO_ORG`, `PERMISSIONS`, `RATE_LIMIT`
   - the route `GET /v1/health`
 
-- [ ] **Step 1: Write `apps/api/package.json`**
+- [x] **Step 1: Write `apps/api/package.json`**
 
 ```json
 {
@@ -58,14 +58,14 @@
 }
 ```
 
-- [ ] **Step 2: Install the dependencies**
+- [x] **Step 2: Install the dependencies**
 
 ```bash
 pnpm --filter api add @nestjs/common@^11 @nestjs/core@^11 @nestjs/platform-express@^11 reflect-metadata rxjs mongoose@^8 nestjs-cls zod@^4 helmet "@veenix/shared@workspace:*"
 pnpm --filter api add -D @nestjs/cli@^11 @nestjs/testing@^11 typescript@^5.8 vitest@^3 unplugin-swc @swc/core supertest @types/supertest @types/express @types/node@^24 tsx
 ```
 
-- [ ] **Step 3: Write `apps/api/tsconfig.json`**
+- [x] **Step 3: Write `apps/api/tsconfig.json`**
 
 ```json
 {
@@ -105,7 +105,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 4: Write `apps/api/.env`** (git-ignored) and the same file with placeholder secrets as `apps/api/.env.example`
+- [x] **Step 4: Write `apps/api/.env`** (git-ignored) and the same file with placeholder secrets as `apps/api/.env.example`
 
 Generate each secret with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
 
@@ -132,7 +132,7 @@ SMTP_URL=smtp://localhost:1025
 MAIL_FROM="Veenix <no-reply@veenix.local>"
 ```
 
-- [ ] **Step 5: Write `src/config/env.ts`**
+- [x] **Step 5: Write `src/config/env.ts`**
 
 ```ts
 import { existsSync } from "node:fs";
@@ -167,7 +167,7 @@ const schema = z.object({
 export const env = schema.parse(process.env);
 ```
 
-- [ ] **Step 6: Write `src/common/decorators.ts`**
+- [x] **Step 6: Write `src/common/decorators.ts`**
 
 ```ts
 import { SetMetadata } from "@nestjs/common";
@@ -188,7 +188,7 @@ export const Can = (...permissions: Permission[]) => SetMetadata(PERMISSIONS, pe
 export const RateLimit = (perMinute: number) => SetMetadata(RATE_LIMIT, perMinute);
 ```
 
-- [ ] **Step 7: Write the app files**
+- [x] **Step 7: Write the app files**
 
 `src/health.controller.ts`:
 ```ts
@@ -261,7 +261,7 @@ void bootstrap();
 
 `ErrorFilter` and `connectDb` come in Task 3.2. Write that task's `src/common/db.ts` and `src/common/error.filter.ts` now, or the build in the next step fails.
 
-- [ ] **Step 8: Run it**
+- [x] **Step 8: Run it**
 
 ```bash
 pnpm services:up
@@ -271,7 +271,7 @@ curl -s http://localhost:4000/v1/health
 ```
 Expected: `{"ok":true}`
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/api pnpm-lock.yaml
@@ -301,7 +301,7 @@ git commit -m "feat(api): NestJS scaffold with validated env and health check"
   - `plain<T>(value): T`
   - test helpers `asOrg(orgId, fn, over?)`, `newId()`
 
-- [ ] **Step 1: Write the failing test** `src/common/common.test.ts`
+- [x] **Step 1: Write the failing test** `src/common/common.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -332,12 +332,12 @@ describe("common", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter api test common`
 Expected: FAIL (modules missing).
 
-- [ ] **Step 3: Write `src/common/db.ts`**
+- [x] **Step 3: Write `src/common/db.ts`**
 
 ```ts
 import mongoose from "mongoose";
@@ -361,7 +361,7 @@ export function connectDb(uri: string = env.MONGODB_URI, dbName?: string) {
 ```
 ⚠ Verify: `transactionAsyncLocalStorage` exists in the installed Mongoose (added in 8.4).
 
-- [ ] **Step 4: Write `src/common/context.ts`**
+- [x] **Step 4: Write `src/common/context.ts`**
 
 ```ts
 import { ClsServiceManager } from "nestjs-cls";
@@ -415,9 +415,10 @@ export function currentUser(): CurrentUser {
 }
 
 export function runWithCtx<T>(c: RequestContext, fn: () => Promise<T>): Promise<T> {
-  return cls().run(() => {
+  // Awaited inside run() so a lazy thenable (a Mongoose Query) executes with the context.
+  return cls().run(async () => {
     setCtx(c);
-    return fn();
+    return await fn();
   });
 }
 
@@ -426,7 +427,7 @@ export function systemCtx(orgId: Types.ObjectId): RequestContext {
 }
 ```
 
-- [ ] **Step 5: Write `src/common/errors.ts` and `src/common/error.filter.ts`**
+- [x] **Step 5: Write `src/common/errors.ts` and `src/common/error.filter.ts`**
 
 ```ts
 // errors.ts
@@ -486,7 +487,7 @@ export class ErrorFilter implements ExceptionFilter {
 }
 ```
 
-- [ ] **Step 6: Write `src/common/zod.ts`, `src/common/oid.ts`, `src/common/plain.ts`**
+- [x] **Step 6: Write `src/common/zod.ts`, `src/common/oid.ts`, `src/common/plain.ts`**
 
 ```ts
 // zod.ts
@@ -547,7 +548,7 @@ export function plain<T = unknown>(value: unknown): T {
 }
 ```
 
-- [ ] **Step 7: Write the test helpers**
+- [x] **Step 7: Write the test helpers**
 
 `apps/api/test/setup.ts`:
 ```ts
@@ -579,12 +580,12 @@ export function asOrg<T>(orgId: Types.ObjectId, fn: () => Promise<T>, over: Part
 }
 ```
 
-- [ ] **Step 8: Run the tests**
+- [x] **Step 8: Run the tests**
 
 Run: `pnpm --filter api test`
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/api
@@ -606,7 +607,7 @@ git commit -m "feat(api): db connection, request context, errors, validation, pl
   - `orgIdField`, `sen()` (required, default 0), `senOrNull()`
   - `findSub(array, id)`: finds an embedded subdocument by id, or `undefined`
 
-- [ ] **Step 1: Write the failing test** `src/common/tenant.plugin.test.ts`
+- [x] **Step 1: Write the failing test** `src/common/tenant.plugin.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -656,15 +657,15 @@ describe("tenantPlugin", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter api test tenant`
 Expected: FAIL (module missing).
 
-- [ ] **Step 3: Write `src/common/tenant.plugin.ts`**
+- [x] **Step 3: Write `src/common/tenant.plugin.ts`**
 
 ```ts
-import { Schema, Types, type Query } from "mongoose";
+import { Schema, Types } from "mongoose";
 import { ctx } from "./context";
 import { forbidden } from "./errors";
 
@@ -703,13 +704,13 @@ export function tenantPlugin(schema: Schema, opts: { projectField?: "_id" | "pro
     return filter;
   };
 
-  schema.pre(QUERY_OPS as unknown as string[], function (this: Query<unknown, unknown>) {
+  schema.pre([...QUERY_OPS], function () {
     this.and([scope()]);
   });
 
   schema.pre("aggregate", function () {
     const pipeline = this.pipeline();
-    const first = pipeline[0] as Record<string, unknown> | undefined;
+    const first = pipeline[0];
     // $search must stay the first stage; filter right after it.
     if (first && "$search" in first) pipeline.splice(1, 0, { $match: scope() });
     else pipeline.unshift({ $match: scope() });
@@ -721,7 +722,7 @@ export function tenantPlugin(schema: Schema, opts: { projectField?: "_id" | "pro
 
   schema.pre("save", function () {
     const c = ctx();
-    if (!c.orgId.equals(this.get("orgId"))) throw new Error("Cross-tenant write blocked");
+    if (!c.orgId.equals(this.get("orgId") as Types.ObjectId)) throw new Error("Cross-tenant write blocked");
     if (opts.projectField && c.projectScope !== "all") {
       const projectId = this.get(opts.projectField) as Types.ObjectId;
       if (!c.projectScope.some((id) => id.equals(projectId))) throw forbidden("This project is not assigned to you");
@@ -737,18 +738,18 @@ export function tenantPlugin(schema: Schema, opts: { projectField?: "_id" | "pro
 }
 ```
 
-- [ ] **Step 4: Write `src/common/fields.ts`** (a single import point for schema files)
+- [x] **Step 4: Write `src/common/fields.ts`** (a single import point for schema files)
 
 ```ts
 export { orgIdField, sen, senOrNull, findSub, tenantPlugin } from "./tenant.plugin";
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `pnpm --filter api test tenant`
 Expected: PASS (5 tests).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api
@@ -774,7 +775,7 @@ git commit -m "feat(api): tenant plugin with org and project scoping, sen fields
   - `audit(action, entityType, entityId, data?, projectId?)`
   - `CounterModel`, `AuditModel`
 
-- [ ] **Step 1: Write the failing test** `src/common/tx.test.ts`
+- [x] **Step 1: Write the failing test** `src/common/tx.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -812,12 +813,12 @@ describe("transactions and counters", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter api test tx`
 Expected: FAIL (modules missing).
 
-- [ ] **Step 3: Write `src/common/tx.ts`**
+- [x] **Step 3: Write `src/common/tx.ts`**
 
 ```ts
 import { Logger } from "@nestjs/common";
@@ -872,7 +873,7 @@ export function afterCommit(fn: () => unknown) {
 }
 ```
 
-- [ ] **Step 4: Write `src/counters/counters.ts`**
+- [x] **Step 4: Write `src/counters/counters.ts`**
 
 ```ts
 import { Schema, Types, model } from "mongoose";
@@ -904,7 +905,7 @@ export async function raiseCounter(orgId: Types.ObjectId, kind: CodeKind, year: 
 }
 ```
 
-- [ ] **Step 5: Write `src/audit/audit.ts`**
+- [x] **Step 5: Write `src/audit/audit.ts`**
 
 ```ts
 import { Schema, Types, model } from "mongoose";
@@ -946,12 +947,12 @@ These audit actions are mandatory (later tasks call them):
 | Members | `member.invited`, `member.role_changed`, `member.removed` |
 | Settings | `org.bank_changed`, `org.pricing_changed`, `org.tax_changed`, `org.einvoice_changed` |
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `pnpm --filter api test`
 Expected: PASS (all API tests so far).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api
