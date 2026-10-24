@@ -64,7 +64,7 @@ Concretely:
 - [x] 3.4 Transactions, `afterCommit`, counters, audit
 
 ### 04 Auth and access
-- [ ] 4.1 Better Auth in web: config, route handler, mail
+- [x] 4.1 Better Auth in web: config, route handler, mail
 - [ ] 4.2 Auth pages: sign-up, verify, MFA setup and verify, login, reset
 - [ ] 4.3 API identity check, `app_users`
 - [ ] 4.4 Organizations, memberships, invitations, `/me`

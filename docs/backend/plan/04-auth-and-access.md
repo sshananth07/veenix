@@ -45,14 +45,14 @@
   - `sendMail({ to, subject, text })`
   - the endpoints `/api/auth/*` and the JWKS at `/api/auth/jwks`
 
-- [ ] **Step 1: Install**
+- [x] **Step 1: Install**
 
 ```bash
 pnpm --filter web add better-auth @node-rs/argon2 mongodb ioredis nodemailer qrcode "@veenix/shared@workspace:*"
 pnpm --filter web add -D @types/nodemailer @types/qrcode
 ```
 
-- [ ] **Step 2: Add the web env vars** (`apps/web/.env`; keep the existing `DATABASE_URL` until plan 08)
+- [x] **Step 2: Add the web env vars** (`apps/web/.env`; keep the existing `DATABASE_URL` until plan 08)
 
 ```bash
 BETTER_AUTH_URL=http://localhost:3100
@@ -66,7 +66,7 @@ NEXT_PUBLIC_API_URL=http://localhost:4000
 SIGNUP_MODE=open
 ```
 
-- [ ] **Step 3: Write `apps/web/lib/server-clients.ts`** (one Mongo and one Redis client per server instance)
+- [x] **Step 3: Write `apps/web/lib/server-clients.ts`** (one Mongo and one Redis client per server instance)
 
 ```ts
 import "server-only";
@@ -79,7 +79,7 @@ export const mongo = (g.__mongo ??= new MongoClient(process.env.MONGODB_URI!));
 export const redis = (g.__redis ??= new Redis(process.env.REDIS_URL!, { maxRetriesPerRequest: 2 }));
 ```
 
-- [ ] **Step 4: Write `apps/web/lib/mail.ts`**
+- [x] **Step 4: Write `apps/web/lib/mail.ts`**
 
 ```ts
 import "server-only";
@@ -92,7 +92,7 @@ export async function sendMail(m: { to: string; subject: string; text: string })
 }
 ```
 
-- [ ] **Step 5: Write `apps/web/lib/auth.ts`**
+- [x] **Step 5: Write `apps/web/lib/auth.ts`**
 
 ```ts
 import "server-only";
@@ -114,12 +114,18 @@ export const auth = betterAuth({
   database: mongodbAdapter(mongo.db(), { client: mongo }),
   secondaryStorage: {
     get: (key) => redis.get(key),
+    getAndDelete: (key) => redis.getdel(key),
     set: async (key, value, ttl) => {
       if (ttl) await redis.set(key, value, "EX", ttl);
       else await redis.set(key, value);
     },
     delete: async (key) => {
       await redis.del(key);
+    },
+    // Atomic, and the TTL is set only when the key is created (a fixed window).
+    increment: async (key, ttl) => {
+      const res = await redis.multi().incr(key).expire(key, ttl, "NX").exec();
+      return Number(res![0][1]);
     },
   },
   session: {
@@ -189,7 +195,7 @@ export const auth = betterAuth({
 3. The `jwt` plugin's default algorithm is EdDSA.
 4. `secondaryStorage.set`'s `ttl` is in seconds.
 
-- [ ] **Step 6: Write the route handler** `apps/web/app/api/auth/[...all]/route.ts`
+- [x] **Step 6: Write the route handler** `apps/web/app/api/auth/[...all]/route.ts`
 
 ```ts
 import { toNextJsHandler } from "better-auth/next-js";
@@ -199,7 +205,7 @@ export const runtime = "nodejs";
 export const { GET, POST } = toNextJsHandler(auth);
 ```
 
-- [ ] **Step 7: Write `apps/web/lib/auth-client.ts`**
+- [x] **Step 7: Write `apps/web/lib/auth-client.ts`**
 
 ```ts
 "use client";
@@ -217,7 +223,7 @@ export const authClient = createAuthClient({
 });
 ```
 
-- [ ] **Step 8: Update `apps/web/next.config.mjs`**
+- [x] **Step 8: Update `apps/web/next.config.mjs`**
 
 ```js
 /** @type {import('next').NextConfig} */
@@ -235,7 +241,7 @@ export default nextConfig;
 
 Leave `bodySizeLimit` at `"10mb"` until plan 08 moves uploads to presigned URLs. Change it to `"1mb"` in Task 8.4.
 
-- [ ] **Step 9: Check that the JWKS endpoint works**
+- [x] **Step 9: Check that the JWKS endpoint works**
 
 ```bash
 pnpm --filter web exec npx @better-auth/cli@latest generate --help >/dev/null 2>&1 || true   # no migrations needed for Mongo
@@ -244,7 +250,7 @@ curl -s http://localhost:3100/api/auth/jwks
 ```
 Expected: `{"keys":[{"crv":"Ed25519","x":"…","kty":"OKP","kid":"…"}]}` (a key is created on the first request).
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add apps/web
