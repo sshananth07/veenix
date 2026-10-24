@@ -49,9 +49,10 @@ export function currentUser(): CurrentUser {
 }
 
 export function runWithCtx<T>(c: RequestContext, fn: () => Promise<T>): Promise<T> {
-  return cls().run(() => {
+  // Awaited inside run() so a lazy thenable (a Mongoose Query) executes with the context.
+  return cls().run(async () => {
     setCtx(c);
-    return fn();
+    return await fn();
   });
 }
 
