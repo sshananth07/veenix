@@ -4,6 +4,8 @@ services:
   mongo:
     # Single-node replica set (transactions work) with Atlas Search built in.
     image: mongodb/mongodb-atlas-local:8.0
+    # Fixed so the replica set config stored in the volume still matches after the container is recreated.
+    hostname: mongo
     environment:
       MONGODB_INITDB_ROOT_USERNAME: veenix
       MONGODB_INITDB_ROOT_PASSWORD: veenix-dev-only
