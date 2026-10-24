@@ -274,13 +274,13 @@ git commit -m "feat(api): S3-compatible storage with presigned uploads and check
   - `JobModel`
   - the route `GET /v1/internal/jobs/run`
 
-- [ ] **Step 1: Install**
+- [x] **Step 1: Install**
 
 ```bash
 pnpm --filter api add @vercel/functions
 ```
 
-- [ ] **Step 2: Write the failing test** `src/jobs/jobs.test.ts`
+- [x] **Step 2: Write the failing test** `src/jobs/jobs.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -314,12 +314,12 @@ describe("jobs", () => {
 });
 ```
 
-- [ ] **Step 3: Run it to confirm it fails**
+- [x] **Step 3: Run it to confirm it fails**
 
 Run: `pnpm --filter api test jobs`
 Expected: FAIL (modules missing).
 
-- [ ] **Step 4: Write `src/jobs/job.model.ts` and `src/jobs/jobs.ts`**
+- [x] **Step 4: Write `src/jobs/job.model.ts` and `src/jobs/jobs.ts`**
 
 ```ts
 // job.model.ts
@@ -397,7 +397,17 @@ async function claimNext() {
   );
 }
 
-export async function runDue(max = 20): Promise<number> {
+// One runner at a time per instance: each call queues behind the one in progress, so a caller
+// that awaits runDue() sees every job it kicked finished. Other instances still claim atomically.
+let running: Promise<unknown> = Promise.resolve();
+
+export function runDue(max = 20): Promise<number> {
+  const run = running.then(() => runBatch(max));
+  running = run.catch(() => undefined);
+  return run;
+}
+
+async function runBatch(max: number): Promise<number> {
   let ran = 0;
   for (; ran < max; ran++) {
     const job = await claimNext();
@@ -420,7 +430,7 @@ export async function runDue(max = 20): Promise<number> {
 }
 ```
 
-- [ ] **Step 5: Write the cron endpoint and the sweep middleware**
+- [x] **Step 5: Write the cron endpoint and the sweep middleware**
 
 `src/jobs/jobs.controller.ts`:
 ```ts
@@ -453,12 +463,12 @@ app.use((_req: unknown, _res: unknown, next: () => void) => {
 ```
 (import `sweepIfIdle` from `./jobs/jobs`). Register `JobsController` in `AppModule`.
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `pnpm --filter api test jobs`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api pnpm-lock.yaml
