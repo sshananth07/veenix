@@ -582,7 +582,7 @@ git commit -m "feat(api): email through the job queue; invitation emails"
   - `liveStream(orgId, scope): Observable<MessageEvent>`
   - routes `POST /v1/live/ticket` (`@Can()`) and `GET /v1/live?ticket=` (public)
 
-- [ ] **Step 1: Write the failing test** `src/live/live.test.ts`
+- [x] **Step 1: Write the failing test** `src/live/live.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -621,12 +621,12 @@ describe("live", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter api test live`
 Expected: FAIL (module missing).
 
-- [ ] **Step 3: Write `src/live/live.ts`**
+- [x] **Step 3: Write `src/live/live.ts`**
 
 ```ts
 import { EventEmitter } from "node:events";
@@ -711,7 +711,7 @@ export function liveStream(orgId: string, scope: Scope): Observable<MessageEvent
 }
 ```
 
-- [ ] **Step 4: Write `src/live/live.controller.ts`**
+- [x] **Step 4: Write `src/live/live.controller.ts`**
 
 ```ts
 import { Controller, Post, Query, Sse, type MessageEvent } from "@nestjs/common";
@@ -739,12 +739,12 @@ Register `LiveController`.
 
 Known limit: someone removed from the organization keeps an already-open stream (ids only) until it next reconnects, at most the function's 300 s limit. Their reconnect then fails, because the ticket request goes through `AccessGuard`.
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `pnpm --filter api test live`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api
