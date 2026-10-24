@@ -769,7 +769,7 @@ git commit -m "feat(api): live updates over SSE with Redis fan-out and scoped ti
   - `SEARCH_INDEX_DEFINITION`
   - `src/models.ts`: imports every model file. **Every later plan adds its model imports here.**
 
-- [ ] **Step 1: Write the model and `src/models.ts`**
+- [x] **Step 1: Write the model and `src/models.ts`**
 
 ```ts
 // search-entry.model.ts
@@ -808,7 +808,7 @@ import "./search/search-entry.model";
 // plan 07 adds: documents
 ```
 
-- [ ] **Step 2: Write `src/search/search.ts`**
+- [x] **Step 2: Write `src/search/search.ts`**
 
 ```ts
 import { Types } from "mongoose";
@@ -883,7 +883,7 @@ export async function search(q: string): Promise<SearchResultDto[]> {
 }
 ```
 
-- [ ] **Step 3: Write `src/search/search.controller.ts`**
+- [x] **Step 3: Write `src/search/search.controller.ts`**
 
 ```ts
 import { Controller, Get } from "@nestjs/common";
@@ -903,7 +903,7 @@ export class SearchController {
 
 Register `SearchController`.
 
-- [ ] **Step 4: Write `scripts/db-indexes.ts`** (production has `autoIndex` off, so indexes are built by this script)
+- [x] **Step 4: Write `scripts/db-indexes.ts`** (production has `autoIndex` off, so indexes are built by this script)
 
 ```ts
 import mongoose from "mongoose";
@@ -933,7 +933,7 @@ Add `"db:indexes": "tsx scripts/db-indexes.ts"` to `apps/api/package.json`.
 Run: `pnpm --filter api db:indexes`
 Expected: one `indexes ok: …` line per model, then `search index ok`.
 
-- [ ] **Step 5: Write the test** `src/search/search.test.ts`
+- [x] **Step 5: Write the test** `src/search/search.test.ts`
 
 The search index builds asynchronously, so the test creates it and waits until it answers.
 
@@ -974,6 +974,9 @@ describe("search", () => {
   it("hides leads and unassigned projects from a project manager", async () => {
     const r = await asOrg(org, () => search("Wawasan"), { role: "project_manager", projectScope: [p2] });
     expect(r).toEqual([]);
+    // ...while their assigned project is still found, so the empty result above isn't a filter that matches nothing.
+    const own = await asOrg(org, () => search("Taman"), { role: "project_manager", projectScope: [p2] });
+    expect(own.map((x) => x.title)).toEqual(["Taman Bahagia Kitchen"]);
   });
   it("never crosses organizations", async () => {
     expect(await asOrg(newId(), () => search("Wawasan"))).toEqual([]);
@@ -981,12 +984,12 @@ describe("search", () => {
 });
 ```
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `pnpm --filter api test search`
 Expected: PASS. The first run can take around 30 s while the index builds.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api
