@@ -7,6 +7,7 @@ import { forbidden, notFound, rule } from "../common/errors";
 import { tx } from "../common/tx";
 import { audit } from "../audit/audit";
 import { env } from "../config/env";
+import { queueMail } from "../mail/mail";
 import { UserModel } from "../users/user.model";
 import { OrgModel, type Org } from "./org.model";
 import { MembershipModel } from "./membership.model";
@@ -93,22 +94,29 @@ export class OrgsService {
   }
 
   async invite(input: { email: string; role: Role }) {
-    const c = ctx();
-    if (input.role === "owner" && c.role !== "owner") throw forbidden("Only an owner can grant or remove the owner role");
-    const token = randomBytes(32).toString("base64url");
-    const [inv] = await InvitationModel.create([{
-      orgId: c.orgId, email: input.email, role: input.role, tokenHash: sha256(token),
-      expiresAt: new Date(Date.now() + INVITE_DAYS * 86_400_000), invitedBy: c.userId,
-    }]);
-    const link = `${env.WEB_ORIGIN}/invite/${token}`;
-    // The email itself is sent by a mail.send job (plan 05, Task 5.3).
-    await this.onInvite?.(input.email, link);
-    await audit("member.invited", "invitation", inv._id, { email: input.email, role: input.role });
-    return { id: String(inv._id), link: env.NODE_ENV === "production" ? undefined : link };
-  }
+    return tx(async () => {
+      const c = ctx();
+      if (input.role === "owner" && c.role !== "owner") throw forbidden("Only an owner can grant or remove the owner role");
+      const token = randomBytes(32).toString("base64url");
+      const [inv] = await InvitationModel.create([{
+        orgId: c.orgId, email: input.email, role: input.role, tokenHash: sha256(token),
+        expiresAt: new Date(Date.now() + INVITE_DAYS * 86_400_000), invitedBy: c.userId,
+      }]);
+      const link = `${env.WEB_ORIGIN}/invite/${token}`;
+      const org = await OrgModel.findById(c.orgId).lean();
+      await queueMail({
+        to: input.email,
+        subject: `You're invited to ${org!.companyName} on Veenix`,
+        text: `You've been invited to join ${org!.companyName} on Veenix.
 
-  /** Set by the mail module (plan 05) so this service doesn't depend on it. */
-  onInvite?: (email: string, link: string) => Promise<void>;
+Accept the invitation: ${link}
+
+The link works once and expires in ${INVITE_DAYS} days.`,
+      });
+      await audit("member.invited", "invitation", inv._id, { email: input.email, role: input.role });
+      return { id: String(inv._id), link: env.NODE_ENV === "production" ? undefined : link };
+    });
+  }
 
   async invitations(): Promise<InvitationDto[]> {
     const { orgId } = ctx();

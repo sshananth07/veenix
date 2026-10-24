@@ -490,13 +490,13 @@ git commit -m "feat(api): transactional job outbox with runner, backoff and cron
   - `queueMail(job: MailJob)`
   - `sendMailNow(job)`
 
-- [ ] **Step 1: Install**
+- [x] **Step 1: Install**
 
 ```bash
 pnpm --filter api add nodemailer && pnpm --filter api add -D @types/nodemailer
 ```
 
-- [ ] **Step 2: Write `src/mail/mail.ts`**
+- [x] **Step 2: Write `src/mail/mail.ts`**
 
 ```ts
 import nodemailer from "nodemailer";
@@ -526,7 +526,7 @@ export const queueMail = (job: MailJob) => enqueue("mail.send", job);
 registerJob<MailJob>("mail.send", sendMailNow);
 ```
 
-- [ ] **Step 3: Send invitations by email**
+- [x] **Step 3: Send invitations by email**
 
 In `OrgsService.invite`, delete the `onInvite` property and its call. Then:
 - Wrap the method body in `tx(async () => { … })`.
@@ -543,7 +543,7 @@ await queueMail({
 
 Add `import "./mail/mail";` at the top of `app.module.ts`, so the handler registers when the app boots.
 
-- [ ] **Step 4: Check it by hand**
+- [x] **Step 4: Check it by hand**
 
 With the API and web running, an owner creates an invitation:
 
@@ -553,7 +553,7 @@ curl -s -X POST http://localhost:4000/v1/org/invitations -H "authorization: Bear
 
 Easier: wait for the members screen in plan 08, Task 8.5. Expected: the email appears in Mailpit (http://localhost:8025) within a second or two.
 
-- [ ] **Step 5: Run the tests and commit**
+- [x] **Step 5: Run the tests and commit**
 
 Run: `pnpm --filter api test`
 Expected: PASS (the orgs test still passes because the mail job only queues).

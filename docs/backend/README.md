@@ -74,7 +74,7 @@ Concretely:
 ### 05 Platform services
 - [x] 5.1 Redis, storage service, bucket init, uploads endpoint (with tests)
 - [x] 5.2 Jobs: outbox, runner, cron endpoint (with tests)
-- [ ] 5.3 Mail service
+- [x] 5.3 Mail service
 - [ ] 5.4 Live updates: `changed()`, SSE, tickets (with tests)
 - [ ] 5.5 Search: entries, Atlas Search index, query (with tests)
 

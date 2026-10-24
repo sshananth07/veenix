@@ -1,3 +1,4 @@
+import "./mail/mail"; // registers the mail.send job handler
 import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { ClsModule } from "nestjs-cls";
