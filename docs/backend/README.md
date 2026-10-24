@@ -68,7 +68,7 @@ Concretely:
 - [x] 4.2 Auth pages: sign-up, verify, MFA setup and verify, login, reset
 - [x] 4.3 API identity check, `app_users`
 - [x] 4.4 Organizations, memberships, invitations, `/me`
-- [ ] 4.5 AccessGuard, `@Can`, project scope, rate limit (with tests)
+- [x] 4.5 AccessGuard, `@Can`, project scope, rate limit (with tests)
 - [ ] 4.6 Web session helpers, onboarding, organization switcher
 
 ### 05 Platform services

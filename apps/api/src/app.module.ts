@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
-import { APP_FILTER } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { ClsModule } from "nestjs-cls";
 import { HealthController } from "./health.controller";
+import { AccessGuard } from "./auth/access.guard";
 import { ErrorFilter } from "./common/error.filter";
 import { OrgsController } from "./orgs/orgs.controller";
 import { OrgsService } from "./orgs/orgs.service";
@@ -10,6 +11,6 @@ import { OrgsService } from "./orgs/orgs.service";
 @Module({
   imports: [ClsModule.forRoot({ global: true, middleware: { mount: true } })],
   controllers: [HealthController, OrgsController],
-  providers: [{ provide: APP_FILTER, useClass: ErrorFilter }, OrgsService],
+  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService],
 })
 export class AppModule {}

@@ -912,7 +912,7 @@ git commit -m "feat(api): organizations, memberships with owner rules, invitatio
   - `AccessGuard`
   - `assignedProjectIds(orgId, userId)`: reads `projects.assignees.userId` through the raw driver collection, so it runs before a context exists. The `projects` collection is created in plan 06; until then the lookup returns `[]`.
 
-- [ ] **Step 1: Write `src/common/redis.ts` and `src/common/rate-limit.ts`**
+- [x] **Step 1: Write `src/common/redis.ts` and `src/common/rate-limit.ts`**
 
 ```ts
 // redis.ts
@@ -937,7 +937,7 @@ export async function rateLimit(key: string, perMinute: number) {
 }
 ```
 
-- [ ] **Step 2: Write `src/auth/access.guard.ts`**
+- [x] **Step 2: Write `src/auth/access.guard.ts`**
 
 ```ts
 import { CanActivate, ExecutionContext, Injectable, Logger } from "@nestjs/common";
@@ -1006,7 +1006,7 @@ export class AccessGuard implements CanActivate {
 
 Register it in `AppModule.providers`: `{ provide: APP_GUARD, useClass: AccessGuard }`.
 
-- [ ] **Step 3: Write the e2e test** `test/access.e2e.test.ts`
+- [x] **Step 3: Write the e2e test** `test/access.e2e.test.ts`
 
 ```ts
 import { beforeAll, describe, expect, it } from "vitest";
@@ -1080,19 +1080,19 @@ describe("AccessGuard", () => {
 });
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `pnpm --filter api test`
 Expected: PASS. Redis must be running (`pnpm services:up`).
 
-- [ ] **Step 5: Smoke-test the toolchain** (jose 6 is ESM-only, so this proves `require(esm)` works in the compiled output)
+- [x] **Step 5: Smoke-test the toolchain** (jose 6 is ESM-only, so this proves `require(esm)` works in the compiled output)
 
 ```bash
 pnpm --filter api build && (cd apps/api && node dist/main.js & sleep 4; curl -s http://localhost:4000/v1/health; kill %1)
 ```
 Expected: `{"ok":true}`. `ERR_REQUIRE_ESM` here means Node is older than 22.12.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api
