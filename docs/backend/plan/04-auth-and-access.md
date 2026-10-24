@@ -149,6 +149,7 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: true,
+    sendOnSignIn: true, // the login page tells an unverified user a new link is on its way
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       await sendMail({ to: user.email, subject: "Verify your Veenix email", text: `Confirm your email address: ${url}` });
@@ -275,7 +276,7 @@ git commit -m "feat(web): Better Auth with Argon2id, TOTP MFA, JWT for the API"
   - `/forgot-password`
   - `/reset-password?token=` → `/login`
 
-- [ ] **Step 1: Write the shared form shell** `components/auth/AuthForm.tsx`
+- [x] **Step 1: Write the shared form shell** `components/auth/AuthForm.tsx`
 
 ```tsx
 "use client";
@@ -324,7 +325,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-- [ ] **Step 2: Write the pages**
+- [x] **Step 2: Write the pages**
 
 Each page is a client component wrapping `AuthForm` with the existing `Input` and `Label` components from `components/ui`. The calls and redirects:
 
@@ -370,7 +371,7 @@ export default function SignupPage() {
 - On success, the `twoFactorClient` redirect fires (`/verify-mfa`) for enrolled users. Otherwise `router.push("/")`, and the layout sends a user without MFA to `/setup-mfa`.
 
 `setup-mfa/page.tsx` (two steps on one page):
-1. A password field → `authClient.twoFactor.enable({ password })` returns `{ totpURI, backupCodes }`. Render the QR with `QRCode.toDataURL(totpURI)` from `qrcode`, the secret text (the `secret=` query parameter of `totpURI`) for manual entry, and the backup codes with the note "Save these somewhere safe. Each works once."
+1. A password field → `authClient.twoFactor.enable({ password })` returns `{ method: "totp", totpURI, backupCodes }` (narrow on `method`; the type also allows `otp`). Render the QR with `QRCode.toDataURL(totpURI)` from `qrcode`, the secret text (the `secret=` query parameter of `totpURI`) for manual entry, and the backup codes with the note "Save these somewhere safe. Each works once."
 2. A 6-digit code field → `authClient.twoFactor.verifyTotp({ code })`. On success, `router.push("/onboarding")`.
 
 `verify-mfa/page.tsx`:
@@ -381,11 +382,11 @@ export default function SignupPage() {
 - `authClient.requestPasswordReset({ email, redirectTo: "/reset-password" })`.
 - Always show "If that email has an account, a reset link is on its way."
 
-`reset-password/page.tsx`: read `token` from `useSearchParams()`, then `authClient.resetPassword({ newPassword, token })`, then `router.push("/login")`.
+`reset-password/page.tsx`: read `token` from `useSearchParams()` (inside a `<Suspense>`, or `next build` refuses to prerender the page), then `authClient.resetPassword({ newPassword, token })`, then `router.push("/login")`.
 
 ⚠ Verify the client method names in the installed Better Auth (`requestPasswordReset` was `forgetPassword` in older versions).
 
-- [ ] **Step 3: Click through it**
+- [x] **Step 3: Click through it**
 
 With `pnpm --filter web dev` running:
 1. Open http://localhost:3100/signup and create an account.
@@ -396,7 +397,7 @@ With `pnpm --filter web dev` running:
 
 Expected: every step works. Six wrong passwords in a minute gives a "too many requests" error.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/web

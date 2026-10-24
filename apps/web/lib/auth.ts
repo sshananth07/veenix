@@ -52,6 +52,7 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: true,
+    sendOnSignIn: true, // the login page tells an unverified user a new link is on its way
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       await sendMail({ to: user.email, subject: "Verify your Veenix email", text: `Confirm your email address: ${url}` });
