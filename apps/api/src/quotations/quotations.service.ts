@@ -5,6 +5,7 @@ import { ctx } from "../common/context";
 import { findSub } from "../common/fields";
 import { notFound, rule } from "../common/errors";
 import { tx } from "../common/tx";
+import { enqueue } from "../jobs/jobs";
 import { audit } from "../audit/audit";
 import { changed } from "../live/live";
 import { indexEntry } from "../search/search";
@@ -111,7 +112,7 @@ export class QuotationsService {
       event(q, "SENT");
       await saved(q, project.name);
       await audit("quotation.sent", "quotation", q._id, { revision: q.revision }, q.projectId);
-      // plan 07 adds: await enqueue("document.snapshot", { type: "quotation", id: String(q._id) });
+      await enqueue("document.snapshot", { type: "quotation", id: String(q._id) });
     });
   }
 

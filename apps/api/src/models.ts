@@ -16,4 +16,4 @@ import "./quotations/quotation.model";
 import "./variations/variation-order.model";
 import "./billing/invoice.model";
 import "./files/file.model";
-// plan 07 adds: documents
+import "./documents/document.model";

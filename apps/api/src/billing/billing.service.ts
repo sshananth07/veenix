@@ -4,6 +4,7 @@ import { addDays, quotationTotals, splitSstInclusive } from "@veenix/shared";
 import { findSub } from "../common/fields";
 import { notFound, rule } from "../common/errors";
 import { tx } from "../common/tx";
+import { enqueue } from "../jobs/jobs";
 import { audit } from "../audit/audit";
 import { nextCode } from "../counters/counters";
 import { changed } from "../live/live";
@@ -54,7 +55,7 @@ export class BillingService {
       await project.save();
       indexEntry({ kind: "invoice", refId: invoice._id, projectId, title: invoice.code, subtitle: project.name });
       await audit("invoice.generated", "invoice", invoice._id, { amount: milestone.amount }, projectId);
-      // plan 07 adds: await enqueue("document.snapshot", { type: "invoice", id: String(invoice._id) });
+      await enqueue("document.snapshot", { type: "invoice", id: String(invoice._id) });
       // plan 10 adds: e-invoice submission when the organization has it enabled
       changed({ kind: "project", projectId: String(projectId) });
       return { invoiceId: String(invoice._id) };

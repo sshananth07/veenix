@@ -253,7 +253,7 @@ git commit -m "feat(api): render PDFs in the API from Mongo data"
   - `storedFor(type, id)`: the snapshot document for a sent quotation or an invoice, otherwise a new stored render
   - the job handler `document.snapshot` (payload `{ type, id }`)
 
-- [ ] **Step 1: Write the model and `stored.ts`**
+- [x] **Step 1: Write the model and `stored.ts`**
 
 ```ts
 // document.model.ts
@@ -324,14 +324,14 @@ registerJob<{ type: "quotation" | "invoice"; id: string }>("document.snapshot", 
 });
 ```
 
-- [ ] **Step 2: Enqueue the snapshots**
+- [x] **Step 2: Enqueue the snapshots**
 
 - In `QuotationsService.send`, replace the `// plan 07 adds:` comment with `await enqueue("document.snapshot", { type: "quotation", id: String(q._id) });`
 - In `BillingService.generateInvoice`, do the same with `type: "invoice"`.
 
 Import `enqueue` from `../jobs/jobs` in both.
 
-- [ ] **Step 3: Write the test** `src/documents/stored.test.ts`
+- [x] **Step 3: Write the test** `src/documents/stored.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -364,12 +364,12 @@ describe("snapshots", () => {
 });
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `pnpm --filter api test stored`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api
