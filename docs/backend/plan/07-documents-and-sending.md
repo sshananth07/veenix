@@ -393,7 +393,7 @@ git commit -m "feat(api): frozen PDF snapshots for sent quotations and invoices"
     - `POST /v1/documents/:type/:id/email` with body `{ to, message? }` → `{ queued: true }`
     - `POST /v1/documents/:type/:id/share` with body `{ phone? }` → `{ url, whatsappUrl }`
 
-- [ ] **Step 1: Write the failing test** `src/documents/whatsapp.test.ts`
+- [x] **Step 1: Write the failing test** `src/documents/whatsapp.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -411,12 +411,12 @@ describe("whatsapp", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter api test whatsapp`
 Expected: FAIL (module missing).
 
-- [ ] **Step 3: Write `src/documents/whatsapp.ts`**
+- [x] **Step 3: Write `src/documents/whatsapp.ts`**
 
 ```ts
 /** Digits only; a leading 0 becomes Malaysia's 60. */
@@ -430,7 +430,7 @@ export function whatsappLink(phone: string | null, text: string): string {
 }
 ```
 
-- [ ] **Step 4: Add the send routes to `documents.controller.ts`**
+- [x] **Step 4: Add the send routes to `documents.controller.ts`**
 
 ```ts
 // additional imports
@@ -471,7 +471,7 @@ import { whatsappLink } from "./whatsapp";
   }
 ```
 
-- [ ] **Step 5: Record email sends**
+- [x] **Step 5: Record email sends**
 
 In `mail.ts`, after `transport.sendMail(...)` succeeds:
 
@@ -482,14 +482,14 @@ if (job.documentId) {
 ```
 (import `DocumentModel` from `../documents/document.model`). The handler runs inside the job's organization, so the tenant plugin allows the update.
 
-- [ ] **Step 6: Run the tests and check by hand**
+- [x] **Step 6: Run the tests and check by hand**
 
 Run: `pnpm --filter api test`
 Expected: PASS.
 
 By hand (once plan 08 adds the buttons): email a quotation to yourself. The PDF arrives in Mailpit, and the quotation's `documents` record has one `sends` entry.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api

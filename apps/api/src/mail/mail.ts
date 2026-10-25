@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import { env } from "../config/env";
 import { enqueue, registerJob } from "../jobs/jobs";
 import { getObject } from "../storage/storage";
+import { DocumentModel } from "../documents/document.model";
 
 export interface MailJob {
   to: string;
@@ -17,6 +18,9 @@ const transport = nodemailer.createTransport(env.SMTP_URL);
 export async function sendMailNow(job: MailJob) {
   const attachments = await Promise.all((job.attachments ?? []).map(async (a) => ({ filename: a.filename, content: await getObject(a.key), contentType: a.contentType })));
   await transport.sendMail({ from: env.MAIL_FROM, to: job.to, subject: job.subject, text: job.text, attachments });
+  if (job.documentId) {
+    await DocumentModel.updateOne({ _id: job.documentId }, { $push: { sends: { channel: "email", to: job.to } } });
+  }
 }
 
 /** Queues an email in the caller's transaction. */

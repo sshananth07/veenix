@@ -94,7 +94,7 @@ Concretely:
 ### 07 Documents and sending
 - [x] 7.1 PDF templates and rendering in the API
 - [x] 7.2 Snapshots for sent quotations and invoices
-- [ ] 7.3 Send by email; WhatsApp share link
+- [x] 7.3 Send by email; WhatsApp share link
 
 ### 08 Web integration
 - [ ] 8.1 API client, shims in `lib/`, date and sen formatting
