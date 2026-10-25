@@ -2,157 +2,74 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { hasStructuredAddress, parseAddress, composeAddress } from "@/lib/address";
-import { requireSession } from "@/lib/session";
-import { date, fail, num, ok, optStr, str, uniqueCode, type ActionResult } from "@/lib/actionResult";
+import { api, apiAction } from "@/lib/api";
+import { parseAddress } from "@/lib/address";
+import { BAD_AMOUNT, date, fail, money, optStr, str, type ActionResult } from "@/lib/actionResult";
 
-function parseLead(formData: FormData) {
-  const name = str(formData, "name");
-  const phone = str(formData, "phone");
-  if (!name) return { ok: false, error: "Lead name is required" } as const;
-  if (!phone) return { ok: false, error: "Phone / WhatsApp is required" } as const;
-
-  const budgetMin = num(formData, "budgetMin");
-  const budgetMax = num(formData, "budgetMax");
-  if ((budgetMin != null && budgetMin < 0) || (budgetMax != null && budgetMax < 0)) {
-    return { ok: false, error: "Budget cannot be negative" } as const;
-  }
-  if (budgetMin != null && budgetMax != null && budgetMax <= budgetMin) {
-    return { ok: false, error: "Max budget must be greater than min budget" } as const;
-  }
-
-  const address = parseAddress(formData, false);
-  if (!address.ok) return address;
-
+function leadBody(formData: FormData) {
+  const budgetMin = money(formData, "budgetMin");
+  const budgetMax = money(formData, "budgetMax");
+  if (Number.isNaN(budgetMin) || Number.isNaN(budgetMax)) return null;
   return {
-    ok: true,
-    data: {
-      name,
-      phone,
-      email: optStr(formData, "email"),
-      source: str(formData, "source") || "Other",
-      campaign: optStr(formData, "campaign"),
-      propertyType: optStr(formData, "propertyType"),
-      builtUpArea: optStr(formData, "builtUpArea"),
-      budgetMin,
-      budgetMax,
-      ...address.parts,
-      siteAddress: address.siteAddress,
-      targetStart: optStr(formData, "targetStart"),
-      assignedTo: optStr(formData, "assignedTo"),
-      surveyAt: date(formData, "surveyAt"),
-    },
-  } as const;
+    name: str(formData, "name"),
+    phone: str(formData, "phone"),
+    email: optStr(formData, "email"),
+    source: str(formData, "source") || "Other",
+    campaign: optStr(formData, "campaign"),
+    propertyType: optStr(formData, "propertyType"),
+    builtUpArea: optStr(formData, "builtUpArea"),
+    budgetMin,
+    budgetMax,
+    ...parseAddress(formData),
+    targetStart: optStr(formData, "targetStart"),
+    assignedTo: optStr(formData, "assignedTo"),
+    surveyAt: date(formData, "surveyAt"),
+    ...(str(formData, "status") ? { status: str(formData, "status") } : {}),
+  };
 }
 
 export async function createLead(formData: FormData): Promise<ActionResult> {
-  const parsed = parseLead(formData);
-  if (!parsed.ok) return fail(parsed.error);
-
-  const code = await uniqueCode(`L-${new Date().getFullYear()}`, await prisma.lead.count(), async (c) =>
-    !!(await prisma.lead.findUnique({ where: { code: c } }))
-  );
-  await prisma.lead.create({
-    data: {
-      ...parsed.data,
-      code,
-      status: str(formData, "status") || "NEW",
-      activities: { create: [{ note: "Lead created", author: "System" }] },
-    },
-  });
-
+  const body = leadBody(formData);
+  if (!body) return fail(BAD_AMOUNT);
+  const r = await apiAction("/leads", { method: "POST", body });
   revalidatePath("/leads");
-  return ok();
+  return r;
 }
 
 export async function updateLead(leadId: string, formData: FormData): Promise<ActionResult> {
-  const parsed = parseLead(formData);
-  if (!parsed.ok) return fail(parsed.error);
-
-  await prisma.lead.update({
-    where: { id: leadId },
-    data: { ...parsed.data, status: str(formData, "status") || undefined },
-  });
-
+  const body = leadBody(formData);
+  if (!body) return fail(BAD_AMOUNT);
+  const r = await apiAction(`/leads/${leadId}`, { method: "PATCH", body });
   revalidatePath("/leads");
   revalidatePath(`/leads/${leadId}`);
-  return ok();
+  return r;
 }
 
 export async function logLeadActivity(leadId: string, note: string) {
   if (!note.trim()) return;
-  const { user } = await requireSession();
-  await prisma.leadActivity.create({ data: { leadId, note: note.trim(), author: user.name } });
+  await apiAction(`/leads/${leadId}/activities`, { method: "POST", body: { note: note.trim(), author: null } });
   revalidatePath(`/leads/${leadId}`);
 }
 
 export async function convertLead(leadId: string, formData: FormData): Promise<ActionResult> {
-  const lead = await prisma.lead.findUniqueOrThrow({ where: { id: leadId } });
-
-  const projectName = str(formData, "projectName");
-  if (!projectName) return fail("Project name is required");
-
-  const targetStart = date(formData, "targetStart");
-  const targetHandover = date(formData, "targetHandover");
-  if (targetStart && targetHandover && targetHandover < targetStart) {
-    return fail("Target handover must be after the target start");
+  let projectId: string;
+  try {
+    ({ projectId } = await api<{ projectId: string }>(`/leads/${leadId}/convert`, {
+      method: "POST",
+      body: {
+        projectName: str(formData, "projectName"),
+        targetStart: date(formData, "targetStart"),
+        targetHandover: date(formData, "targetHandover"),
+        projectOwner: optStr(formData, "projectOwner"),
+        nextStage: str(formData, "nextStage") || "SITE_VISIT",
+        address: formData.has("addressLine1") ? parseAddress(formData, true) : null,
+      },
+    }));
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : "Could not convert the lead");
   }
-
-  // A project needs a full site address. If the lead never had one, the
-  // convert form asks for it and it is saved back onto the lead as well.
-  let address = {
-    addressLine1: lead.addressLine1,
-    addressLine2: lead.addressLine2,
-    addressLine3: lead.addressLine3,
-    postcode: lead.postcode,
-    city: lead.city,
-    state: lead.state,
-  };
-  let siteAddress = hasStructuredAddress(lead) ? composeAddress(lead) : (lead.siteAddress ?? "");
-  if (formData.has("addressLine1")) {
-    const parsed = parseAddress(formData, true);
-    if (!parsed.ok) return fail(parsed.error);
-    address = parsed.parts;
-    siteAddress = parsed.siteAddress ?? "";
-  } else if (!hasStructuredAddress(lead)) {
-    return fail("Add the site address before converting");
-  }
-
-  const code = await uniqueCode(`PRJ-${new Date().getFullYear()}`, await prisma.project.count(), async (c) =>
-    !!(await prisma.project.findUnique({ where: { code: c } }))
-  );
-
-  const project = await prisma.project.create({
-    data: {
-      code,
-      name: projectName,
-      clientName: lead.name,
-      clientPhone: lead.phone,
-      clientEmail: lead.email,
-      ...address,
-      siteAddress,
-      propertyType: lead.propertyType,
-      builtUpArea: lead.builtUpArea,
-      budgetMin: lead.budgetMin,
-      budgetMax: lead.budgetMax,
-      campaign: lead.campaign,
-      surveyAt: lead.surveyAt,
-      pmName: str(formData, "projectOwner") || lead.assignedTo,
-      stage: str(formData, "nextStage") || "SITE_VISIT",
-      targetStart,
-      targetHandover,
-      leadId: lead.id,
-    },
-  });
-
-  await prisma.lead.update({
-    where: { id: leadId },
-    data: { ...address, siteAddress, status: "CONVERTED", activities: { create: [{ note: `Converted to project ${project.code}` }] } },
-  });
-
   revalidatePath("/leads");
   revalidatePath(`/leads/${leadId}`);
   revalidatePath("/projects");
-  redirect(`/projects/${project.id}`);
+  redirect(`/projects/${projectId}`);
 }

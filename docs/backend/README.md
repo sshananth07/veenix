@@ -98,7 +98,7 @@ Concretely:
 
 ### 08 Web integration
 - [x] 8.1 API client, shims in `lib/`, date and sen formatting
-- [ ] 8.2 Server actions call the API
+- [x] 8.2 Server actions call the API
 - [ ] 8.3 Pages read from the API
 - [ ] 8.4 Uploads through presigned URLs; download redirects; PDF proxies
 - [ ] 8.5 Live refresh, global search, team and member screens

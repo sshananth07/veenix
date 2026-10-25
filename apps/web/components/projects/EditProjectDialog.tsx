@@ -118,14 +118,13 @@ export function EditProjectDialog({ project }: { project: ProjectFormValues }) {
             <Input id="builtUpArea" name="builtUpArea" defaultValue={project.builtUpArea ?? ""} />
           </Field>
           <Field label="Budget min (RM)" htmlFor="budgetMin">
-            <Input id="budgetMin" name="budgetMin" type="number" min={0} value={min} onChange={(e) => setMin(e.target.value)} />
+            <Input id="budgetMin" name="budgetMin" inputMode="decimal" value={min} onChange={(e) => setMin(e.target.value)} />
           </Field>
           <Field label="Budget max (RM)" htmlFor="budgetMax">
             <Input
               id="budgetMax"
               name="budgetMax"
-              type="number"
-              min={0}
+              inputMode="decimal"
               value={max}
               onChange={(e) => setMax(e.target.value)}
               className={budgetInvalid ? "border-red-500" : undefined}

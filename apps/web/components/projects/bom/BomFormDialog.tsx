@@ -227,9 +227,7 @@ export function BomFormDialog({
             <Input
               id="unitCost"
               name="unitCost"
-              type="number"
-              min={0}
-              step="any"
+              inputMode="decimal"
               value={unitCost}
               onChange={(e) => setUnitCost(e.target.value)}
               placeholder={lump ? "e.g. 7280" : "e.g. 4.50"}
@@ -339,7 +337,7 @@ export function BomFormDialog({
                           ))}
                         </SelectContent>
                       </Select>
-                      <Input name="matCost" aria-label="Material cost per unit" type="number" min={0} step="any" value={m.cost} onChange={(e) => updateMaterial(i, { cost: e.target.value })} placeholder="5.00" className="h-9" />
+                      <Input name="matCost" aria-label="Material cost per unit" inputMode="decimal" value={m.cost} onChange={(e) => updateMaterial(i, { cost: e.target.value })} placeholder="5.00" className="h-9" />
                       <span className="text-right text-sm tabular-nums">{formatMoney2(rowTotal)}</span>
                       <button
                         type="button"

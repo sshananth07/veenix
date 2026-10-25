@@ -49,7 +49,7 @@ export function NewVoDialog({
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Amount (RM)" htmlFor="amount" required>
-          <Input id="amount" name="amount" type="number" min={1} step="any" placeholder="e.g. 2,500" required />
+          <Input id="amount" name="amount" inputMode="decimal" placeholder="e.g. 2,500" required />
         </Field>
         <Field label="Reason" htmlFor="reason">
           <Select name="reason" value={reason} onValueChange={setReason}>

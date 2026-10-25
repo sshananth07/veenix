@@ -204,7 +204,7 @@ git commit -m "feat(web): API client, lib re-exports from shared, sen in forms"
 - Consumes: `api`, `apiAction`, `money`, `fileRef`, `BAD_AMOUNT` (Task 8.1).
 - Produces: the same exported functions as before, with the same parameters.
 
-- [ ] **Step 1: Rewrite `actions/leads.ts` (worked example 1: plain fields, a redirect)**
+- [x] **Step 1: Rewrite `actions/leads.ts` (worked example 1: plain fields, a redirect)**
 
 ```ts
 "use server";
@@ -286,7 +286,7 @@ export async function convertLead(leadId: string, formData: FormData): Promise<A
 
 `LogActivityForm.tsx` calls `logLeadActivity(leadId, note, author)`. Drop the third argument there.
 
-- [ ] **Step 2: Rewrite `actions/bom.ts` (worked example 2: repeated fields to an array)**
+- [x] **Step 2: Rewrite `actions/bom.ts` (worked example 2: repeated fields to an array)**
 
 ```ts
 "use server";
@@ -337,7 +337,7 @@ export async function deleteBomItem(bomItemId: string): Promise<ActionResult> {
 
 When an action doesn't know the project id, revalidate the route pattern (`revalidatePath("/projects/[id]", "page")`). The live refresh in Task 8.5 updates other open screens.
 
-- [ ] **Step 3: Rewrite the rest**
+- [x] **Step 3: Rewrite the rest**
 
 Each action builds its body from the same form fields it reads today, calls the route below, then runs the same `revalidatePath` as before:
 - `money()` for amounts, returning `fail(BAD_AMOUNT)` on `NaN`.
@@ -396,12 +396,12 @@ export const liveTicket = async () => (await api<{ ticket: string }>("/live/tick
 export const searchAction = (q: string) => (q.trim().length < 2 ? Promise.resolve([] as SearchResultDto[]) : api<SearchResultDto[]>(`/search?q=${encodeURIComponent(q.trim())}`));
 ```
 
-- [ ] **Step 4: Type-check and click through**
+- [x] **Step 4: Type-check and click through**
 
 Run: `pnpm --filter web typecheck`
 Expected: errors only in `app/**/page.tsx` and `app/api/documents/*` (fixed next).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web

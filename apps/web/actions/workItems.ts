@@ -1,56 +1,26 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import { bomDeleteBlocker, refreshDraftQuotation } from "@/lib/bom";
-import { fail, ok, optStr, str, type ActionResult } from "@/lib/actionResult";
+import { apiAction } from "@/lib/api";
+import { optStr, str, type ActionResult } from "@/lib/actionResult";
 
-async function nameTaken(projectId: string, name: string, exceptId?: string) {
-  const items = await prisma.workItem.findMany({ where: { projectId } });
-  return items.some((w) => w.id !== exceptId && w.name.toLowerCase() === name.toLowerCase());
-}
+const body = (formData: FormData) => ({ name: str(formData, "name"), description: optStr(formData, "description") });
 
 export async function createWorkItem(projectId: string, formData: FormData): Promise<ActionResult> {
-  const name = str(formData, "name");
-  if (!name) return fail("Work item name is required");
-  if (await nameTaken(projectId, name)) return fail(`"${name}" already exists on this project`);
-
-  const count = await prisma.workItem.count({ where: { projectId } });
-  await prisma.workItem.create({ data: { projectId, seq: count + 1, name, description: optStr(formData, "description") } });
-
+  const r = await apiAction(`/projects/${projectId}/work-items`, { method: "POST", body: body(formData) });
   revalidatePath(`/projects/${projectId}`);
-  return ok();
+  return r;
 }
 
 export async function updateWorkItem(workItemId: string, formData: FormData): Promise<ActionResult> {
-  const name = str(formData, "name");
-  if (!name) return fail("Work item name is required");
-  const item = await prisma.workItem.findUniqueOrThrow({ where: { id: workItemId } });
-  if (await nameTaken(item.projectId, name, workItemId)) return fail(`"${name}" already exists on this project`);
-
-  await prisma.workItem.update({ where: { id: workItemId }, data: { name, description: optStr(formData, "description") } });
-  await refreshDraftQuotation(item.projectId);
-
-  revalidatePath(`/projects/${item.projectId}`);
-  return ok();
+  const r = await apiAction(`/work-items/${workItemId}`, { method: "PATCH", body: body(formData) });
+  revalidatePath("/projects/[id]", "page");
+  return r;
 }
 
-// Removes the work item and every BOM line under it, then rewrites the draft
-// quotation. Refused if any line already has a PO or sits in a signed quotation.
+// Removes the work item and every BOM line under it. The API refuses if any line has a PO or is in a signed quotation.
 export async function deleteWorkItem(workItemId: string): Promise<ActionResult> {
-  const item = await prisma.workItem.findUniqueOrThrow({ where: { id: workItemId }, include: { bomItems: true } });
-
-  for (const b of item.bomItems) {
-    const blocker = await bomDeleteBlocker(b.id);
-    if (blocker) return fail(`Cannot delete: "${b.workPackage}" ${blocker}.`);
-  }
-
-  await prisma.$transaction([
-    prisma.bomItem.deleteMany({ where: { workItemId } }),
-    prisma.workItem.delete({ where: { id: workItemId } }),
-  ]);
-  await refreshDraftQuotation(item.projectId);
-
-  revalidatePath(`/projects/${item.projectId}`);
-  return ok();
+  const r = await apiAction(`/work-items/${workItemId}`, { method: "DELETE" });
+  revalidatePath("/projects/[id]", "page");
+  return r;
 }

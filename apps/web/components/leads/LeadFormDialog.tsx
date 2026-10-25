@@ -136,8 +136,7 @@ export function LeadFormDialog({ lead, trigger, defaultOpen }: { lead?: LeadForm
               <Input
                 id="budgetMin"
                 name="budgetMin"
-                type="number"
-                min={0}
+                inputMode="decimal"
                 value={min}
                 onChange={(e) => setMin(e.target.value)}
                 placeholder="Min, e.g. 100,000"
@@ -147,8 +146,7 @@ export function LeadFormDialog({ lead, trigger, defaultOpen }: { lead?: LeadForm
                 <Input
                   id="budgetMax"
                   name="budgetMax"
-                  type="number"
-                  min={0}
+                  inputMode="decimal"
                   value={max}
                   onChange={(e) => setMax(e.target.value)}
                   placeholder="Max, e.g. 200,000"
