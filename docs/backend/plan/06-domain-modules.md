@@ -1826,7 +1826,7 @@ git commit -m "feat(api): quotations with versioning, client responses and atomi
   | `attachVendorInvoice(milestoneId, input)` | `attachVendorInvoice` | `POST /v1/po-milestones/:milestoneId/invoice` |
   | `recordPayment(milestoneId, input)` | `recordMilestonePayment` | `POST /v1/po-milestones/:milestoneId/payment` |
 
-- [ ] **Step 1: Write the failing test** `src/procurement/procurement.test.ts`
+- [x] **Step 1: Write the failing test** `src/procurement/procurement.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -1872,12 +1872,12 @@ describe("procurement", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter api test procurement`
 Expected: FAIL (service missing).
 
-- [ ] **Step 3: Write `src/procurement/procurement.service.ts`** (ports the RFQ, quote, PO and payment parts of `actions/vendors.ts`)
+- [x] **Step 3: Write `src/procurement/procurement.service.ts`** (ports the RFQ, quote, PO and payment parts of `actions/vendors.ts`)
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -2064,7 +2064,7 @@ export class ProcurementService {
 }
 ```
 
-- [ ] **Step 4: Write `src/procurement/procurement.controller.ts`**
+- [x] **Step 4: Write `src/procurement/procurement.controller.ts`**
 
 Use `@Controller()` with the full paths from the Interfaces table. Body schemas:
 
@@ -2077,12 +2077,12 @@ Use `@Controller()` with the full paths from the Interfaces table. Body schemas:
 | invoice | `vendorInvoiceInput` |
 | payment | `vendorPaymentInput` |
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `pnpm --filter api test procurement`
 Expected: PASS. In the race, the loser fails with 409 `DUPLICATE` or `RULE` "A quote has already been accepted…". Either is correct.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api
