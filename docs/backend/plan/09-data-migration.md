@@ -365,7 +365,7 @@ git commit -m "feat(api): one-off SQLite and uploads migration with a verificati
 
 ### Task 9.2: Run it and verify
 
-- [ ] **Step 1: Run the migration**
+- [x] **Step 1: Run the migration**
 
 Prerequisites: the services are up, the bucket and indexes exist (plans 05 and 06), and you have signed up and set up MFA in the web app with the owner email.
 
@@ -379,12 +379,12 @@ Expected:
 
 A `MISMATCH` line means stop and investigate before going on.
 
-- [ ] **Step 2: Rebuild search**
+- [x] **Step 2: Rebuild search**
 
 Run: `pnpm --filter api search:rebuild -- --org <id from step 1>`
 Expected: `search entries rebuilt`.
 
-- [ ] **Step 3: Compare with the old app**
+- [x] **Step 3: Compare with the old app**
 
 Run the old app from the baseline commit in a second folder, alongside the new one:
 ```bash
@@ -401,7 +401,7 @@ When you're done:
 cd ../Veenix && git worktree remove ../veenix-old --force
 ```
 
-- [ ] **Step 4: Retire the old data**
+- [ ] **Step 4: Retire the old data** (on hold: the web app still reads dev.db until plan 08 is done)
 
 Only after Step 3 matches, move the old files out of the app:
 ```bash

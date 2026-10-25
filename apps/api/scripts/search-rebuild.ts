@@ -11,7 +11,8 @@ import { QuotationModel } from "../src/quotations/quotation.model";
 import { PurchaseOrderModel } from "../src/procurement/purchase-order.model";
 import { InvoiceModel } from "../src/billing/invoice.model";
 
-const { values } = parseArgs({ options: { org: { type: "string" } } });
+// pnpm 10 forwards a literal "--", so drop it.
+const { values } = parseArgs({ args: process.argv.slice(2).filter((a) => a !== "--"), options: { org: { type: "string" } } });
 
 async function main() {
   await connectDb();

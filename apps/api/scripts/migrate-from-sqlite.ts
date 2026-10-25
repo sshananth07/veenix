@@ -22,7 +22,9 @@ import { VariationOrderModel } from "../src/variations/variation-order.model";
 import { InvoiceModel } from "../src/billing/invoice.model";
 import { FileModel } from "../src/files/file.model";
 
+// pnpm 10 forwards a literal "--", so drop it.
 const { values: args } = parseArgs({
+  args: process.argv.slice(2).filter((a) => a !== "--"),
   options: {
     owner: { type: "string" },
     reset: { type: "boolean", default: false },
