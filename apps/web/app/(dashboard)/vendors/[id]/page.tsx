@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Briefcase, Building2, ExternalLink, FileText, Mail, MapPin, Paperclip, Phone, Receipt, Store, User } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import type { VendorDetailDto } from "@veenix/shared";
+import { api } from "@/lib/api";
 import { BackButton } from "@/components/BackButton";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -18,14 +18,8 @@ const TABS = [
 type TabKey = (typeof TABS)[number]["key"];
 
 export default async function VendorDetailPage({ params, searchParams }: { params: { id: string }; searchParams: { tab?: string } }) {
-  const vendor = await prisma.vendor.findUnique({
-    where: { id: params.id },
-    include: {
-      purchaseOrders: { include: { project: true, rfq: { include: { bomItem: true } }, milestones: true }, orderBy: { issueDate: "desc" } },
-      rfqQuotes: { include: { rfq: { include: { project: true, bomItem: true } }, revisions: { orderBy: { round: "asc" } } }, orderBy: { requestedAt: "desc" } },
-    },
-  });
-  if (!vendor) notFound();
+  const vendor = await api<VendorDetailDto>(`/vendors/${params.id}`);
+  vendor.rfqQuotes.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime()); // newest first, as before
 
   const tab: TabKey = TABS.find((t) => t.key === searchParams.tab)?.key ?? "details";
   const trades = (vendor.type ?? "").split(",").map((t) => t.trim()).filter(Boolean);
@@ -130,7 +124,7 @@ export default async function VendorDetailPage({ params, searchParams }: { param
                 <li key={po.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
                   <div className="min-w-0">
                     <Link href={`/projects/${po.projectId}?tab=vendors`} className="font-medium hover:text-primary hover:underline">
-                      {po.rfq?.bomItem.workPackage ?? po.description}
+                      {po.rfq?.bomItem?.workPackage ?? po.description}
                     </Link>
                     <div className="truncate text-xs text-muted-foreground">{po.project.name}</div>
                   </div>
@@ -202,7 +196,7 @@ export default async function VendorDetailPage({ params, searchParams }: { param
                       <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                     </a>
                     <span className="shrink-0 text-xs text-muted-foreground">
-                      {d.q.rfq.project.name} · {d.q.rfq.bomItem.workPackage}
+                      {d.q.rfq.project.name} · {d.q.rfq.bomItem?.workPackage ?? ""}
                     </span>
                   </li>
                 ))}

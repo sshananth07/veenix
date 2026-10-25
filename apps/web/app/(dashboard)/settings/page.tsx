@@ -1,5 +1,6 @@
 import { Building2, CreditCard, Percent, ShieldCheck, User } from "lucide-react";
-import { getSettings } from "@/lib/settings";
+import type { OrgDto } from "@veenix/shared";
+import { api } from "@/lib/api";
 import { EditBankDetailsDialog } from "@/components/settings/EditBankDetailsDialog";
 import { EditLetterheadDialog } from "@/components/settings/EditLetterheadDialog";
 import { MarkupSettingsCard } from "@/components/settings/MarkupSettingsCard";
@@ -15,7 +16,7 @@ const NAV = [
 ];
 
 export default async function SettingsPage() {
-  const settings = await getSettings();
+  const settings = await api<OrgDto>("/org");
 
   return (
     <div className="space-y-5">

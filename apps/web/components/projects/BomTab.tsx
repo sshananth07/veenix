@@ -1,6 +1,6 @@
 import { ClipboardCheck, Layers, Package, Pencil, Plus, Trash2, Wallet } from "lucide-react";
 import type { ProjectDetail } from "@/lib/projectQuery";
-import type { BomCost } from "@/lib/bom";
+import type { BomCost } from "@veenix/shared";
 import { cn, formatCurrency } from "@/lib/utils";
 import { deleteWorkItem } from "@/actions/workItems";
 import { FormDialog } from "@/components/FormDialog";

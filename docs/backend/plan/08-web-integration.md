@@ -418,7 +418,7 @@ git commit -m "feat(web): server actions call the API"
 **Interfaces:**
 - Consumes: `api<T>` plus `LeadListDto`, `LeadDetailDto`, `ProjectListItemDto`, `ProjectDetailDto`, `ReportsDto`, `OrgDto`, `VendorListDto`, `VendorDetailDto` and `DashboardDto`.
 
-- [ ] **Step 1: Swap each page's queries for one API call**
+- [x] **Step 1: Swap each page's queries for one API call**
 
 In each page, delete the Prisma queries and the calculations the API now does. Keep the JSX.
 
@@ -434,14 +434,14 @@ In each page, delete the Prisma queries and the calculations the API now does. K
 | `vendors/page.tsx` | `api<VendorListDto>(\`/vendors?${…}\`)` | |
 | `vendors/[id]/page.tsx` | `api<VendorDetailDto>(\`/vendors/${params.id}\`)` | |
 
-- [ ] **Step 2: Type-check and run**
+- [x] **Step 2: Type-check and run**
 
 Run: `pnpm --filter web typecheck`
 Expected: errors only in `app/api/documents/*` and `lib/{bom,schedule,settings,uploads,prisma}.ts` (fixed next).
 
 With the API and web running, after plan 09's migration or with new data, open each page. Expected: the same screens as before, with amounts identical to the old app.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/web

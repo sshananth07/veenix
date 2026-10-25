@@ -22,6 +22,8 @@ export function toInvoiceDto(i: Lean): InvoiceDto {
 }
 
 const byProject = <T extends Lean>(rows: T[], id: string) => rows.filter((r) => String(r.projectId) === id);
+// Embedded lists come back in stored order; the screens expect seq order (as Prisma's orderBy gave them).
+const bySeq = <T extends Lean>(rows: T[]) => [...rows].sort((a, b) => a.seq - b.seq);
 
 /** The project page payload for one or many projects, with every query batched across all of them. */
 export async function buildCores(projects: Lean[]): Promise<{ cores: ProjectCore[]; org: Org }> {
@@ -45,6 +47,7 @@ export async function buildCores(projects: Lean[]): Promise<{ cores: ProjectCore
   const cores = projects.map((p): ProjectCore => {
     const base = plain<Lean>(p);
     const id = base.id as string;
+    for (const k of ["workItems", "bomItems", "milestones"]) if (base[k]) base[k] = bySeq(base[k]);
     const bomById = new Map((base.bomItems as Lean[]).map((b) => [b.id, b]));
     const rfqDtos = byProject(rfqs, id).map((r) => {
       const d = plain<Lean>(r);
@@ -58,10 +61,12 @@ export async function buildCores(projects: Lean[]): Promise<{ cores: ProjectCore
       rfqs: rfqDtos,
       purchaseOrders: byProject(pos, id).map((po) => {
         const d = plain<Lean>(po);
-        return { ...d, vendor: vendorById.get(d.vendorId), rfq: d.rfqId ? rfqById.get(d.rfqId) ?? null : null, milestones: d.milestones.map((m: Lean) => ({ ...m, poId: d.id })) };
+        return { ...d, vendor: vendorById.get(d.vendorId), rfq: d.rfqId ? rfqById.get(d.rfqId) ?? null : null, milestones: bySeq(d.milestones).map((m: Lean) => ({ ...m, poId: d.id })) };
       }),
       quotations: byProject(quotations, id).map((q) => {
         const d = plain<Lean>(q);
+        d.lineItems = bySeq(d.lineItems);
+        d.terms = bySeq(d.terms);
         const totals = quotationTotals(d.lineItems, org.sstBps);
         return { ...d, totals, termAmounts: allocate(totals.total, d.terms) };
       }),

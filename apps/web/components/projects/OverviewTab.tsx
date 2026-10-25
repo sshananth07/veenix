@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, CheckCircle2, CircleDollarSign, ClipboardList, FileSignature, FileText, HandCoins, Hammer, Hourglass, Receipt, Sparkles, Truck, UserRound, Users } from "lucide-react";
 import type { ProjectDetail, ProjectTabKey } from "@/lib/projectQuery";
-import type { BomCost, Blocker } from "@/lib/bom";
+import type { BomCost, Blocker } from "@veenix/shared";
 import { getAttention, type Priority } from "@/lib/attention";
 import { getPackages } from "@/lib/procurement";
 import { splitSstInclusive } from "@veenix/shared";

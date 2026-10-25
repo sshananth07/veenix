@@ -81,6 +81,7 @@ export class DashboardService {
       },
       leadCounts,
       rows: rows.slice(0, 8),
+      rowsTotal: rows.length,
     };
   }
 

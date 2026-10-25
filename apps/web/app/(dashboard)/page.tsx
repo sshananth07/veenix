@@ -14,18 +14,14 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
-import { getQuotationReadiness } from "@/lib/bom";
-import { getAttention, PRIORITY_ORDER, type Priority } from "@/lib/attention";
-import { projectDetailInclude } from "@/lib/projectQuery";
-import { quotationTotals } from "@/lib/quotation";
+import type { DashboardDto } from "@veenix/shared";
+import { api } from "@/lib/api";
+import type { Priority } from "@/lib/attention";
 import { LEAD_STATUS_LABEL, LEAD_STATUSES, type LeadStatus } from "@/lib/types";
-import { requireSession } from "@/lib/session";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const DAY = 86_400_000;
 
 type Row = {
   key: string;
@@ -77,63 +73,18 @@ function greeting(hour: number) {
 }
 
 export default async function HomePage() {
-  const { user } = await requireSession();
+  const d = await api<DashboardDto>("/dashboard");
+  const user = { name: d.userName };
   const now = new Date();
-  const week = new Date(now.getTime() - 7 * DAY);
-  const month = new Date(now.getTime() - 30 * DAY);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const [leads, projects, completed, signedRecently] = await Promise.all([
-    prisma.lead.findMany({ orderBy: { createdAt: "desc" } }),
-    prisma.project.findMany({ where: { stage: { notIn: ["COMPLETED", "CANCELLED"] } }, include: projectDetailInclude }),
-    prisma.project.count({ where: { stage: "COMPLETED" } }),
-    prisma.quotation.findMany({ where: { status: "ACCEPTED", acceptedAt: { gte: month } }, include: { lineItems: true } }),
-  ]);
-
-  const openLeads = leads.filter((l) => l.status !== "CONVERTED");
-  const newLeads = leads.filter((l) => l.createdAt >= week).length;
-  const newProjects = projects.filter((p) => p.createdAt >= week).length;
-  const contractValue = projects.reduce((s, p) => s + p.contractValue, 0);
-  const collected = projects.reduce((s, p) => s + p.milestones.filter((m) => m.status === "PAID").reduce((a, m) => a + m.amount, 0), 0);
-  const collectedPct = contractValue > 0 ? Math.round((collected / contractValue) * 100) : 0;
-  const signedRecent = signedRecently.reduce((s, q) => s + quotationTotals(q.lineItems).total, 0);
-
-  // Everything waiting on someone, across every active project and open lead.
-  const readiness = await Promise.all(projects.map((p) => getQuotationReadiness(p.id)));
-  const rows: Row[] = [];
-  projects.forEach((p, i) => {
-    for (const a of getAttention(p, readiness[i])) {
-      rows.push({
-        key: `${p.id}-${a.title}-${rows.length}`,
-        priority: a.priority,
-        name: p.name,
-        sub: p.code,
-        place: [p.city, p.state].filter(Boolean).join(", ") || p.siteAddress || null,
-        title: a.title,
-        text: a.text,
-        status: a.status,
-        href: `/projects/${p.id}?tab=${a.tab}`,
-      });
-    }
-  });
-  for (const l of openLeads) {
-    const place = [l.city, l.state].filter(Boolean).join(", ") || l.siteAddress || null;
-    const base = { name: l.name, sub: l.code, place, href: `/leads/${l.id}` };
-    if (l.status === "NEW") {
-      rows.push({ ...base, key: `lead-new-${l.id}`, priority: "medium", title: "New lead to contact", text: `Enquiry from ${l.source}. Contact them to qualify the job.`, status: "New" });
-    }
-    if (l.surveyAt && l.status !== "LOST") {
-      if (l.surveyAt < today) {
-        rows.push({ ...base, key: `lead-survey-${l.id}`, priority: "high", title: "Site survey date has passed", text: `The survey was on ${formatDate(l.surveyAt)}. Log the outcome or move the lead on.`, status: "Overdue" });
-      } else if (l.surveyAt.getTime() - today.getTime() <= 3 * DAY) {
-        rows.push({ ...base, key: `lead-survey-${l.id}`, priority: "low", title: "Site survey coming up", text: `Survey scheduled for ${formatDate(l.surveyAt)}.`, status: "Scheduled" });
-      }
-    }
-  }
-  rows.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
-  const visible = rows.slice(0, 8);
-
-  const leadCount = (s: LeadStatus) => leads.filter((l) => l.status === s).length;
+  const k = d.kpis;
+  const newLeads = k.newLeads7d;
+  const newProjects = k.newProjects7d;
+  const { contractValue, collected, collectedPct } = k;
+  const signedRecent = k.signedLast30d;
+  const completed = k.completedProjects;
+  const totalLeads = Object.values(d.leadCounts).reduce((a, b) => a + b, 0);
+  const leadCount = (s: LeadStatus) => d.leadCounts[s];
+  const visible: Row[] = d.rows.map((r) => ({ ...r, href: r.target.kind === "lead" ? `/leads/${r.target.id}` : `/projects/${r.target.id}?tab=${r.target.tab}` }));
 
   const kpis = [
     {
@@ -141,7 +92,7 @@ export default async function HomePage() {
       icon: Users,
       tint: "bg-primary/10 text-primary",
       label: "Open leads",
-      value: String(openLeads.length),
+      value: String(k.openLeads),
       trend: newLeads > 0 ? `${newLeads} new in the last 7 days` : "No new leads this week",
       up: newLeads > 0,
     },
@@ -150,7 +101,7 @@ export default async function HomePage() {
       icon: FolderKanban,
       tint: "bg-primary/10 text-primary",
       label: "Active projects",
-      value: String(projects.length),
+      value: String(k.activeProjects),
       trend: newProjects > 0 ? `${newProjects} started in the last 7 days` : "None started this week",
       up: newProjects > 0,
     },
@@ -175,9 +126,9 @@ export default async function HomePage() {
   ];
 
   const tiles = [
-    { label: "Open leads", value: openLeads.length, delta: newLeads > 0 ? `+${newLeads} this week` : null },
+    { label: "Open leads", value: k.openLeads, delta: newLeads > 0 ? `+${newLeads} this week` : null },
     { label: "Quoted", value: leadCount("QUOTED"), delta: null },
-    { label: "Active projects", value: projects.length, delta: newProjects > 0 ? `+${newProjects} this week` : null },
+    { label: "Active projects", value: k.activeProjects, delta: newProjects > 0 ? `+${newProjects} this week` : null },
     { label: "Completed", value: completed, delta: null },
   ];
 
@@ -233,19 +184,19 @@ export default async function HomePage() {
               <h2 className="text-lg font-semibold tracking-tight">Needs your attention</h2>
               <p className="text-sm text-muted-foreground">Items that require your action across all projects and leads.</p>
             </div>
-            {rows.length > 0 && <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">{rows.length}</span>}
+            {d.rowsTotal > 0 && <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">{d.rowsTotal}</span>}
           </div>
 
           {visible.length === 0 ? (
             <div className="flex flex-col items-center rounded-lg border border-dashed px-4 py-12 text-center">
               <CheckCircle2 className="h-9 w-9 text-emerald-600" />
-              <p className="mt-2 font-medium">{leads.length === 0 && projects.length === 0 ? "Nothing here yet" : "All caught up"}</p>
+              <p className="mt-2 font-medium">{totalLeads === 0 && k.activeProjects === 0 ? "Nothing here yet" : "All caught up"}</p>
               <p className="max-w-sm text-sm text-muted-foreground">
-                {leads.length === 0 && projects.length === 0
+                {totalLeads === 0 && k.activeProjects === 0
                   ? "Add your first lead to get started. Anything that needs action will show up here."
                   : "Nothing is waiting on you right now."}
               </p>
-              {leads.length === 0 && projects.length === 0 && (
+              {totalLeads === 0 && k.activeProjects === 0 && (
                 <Link href="/leads" className="mt-4 inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                   Go to Leads
                 </Link>
@@ -293,9 +244,9 @@ export default async function HomePage() {
                   );
                 })}
               </ul>
-              {rows.length > visible.length && (
+              {d.rowsTotal > visible.length && (
                 <div className="border-t bg-muted/30 px-4 py-2.5 text-center text-xs text-muted-foreground">
-                  Showing the {visible.length} most urgent of {rows.length}
+                  Showing the {visible.length} most urgent of {d.rowsTotal}
                 </div>
               )}
             </div>
@@ -330,7 +281,7 @@ export default async function HomePage() {
           <ul className="mt-4 divide-y rounded-lg border">
             {LEAD_STATUSES.map((s) => {
               const n = leadCount(s);
-              const pct = leads.length > 0 ? Math.round((n / leads.length) * 100) : 0;
+              const pct = totalLeads > 0 ? Math.round((n / totalLeads) * 100) : 0;
               const Icon = STATUS_ICON[s];
               return (
                 <li key={s} className="flex items-center gap-3 px-3 py-3">

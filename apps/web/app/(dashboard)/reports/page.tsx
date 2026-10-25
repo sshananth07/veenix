@@ -1,78 +1,23 @@
 import Link from "next/link";
 import { CalendarClock, HandCoins, Percent, TrendingUp, Trophy, Users } from "lucide-react";
-import { prisma } from "@/lib/prisma";
-import { quotationTotals } from "@/lib/quotation";
-import { LEAD_SOURCES } from "@/lib/types";
-import { cn, daysBetween, formatCurrency } from "@/lib/utils";
+import type { ReportsDto } from "@veenix/shared";
+import { api } from "@/lib/api";
+import { cn, formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-  const [leads, projects, vendors] = await Promise.all([
-    prisma.lead.findMany(),
-    prisma.project.findMany({
-      include: { quotations: { include: { lineItems: true } }, lead: true, milestones: true },
-    }),
-    prisma.vendor.findMany({ include: { purchaseOrders: true } }),
-  ]);
-
-  // ---- KPIs -----------------------------------------------------------
-  const converted = leads.filter((l) => l.status === "CONVERTED");
-  const lost = leads.filter((l) => l.status === "LOST");
-  const decided = converted.length + lost.length;
-  const convertedPct = leads.length > 0 ? Math.round((converted.length / leads.length) * 100) : 0;
-  const winRatePct = decided > 0 ? Math.round((converted.length / decided) * 100) : 0;
-
-  const signedProjects = projects.filter((p) => p.quotations.some((q) => q.status === "ACCEPTED"));
-  const dealSizes = signedProjects.map((p) => p.contractValue).filter((v) => v > 0);
-  const avgDeal = dealSizes.length > 0 ? Math.round(dealSizes.reduce((s, v) => s + v, 0) / dealSizes.length) : 0;
-
-  const daysToSign = signedProjects
-    .filter((p) => p.lead)
-    .map((p) => {
-      const signed = p.quotations.find((q) => q.status === "ACCEPTED");
-      return signed?.acceptedAt ? daysBetween(p.lead!.createdAt, signed.acceptedAt) : null;
-    })
-    .filter((d): d is number => d != null && d >= 0);
-  const avgDaysToSign = daysToSign.length > 0 ? Math.round(daysToSign.reduce((s, d) => s + d, 0) / daysToSign.length) : null;
+  const { leads, deals, sources, margins, vendorSpend } = await api<ReportsDto>("/reports");
+  const decided = leads.converted + leads.lost;
 
   const kpis = [
-    { icon: Users, label: "Leads converted", value: `${convertedPct}%`, sub: `${converted.length} of ${leads.length} leads` },
-    { icon: Trophy, label: "Win rate", value: decided > 0 ? `${winRatePct}%` : "—", sub: decided > 0 ? `${converted.length} won, ${lost.length} lost` : "No decided leads yet" },
-    { icon: HandCoins, label: "Average deal size", value: dealSizes.length > 0 ? formatCurrency(avgDeal) : "—", sub: dealSizes.length > 0 ? `Across ${dealSizes.length} signed jobs` : "Nothing signed yet" },
-    { icon: CalendarClock, label: "Avg. lead to signed", value: avgDaysToSign != null ? `${avgDaysToSign} days` : "—", sub: avgDaysToSign != null ? `Across ${daysToSign.length} jobs` : "Not enough data yet" },
+    { icon: Users, label: "Leads converted", value: `${leads.convertedPct}%`, sub: `${leads.converted} of ${leads.total} leads` },
+    { icon: Trophy, label: "Win rate", value: decided > 0 ? `${leads.winRatePct}%` : "—", sub: decided > 0 ? `${leads.converted} won, ${leads.lost} lost` : "No decided leads yet" },
+    { icon: HandCoins, label: "Average deal size", value: deals.signedCount > 0 ? formatCurrency(deals.avgDeal) : "—", sub: deals.signedCount > 0 ? `Across ${deals.signedCount} signed jobs` : "Nothing signed yet" },
+    { icon: CalendarClock, label: "Avg. lead to signed", value: deals.avgDaysToSign != null ? `${deals.avgDaysToSign} days` : "—", sub: deals.avgDaysToSign != null ? `Across ${deals.daysToSignCount} jobs` : "Not enough data yet" },
   ];
 
-  // ---- Lead source performance -----------------------------------------
-  const sources = LEAD_SOURCES.map((source) => {
-    const inSource = leads.filter((l) => l.source === source);
-    const won = inSource.filter((l) => l.status === "CONVERTED").length;
-    return { source, count: inSource.length, won, pct: inSource.length > 0 ? Math.round((won / inSource.length) * 100) : 0 };
-  })
-    .filter((s) => s.count > 0)
-    .sort((a, b) => b.count - a.count);
   const maxSourceCount = Math.max(1, ...sources.map((s) => s.count));
-
-  // ---- Project margins ---------------------------------------------------
-  const margins = signedProjects
-    .map((p) => {
-      const signed = p.quotations.find((q) => q.status === "ACCEPTED")!;
-      const totals = quotationTotals(signed.lineItems);
-      return { id: p.id, name: p.name, cost: totals.cost, contract: totals.total, profit: totals.profit, marginPct: totals.marginPct };
-    })
-    .sort((a, b) => b.contract - a.contract)
-    .slice(0, 8);
-
-  // ---- Vendor spend -------------------------------------------------------
-  const vendorSpend = vendors
-    .map((v) => {
-      const committed = v.purchaseOrders.reduce((s, po) => s + po.amount, 0);
-      const paid = v.purchaseOrders.reduce((s, po) => s + (po.status === "PAID" ? po.amount : 0), 0);
-      return { id: v.id, name: v.name, jobs: v.purchaseOrders.length, committed, paid };
-    })
-    .filter((v) => v.committed > 0)
-    .sort((a, b) => b.committed - a.committed)
-    .slice(0, 8);
   const maxSpend = Math.max(1, ...vendorSpend.map((v) => v.committed));
 
   return (

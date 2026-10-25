@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, Check, Eye, FilePlus2, FileText, Lock, MessageCircleQuestion, MoreVertical, Reply, Send, Square } from "lucide-react";
 import type { ProjectDetail } from "@/lib/projectQuery";
-import type { BomCost, Blocker } from "@/lib/bom";
+import type { BomCost, Blocker } from "@veenix/shared";
 import { groupByWorkItem, quotationTotals } from "@/lib/quotation";
 import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { requireSession } from "@/lib/session";

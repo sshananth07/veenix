@@ -1,9 +1,7 @@
-import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { getSettings } from "@/lib/settings";
-import { getBomCosts, getQuotationReadiness } from "@/lib/bom";
+import type { ProjectDetailDto } from "@veenix/shared";
+import { api } from "@/lib/api";
 import { getPackages } from "@/lib/procurement";
-import { PROJECT_TABS, projectDetailInclude, type ProjectTabKey } from "@/lib/projectQuery";
+import { PROJECT_TABS, type ProjectTabKey } from "@/lib/projectQuery";
 import { BackButton } from "@/components/BackButton";
 import { ProjectHeader } from "@/components/projects/ProjectHeader";
 import { ProjectTabs } from "@/components/projects/ProjectTabs";
@@ -22,12 +20,10 @@ export default async function ProjectDetailPage({
   params: { id: string };
   searchParams: { tab?: string; v?: string; view?: string; invoice?: string };
 }) {
-  const project = await prisma.project.findUnique({ where: { id: params.id }, include: projectDetailInclude });
-  if (!project) notFound();
+  const project = await api<ProjectDetailDto>(`/projects/${params.id}`);
 
   const tab: ProjectTabKey = PROJECT_TABS.find((t) => t.key === searchParams.tab)?.key ?? "overview";
-  const [costMap, readiness, settings] = await Promise.all([getBomCosts(project.id), getQuotationReadiness(project.id), getSettings()]);
-  const costs = Object.fromEntries(costMap);
+  const { costs, readiness, pricing: settings } = project;
 
   const packages = getPackages(project);
   const toAccept = packages.filter((p) => p.stage === "COMPARE").length;

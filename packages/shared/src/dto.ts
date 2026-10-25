@@ -153,6 +153,8 @@ export interface DashboardDto {
   };
   leadCounts: Record<LeadStatus, number>;
   rows: DashboardRowDto[];
+  /** All rows waiting on someone; `rows` holds the most urgent 8. */
+  rowsTotal: number;
 }
 export interface ReportsDto {
   leads: { total: number; converted: number; lost: number; convertedPct: number; winRatePct: number };

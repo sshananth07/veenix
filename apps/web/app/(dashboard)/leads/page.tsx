@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus, Users } from "lucide-react";
-import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { LEAD_STATUSES, type LeadListDto } from "@veenix/shared";
+import { api } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -12,8 +12,6 @@ import { cn, formatBudget, formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 10;
-
 type Search = { view?: string; q?: string; page?: string; source?: string; status?: string };
 
 export default async function LeadsPage({ searchParams }: { searchParams: Search }) {
@@ -21,42 +19,14 @@ export default async function LeadsPage({ searchParams }: { searchParams: Search
   const q = (searchParams.q ?? "").trim();
   const page = Math.max(1, Number(searchParams.page) || 1);
 
-  const where: Prisma.LeadWhereInput = {
-    AND: [
-      view === "open" ? { status: { not: "CONVERTED" } } : view === "converted" ? { status: "CONVERTED" } : {},
-      searchParams.source ? { source: searchParams.source } : {},
-      searchParams.status ? { status: searchParams.status } : {},
-      q
-        ? {
-            OR: [
-              { name: { contains: q } },
-              { phone: { contains: q } },
-              { code: { contains: q } },
-              { siteAddress: { contains: q } },
-              { city: { contains: q } },
-              { state: { contains: q } },
-            ],
-          }
-        : {},
-    ],
-  };
-
-  const [openCount, convertedCount, allCount, total] = await Promise.all([
-    prisma.lead.count({ where: { status: { not: "CONVERTED" } } }),
-    prisma.lead.count({ where: { status: "CONVERTED" } }),
-    prisma.lead.count(),
-    prisma.lead.count({ where }),
-  ]);
-
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const current = Math.min(page, pages);
-  const leads = await prisma.lead.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    skip: (current - 1) * PAGE_SIZE,
-    take: PAGE_SIZE,
-    include: { project: { select: { id: true } } },
-  });
+  // The API query is strict: only send what is set and valid.
+  const params = new URLSearchParams({ view, page: String(page) });
+  if (q) params.set("q", q);
+  if (searchParams.source) params.set("source", searchParams.source);
+  if ((LEAD_STATUSES as readonly string[]).includes(searchParams.status ?? "")) params.set("status", searchParams.status!);
+  const d = await api<LeadListDto>(`/leads?${params}`);
+  const { leads, total, pages, page: current, pageSize: PAGE_SIZE } = d;
+  const { open: openCount, converted: convertedCount, all: allCount } = d.counts;
 
   const tabs = [
     { key: "open", label: "Open", count: openCount },

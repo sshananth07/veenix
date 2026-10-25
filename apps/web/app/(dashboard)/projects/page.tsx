@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Ban, CalendarCheck2, CheckCircle2, FileSignature, MapPin, Search } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import type { ProjectListItemDto } from "@veenix/shared";
+import { api } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { cn, formatCurrency } from "@/lib/utils";
 import { PROJECT_STAGES, PROJECT_STAGE_LABEL, type ProjectStage } from "@/lib/types";
@@ -28,10 +29,7 @@ const STAGE_ACCENT: Record<ProjectStage, string> = {
 export const dynamic = "force-dynamic";
 
 export default async function ProjectsPage() {
-  const projects = await prisma.project.findMany({
-    include: { milestones: true, purchaseOrders: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const projects = await api<ProjectListItemDto[]>("/projects");
 
   const columns = PROJECT_STAGES.map((stage) => ({
     stage,

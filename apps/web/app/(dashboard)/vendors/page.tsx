@@ -1,7 +1,7 @@
 import Link from "next/link";
-import type { Prisma } from "@prisma/client";
 import { Store, Users } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import type { VendorListDto } from "@veenix/shared";
+import { api } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { VendorFormDialog } from "@/components/vendors/VendorFormDialog";
@@ -12,20 +12,12 @@ export const dynamic = "force-dynamic";
 type Search = { q?: string; trade?: string; status?: string };
 
 export default async function VendorsPage({ searchParams }: { searchParams: Search }) {
-  const q = (searchParams.q ?? "").trim();
-  const where: Prisma.VendorWhereInput = {
-    AND: [
-      searchParams.trade ? { type: { contains: searchParams.trade } } : {},
-      searchParams.status === "active" ? { active: true } : searchParams.status === "inactive" ? { active: false } : {},
-      q ? { OR: [{ name: { contains: q } }, { type: { contains: q } }, { location: { contains: q } }] } : {},
-    ],
-  };
-
-  const [vendors, all] = await Promise.all([
-    prisma.vendor.findMany({ where, include: { purchaseOrders: true }, orderBy: { name: "asc" } }),
-    prisma.vendor.findMany({ select: { type: true } }),
-  ]);
-  const trades = [...new Set(all.flatMap((v) => (v.type ?? "").split(",").map((t) => t.trim()).filter(Boolean)))].sort();
+  // The API query is strict: only send what is set and valid.
+  const params = new URLSearchParams();
+  if (searchParams.q?.trim()) params.set("q", searchParams.q.trim());
+  if (searchParams.trade) params.set("trade", searchParams.trade);
+  if (searchParams.status === "active" || searchParams.status === "inactive") params.set("status", searchParams.status);
+  const { vendors, trades } = await api<VendorListDto>(`/vendors?${params}`);
 
   return (
     <div className="space-y-5">
@@ -47,8 +39,8 @@ export default async function VendorsPage({ searchParams }: { searchParams: Sear
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Users className="h-6 w-6" />
             </span>
-            <p className="mt-3 font-semibold">{all.length === 0 ? "No vendors yet" : "No vendors match your search"}</p>
-            <p className="max-w-sm text-sm text-muted-foreground">{all.length === 0 ? "Add your first vendor to start sending RFQs." : "Try a different search or clear the filters."}</p>
+            <p className="mt-3 font-semibold">{params.size === 0 ? "No vendors yet" : "No vendors match your search"}</p>
+            <p className="max-w-sm text-sm text-muted-foreground">{params.size === 0 ? "Add your first vendor to start sending RFQs." : "Try a different search or clear the filters."}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

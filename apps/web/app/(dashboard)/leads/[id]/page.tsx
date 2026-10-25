@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import {
   Building2,
   CalendarClock,
@@ -17,7 +16,8 @@ import {
   UserRound,
   Wallet,
 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import type { LeadDetailDto } from "@veenix/shared";
+import { api } from "@/lib/api";
 import { addressLines } from "@/lib/address";
 import { formatCurrency, formatDateTime, toDateInput } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
@@ -29,11 +29,7 @@ import { LeadFormDialog } from "@/components/leads/LeadFormDialog";
 import { LogActivityForm } from "@/components/leads/LogActivityForm";
 
 export default async function LeadDetailPage({ params, searchParams }: { params: { id: string }; searchParams: { edit?: string } }) {
-  const lead = await prisma.lead.findUnique({
-    where: { id: params.id },
-    include: { activities: { orderBy: { createdAt: "asc" } }, project: true },
-  });
-  if (!lead) notFound();
+  const lead = await api<LeadDetailDto>(`/leads/${params.id}`);
 
   const budget = lead.budgetMin != null && lead.budgetMax != null ? `${formatCurrency(lead.budgetMin)} – ${formatCurrency(lead.budgetMax)}` : null;
   const lines = addressLines(lead);
