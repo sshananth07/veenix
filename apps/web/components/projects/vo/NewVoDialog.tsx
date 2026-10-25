@@ -37,6 +37,7 @@ export function NewVoDialog({
       description="Extra scope after the contract. The client must sign it before work changes."
       submitLabel="Create"
       action={(fd) => createVariationOrder(projectId, fd)}
+      uploadPurpose="vo"
     >
       <Field label="Project" htmlFor="projectDisplay">
         <Input id="projectDisplay" value={projectName} disabled className="bg-muted text-muted-foreground" />

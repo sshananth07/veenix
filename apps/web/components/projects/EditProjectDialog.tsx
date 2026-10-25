@@ -71,6 +71,7 @@ export function EditProjectDialog({ project }: { project: ProjectFormValues }) {
       title="Edit project"
       submitLabel="Save changes"
       action={(fd) => updateProject(project.id, fd)}
+      uploadPurpose="photos"
       disabled={datesInvalid || budgetInvalid}
     >
       <section className="grid gap-4">

@@ -90,6 +90,7 @@ export function QuoteReceivedDialog({
       description="Enter what the vendor quoted and attach their document as proof."
       submitLabel={editing ? "Save changes" : "Save quote"}
       action={(fd) => quoteReceived(quote.id, fd)}
+      uploadPurpose="quotes"
     >
       <Field label="Quoted price (RM)" htmlFor="quotedPrice" required>
         <Input id="quotedPrice" name="quotedPrice" inputMode="decimal" defaultValue={editing ? senToInput(quote.quotedPrice) : undefined} required />
@@ -138,6 +139,7 @@ export function RevisedQuoteDialog({
       description={`Round ${round}. Their earlier quote of ${formatCurrency(previous.quotedPrice)} stays in the history; this one replaces it as the current offer.`}
       submitLabel="Save revised quote"
       action={(fd) => reviseQuote(quoteId, fd)}
+      uploadPurpose="quotes"
     >
       <Field label="Revised price (RM)" htmlFor="quotedPrice" required hint={`Previous: ${formatCurrency(previous.quotedPrice)}`}>
         <Input id="quotedPrice" name="quotedPrice" inputMode="decimal" required />
@@ -258,6 +260,7 @@ export function AttachInvoiceDialog({
       description={`${vendorName} bills ${formatCurrency(milestone.amount)} for this milestone. Attach the invoice you received.`}
       submitLabel={milestone.invoiceNo ? "Save invoice" : "Attach invoice"}
       action={(fd) => attachVendorInvoice(milestone.id, fd)}
+      uploadPurpose="invoices"
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Invoice number" htmlFor="invoiceNo" required>

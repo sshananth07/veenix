@@ -27,6 +27,7 @@ export function EditLetterheadDialog({
       description="Shown at the top of every quotation, PO, RFQ and invoice PDF."
       submitLabel="Save letterhead"
       action={updateLetterhead}
+      uploadPurpose="logos"
     >
       <Field label="Company name" htmlFor="companyName" required>
         <Input id="companyName" name="companyName" defaultValue={settings.companyName} required />

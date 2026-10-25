@@ -14,7 +14,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import type { UploadPurpose } from "@veenix/shared";
 import type { ActionResult } from "@/lib/actionResult";
+import { uploadFormFiles } from "@/lib/upload-client";
 import { cn } from "@/lib/utils";
 
 export function FormDialog({
@@ -30,6 +32,7 @@ export function FormDialog({
   disabled = false,
   presentation = "dialog",
   defaultOpen = false,
+  uploadPurpose,
 }: {
   trigger: React.ReactNode;
   title: string;
@@ -43,6 +46,8 @@ export function FormDialog({
   disabled?: boolean;
   presentation?: "dialog" | "drawer";
   defaultOpen?: boolean;
+  /** Uploads the form's files to storage first and sends their keys instead (Task 8.4). */
+  uploadPurpose?: UploadPurpose;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +56,14 @@ export function FormDialog({
   const run = (formData: FormData) =>
     startTransition(async () => {
       setError(null);
-      const result = await action(formData);
-      if (result.ok) setOpen(false);
-      else setError(result.error);
+      try {
+        const data = uploadPurpose ? await uploadFormFiles(formData, uploadPurpose) : formData;
+        const result = await action(data);
+        if (result.ok) setOpen(false);
+        else setError(result.error);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not upload the file");
+      }
     });
 
   const errorBox = error && (

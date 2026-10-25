@@ -462,7 +462,7 @@ git commit -m "feat(web): pages read from the API"
   - `uploadFile(file: File, purpose: UploadPurpose): Promise<{ key: string; name: string }>`
   - `<FormDialog uploadPurpose="quotes" …>`: before calling `action`, every non-empty `File` field `x` is uploaded and replaced by `xKey` and `xName`
 
-- [ ] **Step 1: Write `lib/upload-client.ts`**
+- [x] **Step 1: Write `lib/upload-client.ts`**
 
 ```ts
 "use client";
@@ -495,7 +495,7 @@ export async function uploadFormFiles(formData: FormData, purpose: UploadPurpose
 }
 ```
 
-- [ ] **Step 2: Upload before submitting in `FormDialog`**
+- [x] **Step 2: Upload before submitting in `FormDialog`**
 
 Add the prop `uploadPurpose?: UploadPurpose`. In `run`:
 
@@ -526,7 +526,7 @@ Pass `uploadPurpose` where a dialog has a file input:
 
 In `FileUploadDropzone`, call `uploadFormFiles(formData, "files")` before `uploadProjectFiles(projectId, data)`.
 
-- [ ] **Step 3: Write the download redirect** `app/api/uploads/[kind]/[id]/route.ts` (this also fixes the links that are broken today)
+- [x] **Step 3: Write the download redirect** `app/api/uploads/[kind]/[id]/route.ts` (this also fixes the links that are broken today)
 
 ```ts
 import { api } from "@/lib/api";
@@ -540,7 +540,7 @@ export async function GET(_req: Request, { params }: { params: { kind: string; i
 }
 ```
 
-- [ ] **Step 4: Write the PDF proxy** `app/api/documents/[type]/[id]/route.ts`
+- [x] **Step 4: Write the PDF proxy** `app/api/documents/[type]/[id]/route.ts`
 
 ```ts
 import { apiToken, requireOrg } from "@/lib/session";
@@ -568,13 +568,13 @@ export async function GET(req: Request, { params }: { params: { type: string; id
 
 Delete the five old route folders. Change `next.config.mjs` `serverActions.bodySizeLimit` to `"1mb"`.
 
-- [ ] **Step 5: Check by hand**
+- [ ] **Step 5: Check by hand** (pending: needs a signed-in session)
 
 - Upload a 6 MB PDF in Files. Expected: it succeeds, and the link opens it.
 - Upload a `.pdf` that's really a renamed `.txt`. Expected: `"x.pdf" is not a real PDF file`.
 - Open a quotation PDF and an RFQ bundle. Expected: they render as before.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/web

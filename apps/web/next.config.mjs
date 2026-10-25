@@ -5,7 +5,7 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   experimental: {
     serverActions: {
-      bodySizeLimit: "10mb", // "1mb" once files go straight to storage (Task 8.4)
+      bodySizeLimit: "1mb", // files go straight to storage
     },
     // Native or server-only packages that must not be bundled.
     serverComponentsExternalPackages: ["@node-rs/argon2", "mongodb", "ioredis", "nodemailer"],

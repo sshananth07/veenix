@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { AlertCircle, UploadCloud } from "lucide-react";
 import { uploadProjectFiles } from "@/actions/files";
+import { uploadFormFiles } from "@/lib/upload-client";
 import { cn } from "@/lib/utils";
 
 // A click-to-browse and drag-and-drop area. Every file dropped or picked is
@@ -20,8 +21,12 @@ export function FileUploadDropzone({ projectId, compact = false }: { projectId: 
     list.forEach((f) => formData.append("files", f));
     setError(null);
     startTransition(async () => {
-      const result = await uploadProjectFiles(projectId, formData);
-      if (!result.ok) setError(result.error);
+      try {
+        const result = await uploadProjectFiles(projectId, await uploadFormFiles(formData, "files"));
+        if (!result.ok) setError(result.error);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not upload the file");
+      }
       if (inputRef.current) inputRef.current.value = "";
     });
   }
