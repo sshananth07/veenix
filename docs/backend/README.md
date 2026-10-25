@@ -89,7 +89,7 @@ Concretely:
 - [x] 6.8 Variation orders and billing (with tests)
 - [x] 6.9 Files and downloads
 - [x] 6.10 Organization settings
-- [ ] 6.11 Dashboard and reports
+- [x] 6.11 Dashboard and reports
 
 ### 07 Documents and sending
 - [ ] 7.1 PDF templates and rendering in the API

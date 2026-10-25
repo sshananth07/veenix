@@ -154,4 +154,11 @@ export interface DashboardDto {
   leadCounts: Record<LeadStatus, number>;
   rows: DashboardRowDto[];
 }
+export interface ReportsDto {
+  leads: { total: number; converted: number; lost: number; convertedPct: number; winRatePct: number };
+  deals: { signedCount: number; avgDeal: Sen; avgDaysToSign: number | null; daysToSignCount: number };
+  sources: { source: string; count: number; won: number; pct: number }[];
+  margins: { id: Id; name: string; cost: Sen; contract: Sen; profit: Sen; marginPct: number }[];
+  vendorSpend: { id: Id; name: string; jobs: number; committed: Sen; paid: Sen }[];
+}
 export interface SearchResultDto { kind: "lead" | "project" | "vendor" | "quotation" | "po" | "invoice"; refId: Id; projectId: Id | null; title: string; subtitle: string }

@@ -2553,7 +2553,7 @@ git commit -m "feat(api): organization settings"
   - `DashboardService.dashboard(): DashboardDto`, `reports(): ReportsDto`
   - routes `GET /v1/dashboard` (`project:read`) and `GET /v1/reports` (`report:read`)
 
-- [ ] **Step 1: Add `ReportsDto` to `packages/shared/src/dto.ts`**
+- [x] **Step 1: Add `ReportsDto` to `packages/shared/src/dto.ts`**
 
 ```ts
 export interface ReportsDto {
@@ -2565,7 +2565,7 @@ export interface ReportsDto {
 }
 ```
 
-- [ ] **Step 2: Write `src/dashboard/dashboard.service.ts`**
+- [x] **Step 2: Write `src/dashboard/dashboard.service.ts`**
 
 `dashboard()` ports the data half of `apps/web/app/(dashboard)/page.tsx`: everything above `const kpis = [`, plus the KPI numbers and tile counts. The changes:
 - **Data source:** use `buildCores(activeProjects)` and `quotationReadiness(core.workItems, core.bomItems)` instead of `projectDetailInclude` and the per-project readiness calls.
@@ -2585,12 +2585,12 @@ export interface ReportsDto {
 - **Days to sign:** `daysToSign` uses each project's lead's `createdAt` (look up `leadId` among the leads already read).
 - **Result:** return the numbers in `ReportsDto`. The page keeps building its cards and bars from them.
 
-- [ ] **Step 3: Write the controller, then run everything**
+- [x] **Step 3: Write the controller, then run everything**
 
 Run: `pnpm --filter @veenix/shared build && pnpm --filter api test && pnpm --filter api typecheck`
 Expected: every test passes and there are no type errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api packages/shared
