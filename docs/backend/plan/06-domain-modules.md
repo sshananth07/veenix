@@ -1195,7 +1195,7 @@ git commit -m "feat(api): project detail payload with batched joins, list, updat
     - `PUT /v1/projects/:id/bom-items/:bomItemId`
     - `DELETE /v1/bom-items/:bomItemId`
 
-- [ ] **Step 1: Write the failing test** `src/projects/bom.test.ts`
+- [x] **Step 1: Write the failing test** `src/projects/bom.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -1246,12 +1246,12 @@ describe("BOM", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter api test bom`
 Expected: FAIL (service missing).
 
-- [ ] **Step 3: Write `src/quotations/draft.ts`** (ports `lib/bom.ts`: `fillQuotationFromBom`, `refreshDraftQuotation`, `createDraftQuotation`, `getQuotationReadiness`)
+- [x] **Step 3: Write `src/quotations/draft.ts`** (ports `lib/bom.ts`: `fillQuotationFromBom`, `refreshDraftQuotation`, `createDraftQuotation`, `getQuotationReadiness`)
 
 ```ts
 import { Types } from "mongoose";
@@ -1317,7 +1317,7 @@ export async function createDraft(project: ProjectDoc, basedOn: QuotationDoc | n
 }
 ```
 
-- [ ] **Step 4: Write `src/projects/bom.service.ts`** (ports `actions/bom.ts` and `actions/workItems.ts`)
+- [x] **Step 4: Write `src/projects/bom.service.ts`** (ports `actions/bom.ts` and `actions/workItems.ts`)
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -1453,7 +1453,7 @@ export class BomService {
 }
 ```
 
-- [ ] **Step 5: Write `src/projects/bom.controller.ts`**
+- [x] **Step 5: Write `src/projects/bom.controller.ts`**
 
 ```ts
 import { Controller, Delete, Patch, Post, Put } from "@nestjs/common";
@@ -1479,12 +1479,12 @@ export class BomController {
 }
 ```
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `pnpm --filter api test bom`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api

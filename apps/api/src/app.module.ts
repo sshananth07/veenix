@@ -17,11 +17,13 @@ import { LeadsController } from "./leads/leads.controller";
 import { LeadsService } from "./leads/leads.service";
 import { ProjectsController } from "./projects/projects.controller";
 import { ProjectsService } from "./projects/projects.service";
+import { BomController } from "./projects/bom.controller";
+import { BomService } from "./projects/bom.service";
 
 // One module for the whole API. Later tasks append to `controllers` and `providers`.
 @Module({
   imports: [ClsModule.forRoot({ global: true, middleware: { mount: true } })],
-  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController],
-  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService],
+  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController],
+  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService, BomService],
 })
 export class AppModule {}

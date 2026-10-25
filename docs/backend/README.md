@@ -83,7 +83,7 @@ Concretely:
 - [x] 6.2 All other domain models
 - [x] 6.3 Leads and convert to project (with tests)
 - [x] 6.4 Projects: detail payload, list, update, assignees
-- [ ] 6.5 Work items, BOM, the draft-quotation refresh (with tests)
+- [x] 6.5 Work items, BOM, the draft-quotation refresh (with tests)
 - [ ] 6.6 Quotations (with tests)
 - [ ] 6.7 Procurement: RFQs, quotes, POs, vendor payments (with tests)
 - [ ] 6.8 Variation orders and billing (with tests)
