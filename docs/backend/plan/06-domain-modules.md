@@ -2344,7 +2344,7 @@ git commit -m "feat(api): variation orders and billing with once-only state chan
     | `GET /v1/downloads/:kind/:id`, where `kind ∈ file \| photo \| quote \| quoterev \| invoice \| vo` | `project:read` |
     | `GET /v1/downloads/logo` | `@Can()` |
 
-- [ ] **Step 1: Write `src/files/files.service.ts`**
+- [x] **Step 1: Write `src/files/files.service.ts`**
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -2430,7 +2430,7 @@ export class FilesService {
 }
 ```
 
-- [ ] **Step 2: Write `src/files/files.controller.ts`**
+- [x] **Step 2: Write `src/files/files.controller.ts`**
 
 ```ts
 import { Controller, Delete, Get, Param, Post } from "@nestjs/common";
@@ -2459,7 +2459,7 @@ export class FilesController {
 }
 ```
 
-- [ ] **Step 3: Type-check and commit**
+- [x] **Step 3: Type-check and commit**
 
 Run: `pnpm --filter api typecheck`
 Expected: no errors.

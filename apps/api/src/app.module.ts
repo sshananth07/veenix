@@ -27,11 +27,13 @@ import { VariationsController } from "./variations/variations.controller";
 import { VariationsService } from "./variations/variations.service";
 import { BillingController } from "./billing/billing.controller";
 import { BillingService } from "./billing/billing.service";
+import { FilesController } from "./files/files.controller";
+import { FilesService } from "./files/files.service";
 
 // One module for the whole API. Later tasks append to `controllers` and `providers`.
 @Module({
   imports: [ClsModule.forRoot({ global: true, middleware: { mount: true } })],
-  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController, QuotationsController, ProcurementController, VariationsController, BillingController],
-  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService, BomService, QuotationsService, ProcurementService, VariationsService, BillingService],
+  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController, QuotationsController, ProcurementController, VariationsController, BillingController, FilesController],
+  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService, BomService, QuotationsService, ProcurementService, VariationsService, BillingService, FilesService],
 })
 export class AppModule {}
