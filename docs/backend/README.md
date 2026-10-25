@@ -88,7 +88,7 @@ Concretely:
 - [x] 6.7 Procurement: RFQs, quotes, POs, vendor payments (with tests)
 - [x] 6.8 Variation orders and billing (with tests)
 - [x] 6.9 Files and downloads
-- [ ] 6.10 Organization settings
+- [x] 6.10 Organization settings
 - [ ] 6.11 Dashboard and reports
 
 ### 07 Documents and sending

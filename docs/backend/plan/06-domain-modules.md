@@ -2489,7 +2489,7 @@ git commit -m "feat(api): project files and scoped download links for every atta
     | `PATCH /v1/org/pricing` | `org:manage` |
     | `PATCH /v1/org/tax` | `org:manage` |
 
-- [ ] **Step 1: Write `src/orgs/settings.service.ts`** (ports `actions/settings.ts`)
+- [x] **Step 1: Write `src/orgs/settings.service.ts`** (ports `actions/settings.ts`)
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -2532,7 +2532,7 @@ export class SettingsService {
 }
 ```
 
-- [ ] **Step 2: Write the controller** with the routes from the Interfaces block. Body schemas: `letterheadInput`, `bankInput`, `pricingInput`, `taxInput`. Type-check, then commit.
+- [x] **Step 2: Write the controller** with the routes from the Interfaces block. Body schemas: `letterheadInput`, `bankInput`, `pricingInput`, `taxInput`. Type-check, then commit.
 
 ```bash
 git add apps/api
