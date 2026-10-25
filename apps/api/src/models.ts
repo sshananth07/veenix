@@ -7,5 +7,12 @@ import "./orgs/membership.model";
 import "./orgs/invitation.model";
 import "./jobs/job.model";
 import "./search/search-entry.model";
-// plan 06 adds: leads, vendors, projects, rfqs, purchase orders, quotations, variation orders, invoices, files
+import "./leads/lead.model";
+import "./projects/project.model";
+import "./procurement/rfq.model";
+import "./procurement/purchase-order.model";
+import "./quotations/quotation.model";
+import "./variations/variation-order.model";
+import "./billing/invoice.model";
+import "./files/file.model";
 // plan 07 adds: documents
