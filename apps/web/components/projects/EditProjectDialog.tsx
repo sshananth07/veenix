@@ -1,5 +1,6 @@
 "use client";
 
+import { senToInput } from "@veenix/shared";
 import { useState } from "react";
 import { Building2, CalendarRange, Flag, Pencil, UserRound, Wallet } from "lucide-react";
 import { updateProject } from "@/actions/projects";
@@ -53,8 +54,8 @@ export function EditProjectDialog({ project }: { project: ProjectFormValues }) {
   const [removePhoto, setRemovePhoto] = useState(false);
   const [start, setStart] = useState(project.targetStart);
   const [handover, setHandover] = useState(project.targetHandover);
-  const [min, setMin] = useState(project.budgetMin != null ? String(project.budgetMin) : "");
-  const [max, setMax] = useState(project.budgetMax != null ? String(project.budgetMax) : "");
+  const [min, setMin] = useState(senToInput(project.budgetMin));
+  const [max, setMax] = useState(senToInput(project.budgetMax));
   const datesInvalid = !!start && !!handover && handover < start;
   const budgetInvalid = min !== "" && max !== "" && Number(max) <= Number(min);
 

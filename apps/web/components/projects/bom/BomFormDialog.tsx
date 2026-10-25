@@ -9,6 +9,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { lineTotal, parseRinggit, senToInput } from "@veenix/shared";
 import { calcBomTotal } from "@/lib/bom-math";
 import { MATERIAL_UNITS, WORK_UNITS, WORK_UNIT_GROUPS } from "@/lib/types";
 import { cn, formatCurrency, formatMoney2, formatNumber } from "@/lib/utils";
@@ -55,9 +56,10 @@ export function BomFormDialog({
   const [performedBy, setPerformedBy] = useState<"OUTSOURCED" | "SELF">(item?.performedBy === "SELF" ? "SELF" : "OUTSOURCED");
   const [unit, setUnit] = useState(item?.unit ?? "sq ft");
   const [qty, setQty] = useState(item ? String(item.qty) : "");
-  const [unitCost, setUnitCost] = useState(item ? String(Math.round(item.unitCost * 100) / 100) : "");
+  // Typed values stay in ringgit; everything computed or displayed below is sen.
+  const [unitCost, setUnitCost] = useState(item ? senToInput(item.unitCost) : "");
   const [materials, setMaterials] = useState<MaterialRow[]>(
-    item?.materials.length ? item.materials.map((m) => ({ name: m.name, qty: String(m.qty), unit: m.unit, cost: String(m.unitCost) })) : []
+    item?.materials.length ? item.materials.map((m) => ({ name: m.name, qty: String(m.qty), unit: m.unit, cost: senToInput(m.unitCost) })) : []
   );
   const [crew, setCrew] = useState({ workers: "", days: "", wage: "" });
   const [crewOpen, setCrewOpen] = useState(true);
@@ -65,8 +67,8 @@ export function BomFormDialog({
   const self = performedBy === "SELF";
   const lump = unit === "lot";
   const qtyNum = lump ? 1 : Number(qty) || 0;
-  const rateNum = Number(unitCost) || 0;
-  const materialRows = self ? materials.map((m) => ({ ...m, qtyNum: Number(m.qty) || 0, costNum: Number(m.cost) || 0 })) : [];
+  const rateNum = parseRinggit(unitCost) ?? 0;
+  const materialRows = self ? materials.map((m) => ({ ...m, qtyNum: Number(m.qty) || 0, costNum: parseRinggit(m.cost) ?? 0 })) : [];
   const totals = calcBomTotal({
     qty: qtyNum,
     unitCost: rateNum,
@@ -77,8 +79,8 @@ export function BomFormDialog({
   const workers = Number(crew.workers) || 0;
   const days = Number(crew.days) || 0;
   const wage = Number(crew.wage) || 0;
-  const crewTotal = workers * days * wage;
-  const crewRate = qtyNum > 0 ? Math.round((crewTotal / qtyNum) * 100) / 100 : 0;
+  const crewTotal = Math.round(workers * days * wage * 100); // sen
+  const crewRate = qtyNum > 0 ? Math.round(crewTotal / qtyNum) : 0; // sen per unit
 
   const rateLabel = lump
     ? self
@@ -286,7 +288,7 @@ export function BomFormDialog({
                 <span className="text-xs text-muted-foreground tabular-nums">
                   {crewTotal > 0 ? (qtyNum > 0 ? `Spread over ${formatNumber(qtyNum)} ${unit} that is ${formatMoney2(crewRate)} per ${unit}.` : "Enter the quantity above to get a rate.") : "Fill in the crew to get a suggested rate."}
                 </span>
-                <Button type="button" size="sm" variant="outline" disabled={crewRate <= 0} onClick={() => setUnitCost(String(crewRate))}>
+                <Button type="button" size="sm" variant="outline" disabled={crewRate <= 0} onClick={() => setUnitCost(senToInput(crewRate))}>
                   Use {formatMoney2(crewRate)} per {unit}
                 </Button>
               </div>
@@ -319,7 +321,7 @@ export function BomFormDialog({
               </div>
               <div className="divide-y">
                 {materials.map((m, i) => {
-                  const rowTotal = Math.round((Number(m.qty) || 0) * (Number(m.cost) || 0));
+                  const rowTotal = lineTotal(Number(m.qty) || 0, parseRinggit(m.cost) ?? 0);
                   const units = MATERIAL_UNITS.includes(m.unit) ? MATERIAL_UNITS : [m.unit, ...MATERIAL_UNITS];
                   return (
                     <div key={i} className="grid grid-cols-2 items-center gap-2 px-4 py-2.5 sm:grid-cols-[1.7fr_0.7fr_0.95fr_0.95fr_0.85fr_28px]">

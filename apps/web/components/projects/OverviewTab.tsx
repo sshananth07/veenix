@@ -4,7 +4,7 @@ import type { ProjectDetail, ProjectTabKey } from "@/lib/projectQuery";
 import type { BomCost, Blocker } from "@/lib/bom";
 import { getAttention, type Priority } from "@/lib/attention";
 import { getPackages } from "@/lib/procurement";
-import { SST_RATE } from "@/lib/quotation";
+import { splitSstInclusive } from "@veenix/shared";
 import { Avatar } from "@/components/ui/avatar";
 import { addressLines } from "@/lib/address";
 import { cn, daysBetween, formatCurrency, formatDate } from "@/lib/utils";
@@ -60,7 +60,7 @@ export function OverviewTab({
 
   const directCost = Object.values(costs).reduce((s, c) => s + c.cost, 0);
   const collected = project.milestones.filter((m) => m.status === "PAID").reduce((s, m) => s + m.amount, 0);
-  const revenue = project.contractValue / (1 + SST_RATE);
+  const revenue = splitSstInclusive(project.contractValue, project.pricing.sstBps).exSst;
   const profit = revenue - directCost;
   const marginPct = revenue > 0 ? (profit / revenue) * 100 : 0;
   const vendorPaid = project.purchaseOrders.flatMap((p) => p.milestones).reduce((s, m) => s + (m.paidAmount ?? 0), 0);
@@ -178,7 +178,7 @@ export function OverviewTab({
 
         <Card title="Financial summary" icon={CircleDollarSign}>
           <dl className="grid grid-cols-3 divide-x rounded-lg bg-muted/40 py-3 text-sm">
-            <Stat label="Contract value" value={project.contractValue > 0 ? formatCurrency(project.contractValue) : "Not signed"} hint="incl. 8% SST" muted={project.contractValue === 0} />
+            <Stat label="Contract value" value={project.contractValue > 0 ? formatCurrency(project.contractValue) : "Not signed"} hint={`incl. ${project.pricing.sstBps / 100}% SST`} muted={project.contractValue === 0} />
             <Stat label="Direct cost" value={formatCurrency(directCost)} hint="vendors, labour, materials" />
             <Stat
               label="Gross profit"

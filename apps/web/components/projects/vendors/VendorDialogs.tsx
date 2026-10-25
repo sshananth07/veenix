@@ -1,5 +1,6 @@
 "use client";
 
+import { senToInput } from "@veenix/shared";
 import { useState } from "react";
 import { Store } from "lucide-react";
 import { acceptQuote, attachVendorInvoice, quoteReceived, recordMilestonePayment, requestQuotes, reviseQuote, setPoTerms } from "@/actions/vendors";
@@ -91,7 +92,7 @@ export function QuoteReceivedDialog({
       action={(fd) => quoteReceived(quote.id, fd)}
     >
       <Field label="Quoted price (RM)" htmlFor="quotedPrice" required>
-        <Input id="quotedPrice" name="quotedPrice" type="number" min={1} step="any" defaultValue={editing ? quote.quotedPrice : undefined} required />
+        <Input id="quotedPrice" name="quotedPrice" type="number" min={1} step="any" defaultValue={editing ? senToInput(quote.quotedPrice) : undefined} required />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Lead time (days)" htmlFor="leadTimeDays">
@@ -299,7 +300,7 @@ export function RecordPaymentDialog({
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Amount paid (RM)" htmlFor="paidAmount" required>
-          <Input id="paidAmount" name="paidAmount" type="number" min={1} step="any" defaultValue={milestone.amount} required />
+          <Input id="paidAmount" name="paidAmount" type="number" min={1} step="any" defaultValue={senToInput(milestone.amount)} required />
         </Field>
         <Field label="Payment date" htmlFor="paidDate" required>
           <Input id="paidDate" name="paidDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />

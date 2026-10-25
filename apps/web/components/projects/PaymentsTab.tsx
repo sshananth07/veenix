@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MilestoneScheduleDialog } from "@/components/projects/payments/MilestoneScheduleDialog";
 import { generateInvoiceForMilestone, markInvoicePaid } from "@/actions/milestones";
-import { quotationTotals } from "@/lib/quotation";
 
 type Milestone = ProjectDetail["milestones"][number];
 
@@ -37,7 +36,7 @@ export function PaymentsTab({ project, selectedInvoiceId }: { project: ProjectDe
         </Card>
       );
     }
-    const contractSum = quotationTotals(signed.lineItems).total;
+    const contractSum = signed.totals.total;
     return (
       <Card>
         <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
@@ -182,7 +181,7 @@ function TaxInvoiceCard({ project, milestone }: { project: ProjectDetail; milest
           <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">SST breakdown</div>
           <dl className="space-y-1.5">
             <Row label="Taxable amount (RM)" value={formatCurrency(invoice.amount).replace("RM ", "")} />
-            <Row label="SST 8% (RM)" value={formatCurrency(invoice.sstAmount).replace("RM ", "")} />
+            <Row label={`SST ${project.pricing.sstBps / 100}% (RM)`} value={formatCurrency(invoice.sstAmount).replace("RM ", "")} />
             <Row label="Total amount (RM)" value={formatCurrency(total).replace("RM ", "")} bold />
           </dl>
         </div>

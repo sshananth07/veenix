@@ -1,3 +1,5 @@
+import { parseRinggit } from "@veenix/shared";
+
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 export const ok = (): ActionResult => ({ ok: true });
@@ -23,9 +25,17 @@ export function date(formData: FormData, key: string) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-export async function uniqueCode(prefix: string, count: number, exists: (code: string) => Promise<boolean>) {
-  let n = count + 1;
-  let code = `${prefix}-${String(n).padStart(4, "0")}`;
-  while (await exists(code)) code = `${prefix}-${String(++n).padStart(4, "0")}`;
-  return code;
+/** A ringgit form field as sen: null when blank, NaN when not a valid amount. */
+export function money(formData: FormData, key: string): number | null {
+  const raw = str(formData, key);
+  if (raw === "") return null;
+  return parseRinggit(raw) ?? Number.NaN;
+}
+
+export const BAD_AMOUNT = "Enter a valid amount, e.g. 1234.50";
+
+/** A file the browser already uploaded (FormDialog swaps File fields for <field>Key / <field>Name, Task 8.4). */
+export function fileRef(formData: FormData, field: string) {
+  const key = str(formData, `${field}Key`);
+  return key ? { key, name: str(formData, `${field}Name`) || "file" } : null;
 }

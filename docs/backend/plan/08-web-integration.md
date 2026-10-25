@@ -54,7 +54,7 @@
   - `money(formData, key): number | null`: sen, `null` when blank, `NaN` when invalid
   - `fileRef(formData, field): { key, name } | null`
 
-- [ ] **Step 1: Write `apps/web/lib/api.ts`**
+- [x] **Step 1: Write `apps/web/lib/api.ts`**
 
 ```ts
 import "server-only";
@@ -120,7 +120,7 @@ export async function apiAction(path: string, init: Init): Promise<ActionResult>
 }
 ```
 
-- [ ] **Step 2: Turn `lib/` into re-exports**
+- [x] **Step 2: Turn `lib/` into re-exports**
 
 | File | New contents |
 |---|---|
@@ -135,7 +135,7 @@ export async function apiAction(path: string, init: Init): Promise<ActionResult>
 | `lib/paymentTerms.ts` | `export { TERM_TEMPLATES, allocate, type TermRow } from "@veenix/shared";` plus `parseTermRows(formData)` kept, but returning `{ ok: true, rows }` without the sum checks (the API validates) |
 | `lib/address.ts` | `export { MY_STATES, addressLines, composeAddress, hasStructuredAddress, isPostcode, type AddressParts } from "@veenix/shared";` plus `parseAddress(formData)` kept, returning only the trimmed `parts` (the API validates) |
 
-- [ ] **Step 3: Add `money` and `fileRef` to `lib/actionResult.ts`**
+- [x] **Step 3: Add `money` and `fileRef` to `lib/actionResult.ts`**
 
 ```ts
 import { parseRinggit } from "@veenix/shared";
@@ -158,7 +158,7 @@ export function fileRef(formData: FormData, field: string) {
 
 Delete `uniqueCode` from this file; codes come from the API now.
 
-- [ ] **Step 4: Show stored money as ringgit in forms**
+- [x] **Step 4: Show stored money as ringgit in forms**
 
 Find every money default:
 ```bash
@@ -170,7 +170,7 @@ In `components/projects/bom/BomFormDialog.tsx`, the live total preview reads typ
 - `unitCost: parseRinggit(unitCostText) ?? 0`
 - each material's `unitCost: parseRinggit(m.cost) ?? 0`
 
-- [ ] **Step 5: Type-check to find what still needs changing**
+- [x] **Step 5: Type-check to find what still needs changing**
 
 Run: `pnpm --filter @veenix/shared build && pnpm --filter web typecheck`
 
@@ -182,7 +182,7 @@ Fix those two components now:
 
 The remaining errors are fixed in Tasks 8.2–8.6.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/web

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, Check, Eye, FilePlus2, FileText, Lock, MessageCircleQuestion, MoreVertical, Reply, Send, Square } from "lucide-react";
 import type { ProjectDetail } from "@/lib/projectQuery";
 import type { BomCost, Blocker } from "@/lib/bom";
-import { allocate } from "@/lib/paymentTerms";
 import { groupByWorkItem, quotationTotals } from "@/lib/quotation";
 import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { requireSession } from "@/lib/session";
@@ -47,10 +46,10 @@ export function QuotationTab({
 
   const quoted = new Set(current.lineItems.map((l) => l.bomItemId).filter(Boolean));
   const newLines = project.bomItems.filter((b) => b.workItemId && costs[b.id]?.priced && !quoted.has(b.id));
-  const totals = quotationTotals(current.lineItems);
+  const totals = current.totals;
   const groups = groupByWorkItem(current.lineItems);
   const termsOk = current.terms.reduce((s, t) => s + t.pct, 0) === 100;
-  const termAmounts = allocate(totals.total, current.terms);
+  const termAmounts = current.termAmounts;
   const base = `/projects/${project.id}?tab=quotation`;
 
   const canCreateVersion = !signed && !hasDraft && OPEN.includes(current.status);
@@ -140,7 +139,7 @@ export function QuotationTab({
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <SummaryCard totals={totals} />
+          <SummaryCard totals={totals} sstBps={project.pricing.sstBps} />
           <TermsCard terms={current.terms} amounts={termAmounts} total={totals.total} />
           {isDraft && !clientView && <PendingActionCard readiness={readiness} termsOk={termsOk} />}
         </div>
@@ -375,7 +374,7 @@ function Timeline({ quotation }: { quotation: Quotation }) {
   );
 }
 
-function SummaryCard({ totals }: { totals: ReturnType<typeof quotationTotals> }) {
+function SummaryCard({ totals, sstBps }: { totals: ReturnType<typeof quotationTotals>; sstBps: number }) {
   return (
     <div className="rounded-xl border bg-card p-5 shadow-sm">
       <h3 className="mb-3 font-semibold">Quotation Summary</h3>
@@ -385,7 +384,7 @@ function SummaryCard({ totals }: { totals: ReturnType<typeof quotationTotals> })
           <dd className="tabular-nums">{formatCurrency(totals.subtotal)}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-muted-foreground">SST 8%</dt>
+          <dt className="text-muted-foreground">{`SST ${sstBps / 100}%`}</dt>
           <dd className="tabular-nums">{formatCurrency(totals.sst)}</dd>
         </div>
         <div className="flex justify-between border-t pt-2.5 text-base font-semibold">

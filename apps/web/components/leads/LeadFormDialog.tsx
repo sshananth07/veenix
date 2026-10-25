@@ -1,5 +1,6 @@
 "use client";
 
+import { senToInput } from "@veenix/shared";
 import { useState } from "react";
 import { MapPin, UserRound } from "lucide-react";
 import { createLead, updateLead } from "@/actions/leads";
@@ -46,8 +47,8 @@ function SectionTitle({ icon: Icon, children }: { icon: typeof MapPin; children:
 }
 
 export function LeadFormDialog({ lead, trigger, defaultOpen }: { lead?: LeadFormValues; trigger: React.ReactNode; defaultOpen?: boolean }) {
-  const [min, setMin] = useState(lead?.budgetMin != null ? String(lead.budgetMin) : "");
-  const [max, setMax] = useState(lead?.budgetMax != null ? String(lead.budgetMax) : "");
+  const [min, setMin] = useState(senToInput(lead?.budgetMin));
+  const [max, setMax] = useState(senToInput(lead?.budgetMax));
   const budgetInvalid = min !== "" && max !== "" && Number(max) <= Number(min);
   const legacyType = lead?.propertyType && !PROPERTY_TYPES.includes(lead.propertyType) ? lead.propertyType : null;
 
