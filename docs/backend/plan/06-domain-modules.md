@@ -58,7 +58,7 @@
     | `PATCH /v1/vendors/:id` | `vendor:write` |
     | `PUT /v1/vendors/:id/active` | `vendor:write` |
 
-- [ ] **Step 1: Add the helpers**
+- [x] **Step 1: Add the helpers**
 
 Append to `src/common/fields.ts`:
 ```ts
@@ -73,7 +73,7 @@ export const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&
 export const contains = (s: string) => ({ $regex: escapeRegex(s), $options: "i" });
 ```
 
-- [ ] **Step 2: Write `src/vendors/vendor.model.ts`**
+- [x] **Step 2: Write `src/vendors/vendor.model.ts`**
 
 ```ts
 import { Schema, model } from "mongoose";
@@ -103,7 +103,7 @@ vendorSchema.plugin(tenantPlugin);
 export const VendorModel = model("Vendor", vendorSchema);
 ```
 
-- [ ] **Step 3: Write the failing test** `src/vendors/vendors.test.ts`
+- [x] **Step 3: Write the failing test** `src/vendors/vendors.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -128,12 +128,12 @@ describe("VendorsService", () => {
 });
 ```
 
-- [ ] **Step 4: Run it to confirm it fails**
+- [x] **Step 4: Run it to confirm it fails**
 
 Run: `pnpm --filter api test vendors`
 Expected: FAIL (service missing).
 
-- [ ] **Step 5: Write `src/vendors/vendors.service.ts`**
+- [x] **Step 5: Write `src/vendors/vendors.service.ts`**
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -236,7 +236,7 @@ export class VendorsService {
 
 This file imports `PurchaseOrderModel`, `RfqModel` and `ProjectModel`. Write those three model files (Task 6.2) before running the test.
 
-- [ ] **Step 6: Write `src/vendors/vendors.controller.ts`**
+- [x] **Step 6: Write `src/vendors/vendors.controller.ts`**
 
 ```ts
 import { Controller, Get, Patch, Post, Put } from "@nestjs/common";
@@ -261,12 +261,12 @@ export class VendorsController {
 
 Register them, and add `import "./vendors/vendor.model";` to `src/models.ts`.
 
-- [ ] **Step 7: Run the tests** (after Task 6.2's models exist)
+- [x] **Step 7: Run the tests** (after Task 6.2's models exist)
 
 Run: `pnpm --filter api test vendors`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/api
@@ -293,7 +293,7 @@ git commit -m "feat(api): vendors module"
   - `LeadModel`, `ProjectModel`, `ProjectDoc`, `loadProject(id): Promise<ProjectDoc>`, `RfqModel`, `PurchaseOrderModel`, `QuotationModel`, `QuotationDoc`, `VariationOrderModel`, `InvoiceModel`, `FileModel`
   - field names exactly as in `@veenix/shared` DTOs (= the Prisma names)
 
-- [ ] **Step 1: Write the models**
+- [x] **Step 1: Write the models**
 
 `leads/lead.model.ts`:
 ```ts
@@ -679,12 +679,12 @@ export const FileModel = model("ProjectFile", fileSchema);
 
 Add all eight to `src/models.ts`.
 
-- [ ] **Step 2: Build the indexes and check them**
+- [x] **Step 2: Build the indexes and check them**
 
 Run: `pnpm --filter api typecheck && pnpm --filter api db:indexes`
 Expected: no type errors, and `indexes ok: …` for every model including `Quotation`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api

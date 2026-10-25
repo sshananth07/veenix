@@ -7,6 +7,7 @@ import "./orgs/membership.model";
 import "./orgs/invitation.model";
 import "./jobs/job.model";
 import "./search/search-entry.model";
+import "./vendors/vendor.model";
 import "./leads/lead.model";
 import "./projects/project.model";
 import "./procurement/rfq.model";
