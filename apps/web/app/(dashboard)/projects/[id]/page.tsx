@@ -1,5 +1,7 @@
-import type { ProjectDetailDto } from "@veenix/shared";
+import { can, type MemberDto, type ProjectDetailDto } from "@veenix/shared";
 import { api } from "@/lib/api";
+import { requireOrg } from "@/lib/session";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { getPackages } from "@/lib/procurement";
 import { PROJECT_TABS, type ProjectTabKey } from "@/lib/projectQuery";
 import { BackButton } from "@/components/BackButton";
@@ -20,7 +22,11 @@ export default async function ProjectDetailPage({
   params: { id: string };
   searchParams: { tab?: string; v?: string; view?: string; invoice?: string };
 }) {
-  const project = await api<ProjectDetailDto>(`/projects/${params.id}`);
+  const { role } = await requireOrg();
+  const [project, members] = await Promise.all([
+    api<ProjectDetailDto>(`/projects/${params.id}`),
+    can(role, "project:assign") ? api<MemberDto[]>("/org/members") : undefined,
+  ]);
 
   const tab: ProjectTabKey = PROJECT_TABS.find((t) => t.key === searchParams.tab)?.key ?? "overview";
   const { costs, readiness, pricing: settings } = project;
@@ -41,7 +47,8 @@ export default async function ProjectDetailPage({
   return (
     <div className="space-y-5">
       <BackButton fallbackHref="/projects" label="Projects" />
-      <ProjectHeader project={project} />
+      <LiveRefresh projectId={project.id} />
+      <ProjectHeader project={project} members={members} />
       <ProjectTabs projectId={project.id} active={tab} badges={badges} />
 
       <div className="pt-1">

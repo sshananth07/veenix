@@ -5,6 +5,7 @@ import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { FormDialog } from "@/components/FormDialog";
 import { Button } from "@/components/ui/button";
 import { AcceptQuoteDialog, QuoteReceivedDialog, RequestQuotesDialog, RevisedQuoteDialog } from "@/components/projects/vendors/VendorDialogs";
+import { SendDocumentButtons } from "@/components/SendDocumentButtons";
 
 type Bom = ProjectDetail["bomItems"][number];
 type Rfq = ProjectDetail["rfqs"][number];
@@ -102,6 +103,7 @@ export function InvitedVendorsTable({ items, vendors }: { items: { bom: Bom; rfq
                         RFQ PDF
                       </a>
                     </Button>
+                    <SendDocumentButtons type="rfq" id={rfq.id} defaultEmail={q.vendor.email} defaultPhone={q.vendor.phone} />
                   </td>
                   <td className="px-3 py-3.5">
                     {q.receivedAt ? (

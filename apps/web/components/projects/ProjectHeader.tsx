@@ -1,10 +1,12 @@
 import { Building2, Check, Home, MapPin } from "lucide-react";
+import type { MemberDto } from "@veenix/shared";
 import type { ProjectDetail } from "@/lib/projectQuery";
 import { cn, formatDate, toDateInput } from "@/lib/utils";
 import { PROJECT_STAGE_LABEL } from "@/lib/types";
 
 import { StatusBadge } from "@/components/StatusBadge";
 import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
+import { TeamDialog } from "@/components/projects/TeamDialog";
 
 const JOURNEY = ["SITE_VISIT", "QUOTING", "WORK_IN_PROGRESS", "COMPLETED"] as const;
 type Stage = (typeof JOURNEY)[number];
@@ -42,7 +44,8 @@ function stageDetail(stage: Stage, project: ProjectDetail, state: "done" | "curr
   }
 }
 
-export function ProjectHeader({ project }: { project: ProjectDetail }) {
+/** `members` is passed only to roles that can assign the project team. */
+export function ProjectHeader({ project, members }: { project: ProjectDetail; members?: MemberDto[] }) {
   const stageIndex = JOURNEY.indexOf(project.stage as Stage);
   const cancelled = project.stage === "CANCELLED";
   const completed = project.stage === "COMPLETED";
@@ -87,6 +90,8 @@ export function ProjectHeader({ project }: { project: ProjectDetail }) {
             </div>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+        {members && <TeamDialog project={project} members={members} />}
         <EditProjectDialog
           project={{
             id: project.id,
@@ -114,6 +119,7 @@ export function ProjectHeader({ project }: { project: ProjectDetail }) {
             targetHandover: toDateInput(project.targetHandover),
           }}
         />
+        </div>
       </div>
 
       {cancelled ? (

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MilestoneScheduleDialog } from "@/components/projects/payments/MilestoneScheduleDialog";
 import { generateInvoiceForMilestone, markInvoicePaid } from "@/actions/milestones";
+import { SendDocumentButtons } from "@/components/SendDocumentButtons";
 
 type Milestone = ProjectDetail["milestones"][number];
 
@@ -152,11 +153,14 @@ function TaxInvoiceCard({ project, milestone }: { project: ProjectDetail; milest
           <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tax Invoice</div>
           <div className="text-lg font-bold">{invoice.code}</div>
         </div>
-        <Button variant="outline" size="icon" asChild aria-label="Download PDF" title="Download PDF">
-          <a href={`/api/documents/invoice/${invoice.id}`} target="_blank" rel="noreferrer">
-            <Download className="h-4 w-4" />
-          </a>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" asChild aria-label="Download PDF" title="Download PDF">
+            <a href={`/api/documents/invoice/${invoice.id}`} target="_blank" rel="noreferrer">
+              <Download className="h-4 w-4" />
+            </a>
+          </Button>
+          <SendDocumentButtons type="invoice" id={invoice.id} defaultEmail={project.clientEmail} defaultPhone={project.clientPhone} />
+        </div>
       </div>
 
       <div className="space-y-4 px-5 py-4 text-sm">

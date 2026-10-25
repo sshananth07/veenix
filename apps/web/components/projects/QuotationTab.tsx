@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { StaticMenuItem } from "@/components/ui/StaticMenuItem";
 import { BuildQuotationDialog, BulkMarkupDialog, ClientQuestionDialog, DiscardDraftMenuItem, QuotationTermsDialog, ReplyDialog } from "@/components/projects/quotation/QuotationDialogs";
 import { QuotationTable } from "@/components/projects/quotation/QuotationTable";
+import { SendDocumentButtons } from "@/components/SendDocumentButtons";
 
 type Quotation = ProjectDetail["quotations"][number];
 
@@ -99,6 +100,7 @@ export function QuotationTab({
               <FileText className="h-4 w-4" />
             </a>
           </Button>
+          {!clientView && <SendDocumentButtons type="quotation" id={current.id} defaultEmail={project.clientEmail} defaultPhone={project.clientPhone} />}
           {!clientView && (isDraft || canCreateVersion) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

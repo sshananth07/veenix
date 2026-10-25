@@ -3,24 +3,27 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, FolderKanban, Home, LogOut, Settings, Truck, Users } from "lucide-react";
-import type { MeDto } from "@veenix/shared";
+import { can, type MeDto, type Permission, type Role } from "@veenix/shared";
 import { Avatar } from "@/components/ui/avatar";
+import { GlobalSearch } from "@/components/GlobalSearch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { OrgSwitcher } from "@/components/OrgSwitcher";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
-const LINKS = [
+// `needs` only hides links; the API enforces every permission.
+const LINKS: { href: string; label: string; icon: typeof Home; needs?: Permission }[] = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/leads", label: "Leads", icon: Users },
+  { href: "/leads", label: "Leads", icon: Users, needs: "lead:read" },
   { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/vendors", label: "Vendors", icon: Truck },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/vendors", label: "Vendors", icon: Truck, needs: "vendor:read" },
+  { href: "/reports", label: "Reports", icon: BarChart3, needs: "report:read" },
+  { href: "/settings", label: "Settings", icon: Settings, needs: "org:manage" },
 ];
 
-export function NavBar({ userName, orgs, currentOrgId }: { userName: string; orgs: MeDto["memberships"]; currentOrgId: string }) {
+export function NavBar({ userName, orgs, currentOrgId, role }: { userName: string; orgs: MeDto["memberships"]; currentOrgId: string; role: Role }) {
   const pathname = usePathname();
+  const links = LINKS.filter((l) => !l.needs || can(role, l.needs));
   return (
     <header className="border-b bg-card">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-6">
@@ -34,7 +37,7 @@ export function NavBar({ userName, orgs, currentOrgId }: { userName: string; org
         </Link>
         <span className="hidden h-7 w-px bg-border md:block" aria-hidden />
         <nav className="flex min-w-0 items-center gap-1 overflow-x-auto">
-          {LINKS.map((link) => {
+          {links.map((link) => {
             const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
             return (
               <Link
@@ -54,10 +57,7 @@ export function NavBar({ userName, orgs, currentOrgId }: { userName: string; org
           })}
         </nav>
         <div className="ml-auto flex items-center gap-4">
-          <input
-            placeholder="Search..."
-            className="hidden h-9 w-56 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring xl:block"
-          />
+          <GlobalSearch />
           {orgs.length > 1 && <OrgSwitcher orgs={orgs} currentOrgId={currentOrgId} />}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

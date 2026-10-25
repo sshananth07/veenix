@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { DashboardDto } from "@veenix/shared";
 import { api } from "@/lib/api";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import type { Priority } from "@/lib/attention";
 import { LEAD_STATUS_LABEL, LEAD_STATUSES, type LeadStatus } from "@/lib/types";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
@@ -134,6 +135,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-6">
+      <LiveRefresh />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">

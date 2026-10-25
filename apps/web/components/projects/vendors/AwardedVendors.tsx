@@ -3,6 +3,7 @@ import type { ProjectDetail } from "@/lib/projectQuery";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AttachInvoiceDialog, EditTermsDialog, RecordPaymentDialog } from "@/components/projects/vendors/VendorDialogs";
+import { SendDocumentButtons } from "@/components/SendDocumentButtons";
 
 type Bom = ProjectDetail["bomItems"][number];
 type Rfq = ProjectDetail["rfqs"][number];
@@ -58,6 +59,7 @@ export function AwardedVendors({ items }: { items: { bom: Bom; rfq: Rfq | undefi
                     PO PDF
                   </a>
                 </Button>
+                <SendDocumentButtons type="po" id={po.id} defaultEmail={po.vendor.email} defaultPhone={po.vendor.phone} />
                 {rfq && rfq.quotes.length > 0 && (
                   <details className="text-xs">
                     <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">RFQs and quotes ({rfq.quotes.length})</summary>

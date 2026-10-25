@@ -610,7 +610,7 @@ git commit -m "feat(web): direct uploads to storage, download redirects, single 
   - `<SendDocumentButtons type id defaultEmail? defaultPhone? />`
   - in `actions/team.ts`: `setAssignees`, `inviteMember`, `changeMemberRole`, `removeMember`, `revokeInvitation`, `emailDocument`, `shareDocument`
 
-- [ ] **Step 1: Write `components/LiveRefresh.tsx`**
+- [x] **Step 1: Write `components/LiveRefresh.tsx`**
 
 ```tsx
 "use client";
@@ -660,7 +660,7 @@ export function LiveRefresh({ projectId }: { projectId?: string }) {
 
 Mount `<LiveRefresh projectId={project.id} />` on the project page and `<LiveRefresh />` on the home page.
 
-- [ ] **Step 2: Write `components/GlobalSearch.tsx`** and put it in place of the dead `<input placeholder="Search..." />` in `NavBar.tsx`
+- [x] **Step 2: Write `components/GlobalSearch.tsx`** and put it in place of the dead `<input placeholder="Search..." />` in `NavBar.tsx`
 
 - It's a client component: an `<input>` with the same classes.
 - On change, debounce 250 ms, then call `searchAction(q)` and show up to 20 results grouped by `kind` in a dropdown. Esc closes it.
@@ -677,13 +677,13 @@ Mount `<LiveRefresh projectId={project.id} />` on the project page and `<LiveRef
 
 - Empty state: "No matches".
 
-- [ ] **Step 3: Hide nav items the role can't use**
+- [x] **Step 3: Hide nav items the role can't use**
 
 - `NavBar` receives `role` from the layout (`requireOrg()` already returns it).
 - Hide: Leads without `lead:read`, Vendors without `vendor:read`, Reports without `report:read`, Settings without `org:manage`.
 - This is convenience only; the API enforces everything.
 
-- [ ] **Step 4: Team and members**
+- [x] **Step 4: Team and members**
 
 `actions/team.ts` (all through `apiAction`):
 
@@ -704,14 +704,14 @@ Mount `<LiveRefresh projectId={project.id} />` on the project page and `<LiveRef
   - "WhatsApp" calls `shareDocument` and does `window.open(whatsappUrl, "_blank")`.
   - Put it next to each existing "PDF" link: the quotation (`quotation`, `q.id`), each invoice (`invoice`, `inv.id`), each PO (`po`, `po.id`), and each RFQ (`rfq`, `rfq.id`).
 
-- [ ] **Step 5: Check by hand**
+- [ ] **Step 5: Check by hand** (pending: needs signed-in sessions)
 
 1. Open the same project in two browsers as two users. Accept a vendor quote in one. Expected: the other updates within about 1 s.
 2. Search "wawsan". Expected: Wawasan results.
 3. Invite a project manager. Expected: the email arrives in Mailpit.
 4. Sign up as that user, accept, and assign them to one project. Expected: they see only that project, and no Leads or Settings in the nav.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/web

@@ -101,7 +101,7 @@ Concretely:
 - [x] 8.2 Server actions call the API
 - [x] 8.3 Pages read from the API
 - [x] 8.4 Uploads through presigned URLs; download redirects; PDF proxies
-- [ ] 8.5 Live refresh, global search, team and member screens
+- [x] 8.5 Live refresh, global search, team and member screens
 - [ ] 8.6 Remove Prisma
 
 ### 09 Data migration

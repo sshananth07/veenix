@@ -3,10 +3,10 @@ import { requireOrg, requireSession } from "@/lib/session";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user } = await requireSession();
-  const { me, orgId } = await requireOrg();
+  const { me, orgId, role } = await requireOrg();
   return (
     <div className="min-h-screen bg-background">
-      <NavBar userName={user.name} orgs={me.memberships} currentOrgId={orgId} />
+      <NavBar userName={user.name} orgs={me.memberships} currentOrgId={orgId} role={role} />
       <main className="mx-auto max-w-[1400px] px-6 py-6">{children}</main>
     </div>
   );

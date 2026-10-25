@@ -1,6 +1,8 @@
-import { Building2, CreditCard, Percent, ShieldCheck, User } from "lucide-react";
-import type { OrgDto } from "@veenix/shared";
+import { Building2, CreditCard, Percent, User } from "lucide-react";
+import { can, type InvitationDto, type MemberDto, type OrgDto } from "@veenix/shared";
 import { api } from "@/lib/api";
+import { requireOrg } from "@/lib/session";
+import { MembersCard } from "@/components/settings/MembersCard";
 import { EditBankDetailsDialog } from "@/components/settings/EditBankDetailsDialog";
 import { EditLetterheadDialog } from "@/components/settings/EditLetterheadDialog";
 import { MarkupSettingsCard } from "@/components/settings/MarkupSettingsCard";
@@ -16,7 +18,13 @@ const NAV = [
 ];
 
 export default async function SettingsPage() {
-  const settings = await api<OrgDto>("/org");
+  const { role } = await requireOrg();
+  const canManage = can(role, "member:manage");
+  const [settings, members, invitations] = await Promise.all([
+    api<OrgDto>("/org"),
+    canManage ? api<MemberDto[]>("/org/members") : [],
+    canManage ? api<InvitationDto[]>("/org/invitations") : [],
+  ]);
 
   return (
     <div className="space-y-5">
@@ -94,11 +102,7 @@ export default async function SettingsPage() {
             <MarkupSettingsCard settings={settings} />
           </div>
 
-          <section id="users" className="rounded-xl border border-dashed bg-card p-5 text-center">
-            <ShieldCheck className="mx-auto h-7 w-7 text-muted-foreground" />
-            <h2 className="mt-2 font-semibold">Users &amp; Permissions</h2>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">Not built yet — the app has no login, so everyone shares one account for now.</p>
-          </section>
+          {canManage && <MembersCard members={members} invitations={invitations} />}
         </div>
       </div>
     </div>
