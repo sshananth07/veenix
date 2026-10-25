@@ -715,7 +715,7 @@ git commit -m "feat(api): domain models for leads, projects, procurement, quotat
     | `POST /v1/leads/:id/activities` | `lead:write` | `logLeadActivity` |
     | `POST /v1/leads/:id/convert` | `lead:write` | `convertLead` |
 
-- [ ] **Step 1: Write the failing test** `src/leads/leads.test.ts`
+- [x] **Step 1: Write the failing test** `src/leads/leads.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -753,12 +753,12 @@ describe("LeadsService", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter api test leads`
 Expected: FAIL (service missing).
 
-- [ ] **Step 3: Write `src/leads/leads.service.ts`** (ports `apps/web/actions/leads.ts` and the leads pages' queries)
+- [x] **Step 3: Write `src/leads/leads.service.ts`** (ports `apps/web/actions/leads.ts` and the leads pages' queries)
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -906,7 +906,7 @@ export class LeadsService {
 }
 ```
 
-- [ ] **Step 4: Write `src/leads/leads.controller.ts`**
+- [x] **Step 4: Write `src/leads/leads.controller.ts`**
 
 ```ts
 import { Controller, Get, Patch, Post } from "@nestjs/common";
@@ -930,12 +930,12 @@ export class LeadsController {
 }
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `pnpm --filter api test leads`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api

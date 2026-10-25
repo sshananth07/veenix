@@ -13,11 +13,13 @@ import { LiveController } from "./live/live.controller";
 import { SearchController } from "./search/search.controller";
 import { VendorsController } from "./vendors/vendors.controller";
 import { VendorsService } from "./vendors/vendors.service";
+import { LeadsController } from "./leads/leads.controller";
+import { LeadsService } from "./leads/leads.service";
 
 // One module for the whole API. Later tasks append to `controllers` and `providers`.
 @Module({
   imports: [ClsModule.forRoot({ global: true, middleware: { mount: true } })],
-  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController],
-  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService],
+  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController],
+  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService],
 })
 export class AppModule {}
