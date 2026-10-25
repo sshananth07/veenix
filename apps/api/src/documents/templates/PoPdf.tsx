@@ -1,7 +1,7 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
 import { styles } from "./styles";
 import { Letterhead, MetaGrid, Footer } from "./Letterhead";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@veenix/shared";
 
 interface PoPdfProps {
   company: { companyName: string; companyAddress: string; companyReg: string; companyPhone: string };

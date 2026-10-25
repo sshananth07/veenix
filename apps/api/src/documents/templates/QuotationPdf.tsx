@@ -1,9 +1,9 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
 import { styles } from "./styles";
 import { Letterhead, MetaGrid, Footer } from "./Letterhead";
-import { formatCurrency, formatDate, formatMoney2, formatNumber } from "@/lib/utils";
-import { groupByWorkItem, quotationTotals, unitPrice } from "@/lib/quotation";
-import { allocate } from "@/lib/paymentTerms";
+import { formatCurrency, formatDate, formatMoney2, formatNumber } from "@veenix/shared";
+import { groupByWorkItem, quotationTotals, unitPrice } from "@veenix/shared";
+import { allocate } from "@veenix/shared";
 
 interface QuotationPdfProps {
   company: { companyName: string; companyAddress: string; companyReg: string; companyPhone: string };
@@ -17,10 +17,11 @@ interface QuotationPdfProps {
   project: { name: string; clientName: string; siteAddress: string };
   lineItems: { workItemName: string | null; workPackage: string; qty: number; unit: string; bomCost: number; clientPrice: number; seq: number }[];
   terms: { seq: number; name: string; trigger: string; pct: number }[];
+  sstBps: number;
 }
 
-export function QuotationPdf({ company, quotation, project, lineItems, terms }: QuotationPdfProps) {
-  const { subtotal, sst, total } = quotationTotals(lineItems);
+export function QuotationPdf({ company, quotation, project, lineItems, terms, sstBps }: QuotationPdfProps) {
+  const { subtotal, sst, total } = quotationTotals(lineItems, sstBps);
   const groups = groupByWorkItem(lineItems);
   const sortedTerms = [...terms].sort((a, b) => a.seq - b.seq);
   const termAmounts = allocate(total, sortedTerms);
@@ -78,7 +79,7 @@ export function QuotationPdf({ company, quotation, project, lineItems, terms }: 
             <Text style={styles.totalsValue}>{formatCurrency(subtotal)}</Text>
           </View>
           <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>SST 8%</Text>
+            <Text style={styles.totalsLabel}>{`SST ${sstBps / 100}%`}</Text>
             <Text style={styles.totalsValue}>{formatCurrency(sst)}</Text>
           </View>
           <View style={styles.grandTotalRow}>

@@ -43,7 +43,7 @@
   - `DocumentsService.pdf(type, id, opts?)`: the snapshot when there is one, otherwise `render`
   - the route `GET /v1/documents/:type/:id/pdf?vendorId=&download=1` (`project:read`, `@RateLimit(30)`)
 
-- [ ] **Step 1: Move the templates and install**
+- [x] **Step 1: Move the templates and install**
 
 ```bash
 mkdir -p apps/api/src/documents/templates
@@ -52,7 +52,7 @@ pnpm --filter api add @react-pdf/renderer@^4 react@^18
 pnpm --filter api add -D @types/react@^18
 ```
 
-- [ ] **Step 2: Fix the template imports**
+- [x] **Step 2: Fix the template imports**
 
 In every file under `apps/api/src/documents/templates/`:
 - `@/lib/utils` → `@veenix/shared` (`formatCurrency`, `formatDate`, `formatMoney2` and `formatNumber` now take sen and format in Malaysian time)
@@ -65,7 +65,7 @@ In `QuotationPdf.tsx`:
 
 The money values these templates receive are already sen, so nothing else changes.
 
-- [ ] **Step 3: Write `src/documents/documents.service.ts`**
+- [x] **Step 3: Write `src/documents/documents.service.ts`**
 
 ```tsx
 import { Injectable } from "@nestjs/common";
@@ -171,7 +171,7 @@ export class DocumentsService {
 
 `P()` silences the template prop types. The templates declare their own prop shapes, and these Mongo objects have the same field names. If a template reads a relation the old Prisma include supplied, the type checker shows it here. Add that field to the object you pass.
 
-- [ ] **Step 4: Write `src/documents/documents.controller.ts`**
+- [x] **Step 4: Write `src/documents/documents.controller.ts`**
 
 ```ts
 import { Controller, Get, Param, Query, Res } from "@nestjs/common";
@@ -200,7 +200,7 @@ export class DocumentsController {
 
 Register both.
 
-- [ ] **Step 5: Write the test** `src/documents/documents.test.ts`
+- [x] **Step 5: Write the test** `src/documents/documents.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -225,12 +225,12 @@ describe("documents", () => {
 });
 ```
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `pnpm --filter api test documents`
 Expected: PASS. `ERR_REQUIRE_ESM` means Node is older than 22.12.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api apps/web pnpm-lock.yaml

@@ -1,7 +1,7 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
 import { styles } from "./styles";
 import { Letterhead, MetaGrid, Footer } from "./Letterhead";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@veenix/shared";
 
 interface InvoicePdfProps {
   company: { companyName: string; companyAddress: string; companyReg: string; companyPhone: string; bankName: string; bankAccount: string };
@@ -16,9 +16,10 @@ interface InvoicePdfProps {
   };
   milestoneName: string;
   project: { name: string; clientName: string; siteAddress: string };
+  sstBps: number;
 }
 
-export function InvoicePdf({ company, invoice, milestoneName, project }: InvoicePdfProps) {
+export function InvoicePdf({ company, invoice, milestoneName, project, sstBps }: InvoicePdfProps) {
   const total = invoice.amount + invoice.sstAmount;
 
   return (
@@ -54,7 +55,7 @@ export function InvoicePdf({ company, invoice, milestoneName, project }: Invoice
             <Text style={styles.totalsValue}>{formatCurrency(invoice.amount)}</Text>
           </View>
           <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>SST @ 8%</Text>
+            <Text style={styles.totalsLabel}>{`SST @ ${sstBps / 100}%`}</Text>
             <Text style={styles.totalsValue}>{formatCurrency(invoice.sstAmount)}</Text>
           </View>
           <View style={styles.grandTotalRow}>

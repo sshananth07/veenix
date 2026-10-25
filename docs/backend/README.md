@@ -92,7 +92,7 @@ Concretely:
 - [x] 6.11 Dashboard and reports
 
 ### 07 Documents and sending
-- [ ] 7.1 PDF templates and rendering in the API
+- [x] 7.1 PDF templates and rendering in the API
 - [ ] 7.2 Snapshots for sent quotations and invoices
 - [ ] 7.3 Send by email; WhatsApp share link
 
