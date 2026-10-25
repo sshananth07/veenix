@@ -82,7 +82,7 @@ Concretely:
 - [x] 6.1 Vendors (the template for the other modules)
 - [x] 6.2 All other domain models
 - [x] 6.3 Leads and convert to project (with tests)
-- [ ] 6.4 Projects: detail payload, list, update, assignees
+- [x] 6.4 Projects: detail payload, list, update, assignees
 - [ ] 6.5 Work items, BOM, the draft-quotation refresh (with tests)
 - [ ] 6.6 Quotations (with tests)
 - [ ] 6.7 Procurement: RFQs, quotes, POs, vendor payments (with tests)

@@ -1,4 +1,5 @@
 import { Schema, model, type InferSchemaType } from "mongoose";
+import { ctx } from "../common/context";
 
 const orgSchema = new Schema(
   {
@@ -22,3 +23,9 @@ const orgSchema = new Schema(
 );
 export type Org = InferSchemaType<typeof orgSchema> & { _id: import("mongoose").Types.ObjectId };
 export const OrgModel = model("Organization", orgSchema);
+
+export async function loadOrg(): Promise<Org> {
+  const org = await OrgModel.findById(ctx().orgId).lean();
+  if (!org) throw new Error("Organization missing for the current context");
+  return org as Org;
+}

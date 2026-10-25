@@ -966,7 +966,7 @@ git commit -m "feat(api): leads, activity log and convert-to-project"
     | `PATCH /v1/projects/:id` | `project:write` |
     | `PUT /v1/projects/:id/assignees` | `project:assign` |
 
-- [ ] **Step 1: Add `loadOrg` to `src/orgs/org.model.ts`**
+- [x] **Step 1: Add `loadOrg` to `src/orgs/org.model.ts`**
 
 ```ts
 import { ctx } from "../common/context";
@@ -977,7 +977,7 @@ export async function loadOrg(): Promise<Org> {
 }
 ```
 
-- [ ] **Step 2: Write `src/projects/core.ts`**
+- [x] **Step 2: Write `src/projects/core.ts`**
 
 ```ts
 import type { InvoiceDto, PaymentMilestoneDto, ProjectCore, VendorDto } from "@veenix/shared";
@@ -1058,7 +1058,7 @@ export async function buildCores(projects: Lean[]): Promise<{ cores: ProjectCore
 }
 ```
 
-- [ ] **Step 3: Write `src/projects/projects.service.ts`**
+- [x] **Step 3: Write `src/projects/projects.service.ts`**
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -1136,7 +1136,7 @@ export class ProjectsService {
 }
 ```
 
-- [ ] **Step 4: Write `src/projects/projects.controller.ts`**
+- [x] **Step 4: Write `src/projects/projects.controller.ts`**
 
 ```ts
 import { Controller, Get, Patch, Put } from "@nestjs/common";
@@ -1158,12 +1158,12 @@ export class ProjectsController {
 }
 ```
 
-- [ ] **Step 5: Check it**
+- [x] **Step 5: Check it**
 
 Run: `pnpm --filter api typecheck && pnpm --filter api test`
 Expected: PASS. Task 6.5's test calls `detail()` on a real project.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api
