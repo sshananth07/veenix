@@ -42,7 +42,7 @@
   - `pnpm --filter api migrate:sqlite -- --owner you@example.com [--reset] [--db ../web/prisma/dev.db] [--uploads ../web/uploads]`
   - `pnpm --filter api search:rebuild -- --org <orgId>`
 
-- [ ] **Step 1: Write `scripts/migrate-from-sqlite.ts`**
+- [x] **Step 1: Write `scripts/migrate-from-sqlite.ts`**
 
 ```ts
 import { existsSync, readFileSync } from "node:fs";
@@ -305,7 +305,7 @@ main().catch((e) => { console.error(e); process.exit(1); });
 
 ⚠ Verify: the table names in your `dev.db` match the Prisma model names (`sqlite3 apps/web/prisma/dev.db ".tables"`, or run `SELECT name FROM sqlite_master` through `node:sqlite`).
 
-- [ ] **Step 2: Write `scripts/search-rebuild.ts`**
+- [x] **Step 2: Write `scripts/search-rebuild.ts`**
 
 ```ts
 import { parseArgs } from "node:util";
@@ -354,7 +354,7 @@ Add to `apps/api/package.json`:
 "search:rebuild": "tsx scripts/search-rebuild.ts"
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api

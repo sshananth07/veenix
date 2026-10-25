@@ -105,7 +105,7 @@ Concretely:
 - [ ] 8.6 Remove Prisma
 
 ### 09 Data migration
-- [ ] 9.1 Migration script (SQLite + uploads → Mongo + storage)
+- [x] 9.1 Migration script (SQLite + uploads → Mongo + storage)
 - [ ] 9.2 Verification report and clicking through the app
 
 ### 10 LHDN MyInvois
