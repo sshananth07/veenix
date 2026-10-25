@@ -23,11 +23,15 @@ import { QuotationsController } from "./quotations/quotations.controller";
 import { QuotationsService } from "./quotations/quotations.service";
 import { ProcurementController } from "./procurement/procurement.controller";
 import { ProcurementService } from "./procurement/procurement.service";
+import { VariationsController } from "./variations/variations.controller";
+import { VariationsService } from "./variations/variations.service";
+import { BillingController } from "./billing/billing.controller";
+import { BillingService } from "./billing/billing.service";
 
 // One module for the whole API. Later tasks append to `controllers` and `providers`.
 @Module({
   imports: [ClsModule.forRoot({ global: true, middleware: { mount: true } })],
-  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController, QuotationsController, ProcurementController],
-  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService, BomService, QuotationsService, ProcurementService],
+  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController, QuotationsController, ProcurementController, VariationsController, BillingController],
+  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService, BomService, QuotationsService, ProcurementService, VariationsService, BillingService],
 })
 export class AppModule {}

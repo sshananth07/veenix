@@ -2112,7 +2112,7 @@ git commit -m "feat(api): procurement with one award per package and checked ven
     | `POST /v1/milestones/:milestoneId/invoice` | `billing:write` |
     | `POST /v1/invoices/:id/paid` | `billing:mark_paid` |
 
-- [ ] **Step 1: Write the failing test** `src/billing/billing.test.ts`
+- [x] **Step 1: Write the failing test** `src/billing/billing.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -2151,12 +2151,12 @@ describe("billing and variation orders", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter api test billing`
 Expected: FAIL (services missing).
 
-- [ ] **Step 3: Write `src/variations/variations.service.ts`** (ports `actions/variationOrders.ts` and adds the missing state checks)
+- [x] **Step 3: Write `src/variations/variations.service.ts`** (ports `actions/variationOrders.ts` and adds the missing state checks)
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -2225,7 +2225,7 @@ export class VariationsService {
 }
 ```
 
-- [ ] **Step 4: Write `src/billing/billing.service.ts`** (ports `actions/milestones.ts` and `actions/milestoneSchedule.ts`)
+- [x] **Step 4: Write `src/billing/billing.service.ts`** (ports `actions/milestones.ts` and `actions/milestoneSchedule.ts`)
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -2308,16 +2308,16 @@ export class BillingService {
 }
 ```
 
-- [ ] **Step 5: Write the two controllers**
+- [x] **Step 5: Write the two controllers**
 
 Use `@Controller()` with the full paths from the Interfaces block. Body schemas: `voInput` for create, `scheduleInput` for the schedule, no body for the rest.
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `pnpm --filter api test billing`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api
