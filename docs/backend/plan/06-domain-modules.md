@@ -1532,7 +1532,7 @@ git commit -m "feat(api): work items and BOM with cascades and draft-quotation r
     - `POST /v1/quotations/:id/replies` → `quotation:record`
     - `POST /v1/quotations/:id/accept` → `quotation:record`
 
-- [ ] **Step 1: Write the failing test** `src/quotations/quotations.test.ts`
+- [x] **Step 1: Write the failing test** `src/quotations/quotations.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -1580,12 +1580,12 @@ describe("QuotationsService", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails**
+- [x] **Step 2: Run it to confirm it fails**
 
 Run: `pnpm --filter api test quotations`
 Expected: FAIL (service missing).
 
-- [ ] **Step 3: Write `src/billing/schedule.ts`**
+- [x] **Step 3: Write `src/billing/schedule.ts`**
 
 ```ts
 import { allocate, type Sen } from "@veenix/shared";
@@ -1600,7 +1600,7 @@ export function applySchedule(project: ProjectDoc, terms: { name: string; trigge
 }
 ```
 
-- [ ] **Step 4: Write `src/quotations/quotations.service.ts`** (ports `actions/quotation.ts`)
+- [x] **Step 4: Write `src/quotations/quotations.service.ts`** (ports `actions/quotation.ts`)
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -1773,7 +1773,7 @@ export class QuotationsService {
 }
 ```
 
-- [ ] **Step 5: Write `src/quotations/quotations.controller.ts`**
+- [x] **Step 5: Write `src/quotations/quotations.controller.ts`**
 
 Use the same pattern as the BOM controller: the `projects/:id/quotations` route lives in this controller as `@Post("projects/:id/quotations")` under `@Controller()`, and the rest are `quotations/...`. Body schemas:
 
@@ -1789,12 +1789,12 @@ Use the same pattern as the BOM controller: the `projects/:id/quotations` route 
 
 Permissions as listed in the Interfaces block.
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `pnpm --filter api test quotations`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api
