@@ -102,7 +102,7 @@ Concretely:
 - [x] 8.3 Pages read from the API
 - [x] 8.4 Uploads through presigned URLs; download redirects; PDF proxies
 - [x] 8.5 Live refresh, global search, team and member screens
-- [ ] 8.6 Remove Prisma
+- [x] 8.6 Remove Prisma
 
 ### 09 Data migration
 - [x] 9.1 Migration script (SQLite + uploads → Mongo + storage)

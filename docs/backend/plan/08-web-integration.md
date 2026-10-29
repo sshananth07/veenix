@@ -727,7 +727,7 @@ git commit -m "feat(web): live refresh, fuzzy search, team assignment, members, 
 - Keep for now: `apps/web/prisma/dev.db` and `apps/web/uploads/`; plan 09 reads them
 - Modify: `apps/web/package.json`, `apps/web/.env`, `apps/web/START-HERE.md`
 
-- [ ] **Step 1: Delete and uninstall**
+- [x] **Step 1: Delete and uninstall**
 
 ```bash
 cd apps/web
@@ -742,7 +742,7 @@ In `apps/web/package.json`:
 
 Remove `DATABASE_URL` from `apps/web/.env`.
 
-- [ ] **Step 2: Check nothing still uses them**
+- [x] **Step 2: Check nothing still uses them**
 
 Run: `grep -rn "prisma\|@/lib/settings\|@/lib/bom\"\|@/lib/uploads\|@/lib/schedule" apps/web --include=*.ts --include=*.tsx`
 Expected: no output.
@@ -750,7 +750,7 @@ Expected: no output.
 Run: `pnpm check`
 Expected: the shared build, every type-check and every test pass.
 
-- [ ] **Step 3: Update `apps/web/START-HERE.md`**
+- [x] **Step 3: Update `apps/web/START-HERE.md`**
 
 Replace sections 1–3 with:
 ```
@@ -763,7 +763,7 @@ Replace sections 1–3 with:
 ```
 Update section 5's "not finished" list: login and accounts exist now, and the uploads folder is replaced by storage.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A

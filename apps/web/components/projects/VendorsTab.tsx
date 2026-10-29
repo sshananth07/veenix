@@ -1,6 +1,8 @@
 import { Download, HandCoins, Hourglass, Inbox, ListChecks, PackageCheck } from "lucide-react";
 import type { ProjectDetail } from "@/lib/projectQuery";
-import { prisma } from "@/lib/prisma";
+import { can, type VendorListDto } from "@veenix/shared";
+import { api } from "@/lib/api";
+import { requireOrg } from "@/lib/session";
 import { getPackages } from "@/lib/procurement";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -9,7 +11,9 @@ import { InvitedVendorsTable } from "@/components/projects/vendors/InvitedVendor
 import { PackageSummaryCard } from "@/components/projects/vendors/PackageSummaryCard";
 
 export async function VendorsTab({ project }: { project: ProjectDetail }) {
-  const vendors = await prisma.vendor.findMany({ orderBy: { name: "asc" } });
+  // The vendor picker. Roles without vendor:read (site staff) still see the packages, just not the full vendor list.
+  const { role } = await requireOrg();
+  const vendors = can(role, "vendor:read") ? (await api<VendorListDto>("/vendors")).vendors : [];
 
   const packages = getPackages(project);
   const count = (...stages: string[]) => packages.filter((p) => stages.includes(p.stage)).length;
