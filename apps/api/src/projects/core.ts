@@ -1,6 +1,7 @@
 import type { InvoiceDto, PaymentMilestoneDto, ProjectCore, VendorDto } from "@veenix/shared";
 import { allocate, quotationTotals } from "@veenix/shared";
 import { plain } from "../common/plain";
+import { validationUrl } from "../einvoice/myinvois";
 import { loadOrg, type Org } from "../orgs/org.model";
 import { UserModel } from "../users/user.model";
 import { VendorModel } from "../vendors/vendor.model";
@@ -18,6 +19,8 @@ export function toInvoiceDto(i: Lean): InvoiceDto {
     id: String(i._id), code: i.code, milestoneId: String(i.milestoneId), invoiceDate: i.invoiceDate, dueDate: i.dueDate,
     amount: i.amount, sstAmount: i.sstAmount, status: i.status,
     eInvoiceStatus: i.einvoice?.status ?? "NOT_SUBMITTED", eInvoiceUuid: i.einvoice?.uuid ?? null, eInvoiceValidatedAt: i.einvoice?.validatedAt ?? null,
+    eInvoiceUrl: i.einvoice?.status === "VALID" && i.einvoice.longId ? validationUrl(i.einvoice.environment ?? "prod", i.einvoice.uuid, i.einvoice.longId) : null,
+    eInvoiceErrors: i.einvoice?.errors?.length ? i.einvoice.errors : null,
   };
 }
 

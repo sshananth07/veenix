@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Building2, CheckCircle2, CircleDollarSign, Download, Hourglass, QrCode, Smartphone } from "lucide-react";
+import { AlertCircle, Building2, CheckCircle2, CircleDollarSign, Download, ExternalLink, Hourglass, QrCode, Smartphone } from "lucide-react";
 import type { ProjectDetail } from "@/lib/projectQuery";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ActionButton } from "@/components/ActionButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MilestoneScheduleDialog } from "@/components/projects/payments/MilestoneScheduleDialog";
-import { generateInvoiceForMilestone, markInvoicePaid } from "@/actions/milestones";
+import { generateInvoiceForMilestone, markInvoicePaid, submitEinvoice } from "@/actions/milestones";
 import { SendDocumentButtons } from "@/components/SendDocumentButtons";
 
 type Milestone = ProjectDetail["milestones"][number];
@@ -171,15 +171,7 @@ function TaxInvoiceCard({ project, milestone }: { project: ProjectDetail; milest
           <Field label="Milestone" value={milestone.name} />
         </div>
 
-        {invoice.eInvoiceUuid && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
-            <div className="flex items-center gap-2 text-sm font-medium text-emerald-800">
-              <CheckCircle2 className="h-4 w-4" />
-              MyInvois Validated
-            </div>
-            <div className="mt-1 text-xs text-emerald-800">UUID {invoice.eInvoiceUuid}</div>
-          </div>
-        )}
+        <EinvoiceStatus invoice={invoice} enabled={project.einvoiceEnabled} />
 
         <div>
           <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">SST breakdown</div>
@@ -210,6 +202,62 @@ function TaxInvoiceCard({ project, milestone }: { project: ProjectDetail; milest
       </div>
     </div>
   );
+}
+
+function EinvoiceStatus({ invoice, enabled }: { invoice: NonNullable<Milestone["invoice"]>; enabled: boolean }) {
+  const submit = (label: string) => (
+    <ActionButton size="sm" variant="outline" className="mt-2" action={submitEinvoice.bind(null, invoice.id)} pendingLabel="Submitting...">
+      {label}
+    </ActionButton>
+  );
+  switch (invoice.eInvoiceStatus) {
+    case "VALID":
+      return (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-emerald-800">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <CheckCircle2 className="h-4 w-4" />
+            MyInvois Validated
+          </div>
+          <div className="mt-1 break-all text-xs">UUID {invoice.eInvoiceUuid}</div>
+          {invoice.eInvoiceUrl && (
+            <a href={invoice.eInvoiceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs font-medium underline">
+              View on MyInvois <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+        </div>
+      );
+    case "SUBMITTED":
+      return (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+          <Hourglass className="h-4 w-4" />
+          Submitted to LHDN, waiting for validation
+        </div>
+      );
+    case "INVALID":
+      return (
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-red-800">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <AlertCircle className="h-4 w-4" />
+            LHDN did not accept this e-invoice
+          </div>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs">
+            {(invoice.eInvoiceErrors ?? ["No reason was given"]).map((e) => (
+              <li key={e}>{e}</li>
+            ))}
+          </ul>
+          {submit("Fix the details above, then resubmit")}
+        </div>
+      );
+    case "NOT_SUBMITTED":
+      return enabled ? (
+        <div className="rounded-lg border bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
+          Not submitted to LHDN yet.
+          <div>{submit("Submit to LHDN")}</div>
+        </div>
+      ) : null;
+    default:
+      return null;
+  }
 }
 
 function NoInvoiceCard() {

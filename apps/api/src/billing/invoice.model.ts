@@ -5,13 +5,14 @@ import { orgIdField, sen, tenantPlugin, text } from "../common/fields";
 const einvoiceSchema = new Schema(
   {
     status: { type: String, enum: ["NOT_SUBMITTED", "SUBMITTED", "VALID", "INVALID", "CANCELLED"], default: "NOT_SUBMITTED" },
+    environment: { type: String, enum: ["preprod", "prod", null], default: null }, // where it was submitted
     submissionUid: text(),
     uuid: text(),
     longId: text(),
     validatedAt: { type: Date, default: null },
-    errors: { type: Schema.Types.Mixed, default: null },
+    errors: { type: [String], default: null }, // readable lines: ours or LHDN's
   },
-  { _id: false },
+  { _id: false, suppressReservedKeysWarning: true },
 );
 
 const invoiceSchema = new Schema(

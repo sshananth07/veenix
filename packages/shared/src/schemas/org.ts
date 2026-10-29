@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ROLES } from "../permissions";
-import { optText, uploadRef } from "./common";
+import { optText, requiredAddress, uploadRef } from "./common";
 
 export const createOrgInput = z.strictObject({ companyName: z.string().trim().min(2, "Enter your company name").max(160) });
 
@@ -26,20 +26,25 @@ export const pricingInput = z.strictObject({
 
 export const taxInput = z.strictObject({ sstBps: z.int().min(0).max(2000) });
 
-export const einvoiceSettingsInput = z.strictObject({
-  enabled: z.boolean(),
-  environment: z.enum(["preprod", "prod"]).default("preprod"),
-  tin: z.string().trim().min(1, "Enter your company's TIN").max(20),
-  brn: z.string().trim().min(1, "Enter your business registration number").max(30),
-  sstNo: optText(30),
-  msicCode: z.string().trim().regex(/^\d{5}$/, "MSIC code is 5 digits"),
-  businessActivity: z.string().trim().min(1, "Describe your business activity").max(300),
-  clientId: z.string().trim().min(1, "Enter the MyInvois client ID").max(100),
-  /** Omit to keep the stored value. */
-  clientSecret: z.string().min(1).max(500).optional(),
-  certificateBase64: z.string().min(1).max(20_000).optional(), // the .p12 file, base64
-  certificatePassword: z.string().min(1).max(200).optional(),
-});
+export const einvoiceSettingsInput = z
+  .strictObject({
+    enabled: z.boolean(),
+    environment: z.enum(["preprod", "prod"]).default("preprod"),
+    tin: z.string().trim().min(1, "Enter your company's TIN").max(20),
+    brn: z.string().trim().min(1, "Enter your business registration number").max(30),
+    sstNo: optText(30),
+    msicCode: z.string().trim().regex(/^\d{5}$/, "MSIC code is 5 digits"),
+    businessActivity: z.string().trim().min(1, "Describe your business activity").max(300),
+    // LHDN needs the supplier's structured address and phone; the letterhead's are free text.
+    phone: z.string().trim().min(8, "Enter the company phone number").max(20),
+    ...requiredAddress,
+    clientId: z.string().trim().min(1, "Enter the MyInvois client ID").max(100),
+    /** Omit to keep the stored value. */
+    clientSecret: z.string().min(1).max(500).optional(),
+    certificateBase64: z.string().min(1).max(40_000).optional(), // the .p12 file, base64
+    certificatePassword: z.string().min(1).max(200).optional(),
+  })
+  .refine((d) => !d.certificateBase64 || d.certificatePassword, { error: "Enter the certificate's password", path: ["certificatePassword"] });
 export type EinvoiceSettingsInput = z.infer<typeof einvoiceSettingsInput>;
 
 export const inviteInput = z.strictObject({ email: z.email({ error: "Enter a valid email" }).transform((e) => e.toLowerCase()), role: z.enum(ROLES) });

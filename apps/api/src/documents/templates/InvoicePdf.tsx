@@ -1,4 +1,4 @@
-import { Document, Page, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, Text, View } from "@react-pdf/renderer";
 import { styles } from "./styles";
 import { Letterhead, MetaGrid, Footer } from "./Letterhead";
 import { formatCurrency, formatDate } from "@veenix/shared";
@@ -13,13 +13,17 @@ interface InvoicePdfProps {
     sstAmount: number;
     status: string;
     eInvoiceUuid: string | null;
+    eInvoiceUrl: string | null;
+    eInvoiceValidatedAt: Date | null;
   };
+  /** The validation link as a QR code (data URL), once LHDN has validated the invoice. */
+  qr?: string | null;
   milestoneName: string;
   project: { name: string; clientName: string; siteAddress: string };
   sstBps: number;
 }
 
-export function InvoicePdf({ company, invoice, milestoneName, project, sstBps }: InvoicePdfProps) {
+export function InvoicePdf({ company, invoice, qr, milestoneName, project, sstBps }: InvoicePdfProps) {
   const total = invoice.amount + invoice.sstAmount;
 
   return (
@@ -72,10 +76,14 @@ export function InvoicePdf({ company, invoice, milestoneName, project, sstBps }:
           </Text>
         </View>
 
-        {invoice.eInvoiceUuid && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>LHDN MyInvois e-Invoice</Text>
-            <Text style={styles.bodyText}>Validated — UUID {invoice.eInvoiceUuid}</Text>
+        {invoice.eInvoiceUrl && (
+          <View style={[styles.section, { flexDirection: "row", gap: 12, alignItems: "center" }]}>
+            {qr && <Image src={qr} style={{ width: 72, height: 72 }} />}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sectionTitle}>LHDN MyInvois e-Invoice</Text>
+              <Text style={styles.bodyText}>Validated{invoice.eInvoiceValidatedAt ? ` on ${formatDate(invoice.eInvoiceValidatedAt)}` : ""}. UUID {invoice.eInvoiceUuid}</Text>
+              <Text style={styles.bodyText}>Scan the code or visit {invoice.eInvoiceUrl} to verify.</Text>
+            </View>
           </View>
         )}
 

@@ -34,6 +34,7 @@ export class ProjectsService {
       readiness,
       attention: getAttention(core, readiness),
       pricing: { defaultMarkupPct: org.defaultMarkupPct, minMarkupPct: org.minMarkupPct, sstBps: org.sstBps },
+      einvoiceEnabled: !!(org.einvoice as { enabled?: boolean } | null)?.enabled,
     };
   }
 

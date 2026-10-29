@@ -15,3 +15,10 @@ export async function markInvoicePaid(invoiceId: string): Promise<ActionResult> 
   revalidatePath("/projects/[id]", "page");
   return r;
 }
+
+/** Sends an invoice to LHDN MyInvois, or again after fixing what it rejected. */
+export async function submitEinvoice(invoiceId: string): Promise<ActionResult> {
+  const r = await apiAction(`/invoices/${invoiceId}/einvoice`, { method: "POST" });
+  revalidatePath("/projects/[id]", "page");
+  return r;
+}

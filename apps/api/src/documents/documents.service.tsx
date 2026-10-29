@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Types } from "mongoose";
 import { renderToBuffer } from "@react-pdf/renderer";
+import QRCode from "qrcode";
 import { notFound } from "../common/errors";
 import { findSub } from "../common/fields";
 import { plain } from "../common/plain";
@@ -49,8 +50,10 @@ export class DocumentsService {
         if (!inv) throw notFound("Invoice");
         const p = await project(inv.projectId);
         const milestone = findSub(p.milestones, inv.milestoneId);
-        // toInvoiceDto flattens einvoice.uuid into the eInvoiceUuid the template reads.
-        const buffer = await renderToBuffer(<InvoicePdf company={company} invoice={P(toInvoiceDto(inv))} milestoneName={milestone?.name ?? ""} project={P(p)} sstBps={company.sstBps} />);
+        // toInvoiceDto flattens einvoice into the eInvoiceUuid / eInvoiceUrl the template reads.
+        const dto = toInvoiceDto(inv);
+        const qr = dto.eInvoiceUrl ? await QRCode.toDataURL(dto.eInvoiceUrl, { margin: 0, width: 240 }) : null;
+        const buffer = await renderToBuffer(<InvoicePdf company={company} invoice={P(dto)} qr={qr} milestoneName={milestone?.name ?? ""} project={P(p)} sstBps={company.sstBps} />);
         return { buffer, filename: `${inv.code}.pdf`, projectId: inv.projectId };
       }
       case "po": {

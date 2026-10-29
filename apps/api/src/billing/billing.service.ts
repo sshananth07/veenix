@@ -5,6 +5,7 @@ import { findSub } from "../common/fields";
 import { notFound, rule } from "../common/errors";
 import { tx } from "../common/tx";
 import { enqueue } from "../jobs/jobs";
+import { requestSubmission } from "../einvoice/einvoice.jobs";
 import { audit } from "../audit/audit";
 import { nextCode } from "../counters/counters";
 import { changed } from "../live/live";
@@ -56,7 +57,7 @@ export class BillingService {
       indexEntry({ kind: "invoice", refId: invoice._id, projectId, title: invoice.code, subtitle: project.name });
       await audit("invoice.generated", "invoice", invoice._id, { amount: milestone.amount }, projectId);
       await enqueue("document.snapshot", { type: "invoice", id: String(invoice._id) });
-      // plan 10 adds: e-invoice submission when the organization has it enabled
+      await requestSubmission(invoice._id);
       changed({ kind: "project", projectId: String(projectId) });
       return { invoiceId: String(invoice._id) };
     });

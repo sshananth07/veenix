@@ -33,6 +33,13 @@ export interface VendorDto {
   active: boolean; jobsCount: number; notes: string | null;
 }
 
+/** GET /v1/org/einvoice (null until saved once). Secrets are never returned, only whether they are stored. */
+export interface EinvoiceSettingsDto {
+  enabled: boolean; environment: "preprod" | "prod"; tin: string; brn: string; sstNo: string | null; msicCode: string; businessActivity: string;
+  phone: string; addressLine1: string; addressLine2: string | null; addressLine3: string | null; postcode: string; city: string; state: string;
+  clientId: string; hasClientSecret: boolean; hasCertificate: boolean; certificateSubject: string | null; certificateExpiresAt: Date | null;
+}
+
 // ---- Projects and BOM --------------------------------------------------------
 export interface AssigneeDto { userId: Id; role: "project_manager" | "site_staff"; name: string; email: string }
 export interface ProjectDto {
@@ -94,6 +101,8 @@ export interface InvoiceDto {
   id: Id; code: string; milestoneId: Id; invoiceDate: Date; dueDate: Date | null; amount: Sen; sstAmount: Sen; status: InvoiceStatus;
   eInvoiceStatus: "NOT_SUBMITTED" | "SUBMITTED" | "VALID" | "INVALID" | "CANCELLED";
   eInvoiceUuid: string | null; eInvoiceValidatedAt: Date | null;
+  /** LHDN's public validation link (also the QR code's content), once VALID. */
+  eInvoiceUrl: string | null; eInvoiceErrors: string[] | null;
 }
 export interface ProjectFileDto { id: Id; projectId: Id; name: string; path: string; size: number; contentType: string; createdAt: Date }
 
@@ -115,6 +124,7 @@ export interface ProjectDetailDto extends ProjectCore {
   readiness: Readiness;
   attention: AttentionItem[];
   pricing: { defaultMarkupPct: number; minMarkupPct: number; sstBps: number };
+  einvoiceEnabled: boolean;
 }
 /** GET /v1/projects */
 export type ProjectListItemDto = ProjectDto & { milestones: PaymentMilestoneDto[]; purchaseOrders: PurchaseOrderDto[] };

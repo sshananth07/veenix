@@ -1,6 +1,8 @@
-import { Building2, CreditCard, Percent, User } from "lucide-react";
-import { can, type InvitationDto, type MemberDto, type OrgDto } from "@veenix/shared";
+import { Building2, CreditCard, Percent, ReceiptText, User } from "lucide-react";
+import { can, type EinvoiceSettingsDto, type InvitationDto, type MemberDto, type OrgDto } from "@veenix/shared";
 import { api } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
+import { EinvoiceSettingsDialog } from "@/components/settings/EinvoiceSettingsDialog";
 import { requireOrg } from "@/lib/session";
 import { MembersCard } from "@/components/settings/MembersCard";
 import { EditBankDetailsDialog } from "@/components/settings/EditBankDetailsDialog";
@@ -14,16 +16,19 @@ const NAV = [
   { href: "#bank", label: "Bank Details", icon: CreditCard },
   { href: "#markup", label: "Default Markup", icon: Percent },
   { href: "#markup", label: "Minimum Markup", icon: Percent },
+  { href: "#einvoice", label: "E-invoicing", icon: ReceiptText },
   { href: "#users", label: "Users & Permissions", icon: User },
 ];
 
 export default async function SettingsPage() {
   const { role } = await requireOrg();
   const canManage = can(role, "member:manage");
-  const [settings, members, invitations] = await Promise.all([
+  const canManageOrg = can(role, "org:manage");
+  const [settings, members, invitations, einvoice] = await Promise.all([
     api<OrgDto>("/org"),
     canManage ? api<MemberDto[]>("/org/members") : [],
     canManage ? api<InvitationDto[]>("/org/invitations") : [],
+    canManageOrg ? api<EinvoiceSettingsDto | null>("/org/einvoice") : null,
   ]);
 
   return (
@@ -36,7 +41,7 @@ export default async function SettingsPage() {
       <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
         <nav aria-label="Settings sections" className="h-fit rounded-xl border bg-card p-2 shadow-sm">
           <ul className="space-y-1">
-            {NAV.map((item, i) => (
+            {NAV.filter((item) => item.href !== "#einvoice" || canManageOrg).map((item, i) => (
               <li key={item.label + i}>
                 <a href={item.href} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <item.icon className="h-4 w-4" />
@@ -101,6 +106,31 @@ export default async function SettingsPage() {
           <div id="markup">
             <MarkupSettingsCard settings={settings} />
           </div>
+
+          {canManageOrg && (
+            <section id="einvoice" className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="flex items-center gap-2 font-semibold">
+                  <ReceiptText className="h-4 w-4 text-primary" />
+                  E-invoicing (LHDN MyInvois)
+                </h2>
+                <EinvoiceSettingsDialog settings={einvoice} />
+              </div>
+              {einvoice ? (
+                <dl className="grid grid-cols-2 gap-4 text-sm">
+                  <Detail label="Status" value={einvoice.enabled ? `On, ${einvoice.environment === "prod" ? "production" : "pre-production"}` : "Off"} />
+                  <Detail label="Company TIN" value={einvoice.tin} />
+                  <Detail label="Client secret" value={einvoice.hasClientSecret ? "Stored" : null} />
+                  <Detail
+                    label="Signing certificate"
+                    value={einvoice.hasCertificate ? `Expires ${formatDate(einvoice.certificateExpiresAt)}` : null}
+                  />
+                </dl>
+              ) : (
+                <p className="text-sm text-muted-foreground">Not set up. Invoices are generated without being submitted to LHDN.</p>
+              )}
+            </section>
+          )}
 
           {canManage && <MembersCard members={members} invitations={invitations} />}
         </div>

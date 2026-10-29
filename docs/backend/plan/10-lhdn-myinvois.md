@@ -165,7 +165,18 @@ git commit -m "feat(einvoice): encrypted per-organization MyInvois settings and 
   - job handlers `einvoice.submit` and `einvoice.poll`
   - the route `POST /v1/invoices/:id/einvoice` (`einvoice:submit`): resubmit after fixing data
 
-- [ ] **Step 1: Write `src/einvoice/myinvois.ts`** ⚠ Verify each path and field name against the SDK "API" section.
+**As built (checked against the SDK, 2026-10-29).** Where the code differs from the snippets below, the code wins:
+- **Signing** follows "Signing a JSON document" and is proven against the SDK's signed sample: the test reproduces its DocDigest, PropsDigest and CertDigest exactly. The SDK page's step 1 shows `listVersionID "1.0"`, but its digest only matches with `"1.1"`.
+- **Certificate:** `node:crypto` can't read PKCS#12, so `node-forge` opens the .p12 once on save. Only the PEM key (encrypted) and the DER certificate are kept; the password is not stored. `EinvoiceSettings` has `privateKeyEnc`, `certificate`, `certificateSubject` and `certificateExpiresAt` instead of `certificateEnc`/`certificatePasswordEnc`.
+- **Supplier address and phone** are part of the e-invoice settings. LHDN requires the city, state code and phone; the letterhead only has free text.
+- **IssueDate/IssueTime** are the submission time (UTC, a minute back), not `invoiceDate`. LHDN rejects documents issued more than 72 hours before submission.
+- **Buyer without TIN:** `EI00000000010` with their NRIC (`EI00000000020` with a passport). Missing phone, address, ID or SST number marks the invoice `INVALID` with a readable reason before anything is sent.
+- **API:** the token is cached per org, environment and client ID. A 401 drops the cached token. Statuses are compared ignoring case and spaces (the SDK spells them both ways), and `submissionUid`/`submissionUID` are both read. `documentHash` is the hex SHA-256 of the signed JSON.
+- **Polling:** 4 s between checks (the SDK asks for 3-5 s), up to 5 in one run, then the runner's backoff takes over. Details are fetched only for invalid documents, as the SDK asks.
+- **On VALID**, the stored invoice PDF is re-rendered with the validation link as a QR code (`{portal}/{uuid}/share/{longId}`).
+- **Web:** Settings → E-invoicing (the .p12 goes from the form to the API, never to storage). The invoice card shows the status, LHDN's errors and a Submit/Resubmit button.
+
+- [x] **Step 1: Write `src/einvoice/myinvois.ts`** ⚠ Verify each path and field name against the SDK "API" section.
 
 ```ts
 import { redis } from "../common/redis";
@@ -217,7 +228,7 @@ export async function documentDetails(s: EinvoiceSettings, accessToken: string, 
 }
 ```
 
-- [ ] **Step 2: Write `src/einvoice/ubl.ts`**
+- [x] **Step 2: Write `src/einvoice/ubl.ts`**
 
 `buildInvoiceDocument({ invoice, org, settings, project, milestoneName })` returns the UBL 2.1 JSON invoice. Build it from this mapping and the SDK's "Invoice v1.1" JSON sample. ⚠ Copy the sample's exact structure (`_D`, `_A`, `_B` namespaces, `Invoice: [ { … } ]` arrays).
 
@@ -235,7 +246,7 @@ export async function documentDetails(s: EinvoiceSettings, accessToken: string, 
 
 Amounts are sen in our data and ringgit with 2 decimals in UBL. Convert with `(sen / 100).toFixed(2)` passed through `Number(...)`, never float arithmetic on ringgit.
 
-- [ ] **Step 3: Write `src/einvoice/sign.ts`**
+- [x] **Step 3: Write `src/einvoice/sign.ts`**
 
 `signDocument(doc, { p12: Buffer, password: string })` adds the `UBLExtensions` signature block and the `Signature` element exactly as the SDK's "Signature" guide describes for v1.1:
 1. canonicalise the document without the signature parts
@@ -247,7 +258,7 @@ Amounts are sen in our data and ringgit with 2 decimals in UBL. Convert with `(s
 
 Extract the key and certificate from the `.p12` with `node:crypto`. If PKCS#12 can't be read with `node:crypto` alone, convert it once when the settings are saved, storing PEM key and certificate (both encrypted) instead of the `.p12`. ⚠ This is the most error-prone part. Test it against the SDK's signature validation tool or the pre-production environment before relying on it.
 
-- [ ] **Step 4: Write `src/einvoice/einvoice.jobs.ts`**
+- [x] **Step 4: Write `src/einvoice/einvoice.jobs.ts`**
 
 ```ts
 import { createHash } from "node:crypto";
@@ -313,13 +324,13 @@ export async function requestSubmission(invoiceId: Types.ObjectId) {
 }
 ```
 
-- [ ] **Step 5: Wire it in**
+- [x] **Step 5: Wire it in**
 
 - **On invoice generation:** in `BillingService.generateInvoice`, replace the `// plan 10 adds:` comment with `await requestSubmission(invoice._id);`
 - **Resubmit:** in `billing.controller.ts`, add `@Can("einvoice:submit") @Post("invoices/:id/einvoice")`. It refuses unless `einvoice.status` is `INVALID` or `NOT_SUBMITTED` ("This invoice is already with LHDN"), resets the status to `NOT_SUBMITTED`, then calls `requestSubmission(id)`.
 - **The QR link:** on the invoice PDF and screen, the LHDN validation link is `https://myinvois.hasil.gov.my/<uuid>/share/<longId>` (⚠ verify; pre-production uses `preprod.myinvois.hasil.gov.my`). Show it only when `eInvoiceStatus === "VALID"`.
 
-- [ ] **Step 6: Write the test** (LHDN mocked, so the flow is checked without the network) `src/einvoice/einvoice.test.ts`
+- [x] **Step 6: Write the test** (LHDN mocked, so the flow is checked without the network) `src/einvoice/einvoice.test.ts`
 
 ```ts
 import { describe, expect, it, vi } from "vitest";
@@ -367,7 +378,7 @@ Then use real pre-production credentials:
 
 Expected: within about a minute (a request after the job's run time kicks the queue), the invoice shows the validated badge with a working LHDN link. On `INVALID`, the errors show the LHDN rule that failed. Fix the data and use Resubmit.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/api
