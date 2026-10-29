@@ -401,7 +401,7 @@ When you're done:
 cd ../Veenix && git worktree remove ../veenix-old --force
 ```
 
-- [ ] **Step 4: Retire the old data** (on hold: the web app still reads dev.db until plan 08 is done)
+- [x] **Step 4: Retire the old data**
 
 Only after Step 3 matches, move the old files out of the app:
 ```bash
@@ -410,7 +410,7 @@ rmdir apps/web/prisma 2>/dev/null || true
 ```
 `backups/` is already git-ignored.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A

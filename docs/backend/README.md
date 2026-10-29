@@ -106,7 +106,7 @@ Concretely:
 
 ### 09 Data migration
 - [x] 9.1 Migration script (SQLite + uploads → Mongo + storage)
-- [ ] 9.2 Verification report and clicking through the app
+- [x] 9.2 Verification report and clicking through the app
 
 ### 10 LHDN MyInvois
 - [ ] 10.1 Per-organization e-invoice settings (encrypted)
