@@ -1,7 +1,8 @@
 import { Controller, Get, Patch } from "@nestjs/common";
-import { bankInput, letterheadInput, pricingInput, taxInput } from "@veenix/shared";
+import { bankInput, einvoiceSettingsInput, letterheadInput, pricingInput, taxInput, type EinvoiceSettingsInput } from "@veenix/shared";
 import { Can } from "../common/decorators";
 import { ZBody } from "../common/zod";
+import { einvoiceSettingsView, saveEinvoiceSettings } from "../einvoice/einvoice.settings";
 import { SettingsService } from "./settings.service";
 
 type Svc = SettingsService;
@@ -15,4 +16,6 @@ export class SettingsController {
   @Can("org:manage") @Patch("bank") bank(@ZBody(bankInput) b: Parameters<Svc["bank"]>[0]) { return this.settings.bank(b); }
   @Can("org:manage") @Patch("pricing") pricing(@ZBody(pricingInput) b: Parameters<Svc["pricing"]>[0]) { return this.settings.pricing(b); }
   @Can("org:manage") @Patch("tax") tax(@ZBody(taxInput) b: Parameters<Svc["tax"]>[0]) { return this.settings.tax(b); }
+  @Can("org:manage") @Get("einvoice") einvoice() { return einvoiceSettingsView(); }
+  @Can("org:manage") @Patch("einvoice") saveEinvoice(@ZBody(einvoiceSettingsInput) b: EinvoiceSettingsInput) { return saveEinvoiceSettings(b); }
 }

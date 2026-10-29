@@ -55,7 +55,7 @@
   - `einvoiceSecrets(): Promise<{ clientSecret; certificate: Buffer; certificatePassword }>`
   - routes `GET /v1/org/einvoice` and `PATCH /v1/org/einvoice` (`org:manage`), audit action `org.einvoice_changed`
 
-- [ ] **Step 1: Write the failing test** `src/common/crypto.test.ts`
+- [x] **Step 1: Write the failing test** `src/common/crypto.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -75,7 +75,7 @@ describe("field encryption", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to confirm it fails, then write `src/common/crypto.ts`**
+- [x] **Step 2: Run it to confirm it fails, then write `src/common/crypto.ts`**
 
 ```ts
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
@@ -103,7 +103,7 @@ export function decrypt(token: string): string {
 Run: `pnpm --filter api test crypto`
 Expected: PASS.
 
-- [ ] **Step 3: Settings input, storage and routes**
+- [x] **Step 3: Settings input, storage and routes**
 
 Add to `schemas/org.ts`:
 ```ts
@@ -138,7 +138,7 @@ Add `clientTin: text(), clientIdType: text(), clientIdNo: text()` to the project
 
 The `GET` route returns everything except the `*Enc` fields, plus `hasClientSecret` and `hasCertificate`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api packages/shared apps/web

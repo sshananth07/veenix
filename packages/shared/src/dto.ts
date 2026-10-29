@@ -37,6 +37,7 @@ export interface VendorDto {
 export interface AssigneeDto { userId: Id; role: "project_manager" | "site_staff"; name: string; email: string }
 export interface ProjectDto {
   id: Id; code: string; name: string; clientName: string; clientPhone: string | null; clientEmail: string | null;
+  clientTin: string | null; clientIdType: "NRIC" | "PASSPORT" | "BRN" | "ARMY" | null; clientIdNo: string | null;
   addressLine1: string | null; addressLine2: string | null; addressLine3: string | null; postcode: string | null;
   city: string | null; state: string | null; siteAddress: string; propertyType: string | null; builtUpArea: string | null;
   budgetMin: Sen | null; budgetMax: Sen | null; campaign: string | null; surveyAt: Date | null; photoPath: string | null;

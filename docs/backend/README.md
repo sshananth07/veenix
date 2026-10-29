@@ -109,7 +109,7 @@ Concretely:
 - [x] 9.2 Verification report and clicking through the app
 
 ### 10 LHDN MyInvois
-- [ ] 10.1 Per-organization e-invoice settings (encrypted)
+- [x] 10.1 Per-organization e-invoice settings (encrypted)
 - [ ] 10.2 MyInvois client, submission and polling jobs (pre-production)
 
 ### 11 Deployment (later, don't start yet)

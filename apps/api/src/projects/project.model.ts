@@ -44,6 +44,7 @@ const projectSchema = new Schema(
     name: { type: String, required: true },
     clientName: { type: String, required: true },
     clientPhone: text(), clientEmail: text(),
+    clientTin: text(), clientIdType: text(), clientIdNo: text(), // buyer details for e-invoices
     addressLine1: text(), addressLine2: text(), addressLine3: text(), postcode: text(), city: text(), state: text(),
     siteAddress: { type: String, default: "" },
     propertyType: text(), builtUpArea: text(),

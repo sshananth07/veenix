@@ -2,7 +2,7 @@
 
 import { senToInput } from "@veenix/shared";
 import { useState } from "react";
-import { Building2, CalendarRange, Flag, Pencil, UserRound, Wallet } from "lucide-react";
+import { Building2, CalendarRange, Flag, Pencil, ReceiptText, UserRound, Wallet } from "lucide-react";
 import { updateProject } from "@/actions/projects";
 import { FormDialog } from "@/components/FormDialog";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,9 @@ export type ProjectFormValues = {
   clientName: string;
   clientPhone: string | null;
   clientEmail: string | null;
+  clientTin: string | null;
+  clientIdType: string | null;
+  clientIdNo: string | null;
   addressLine1: string | null;
   addressLine2: string | null;
   addressLine3: string | null;
@@ -105,6 +108,34 @@ export function EditProjectDialog({ project }: { project: ProjectFormValues }) {
             </label>
           )}
         </Field>
+      </section>
+
+      <div className="border-t" />
+
+      <section className="grid gap-4">
+        <SectionTitle icon={ReceiptText}>Client tax details (for e-invoices)</SectionTitle>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Client TIN" htmlFor="clientTin" hint="Leave empty for homeowners without one.">
+            <Input id="clientTin" name="clientTin" defaultValue={project.clientTin ?? ""} />
+          </Field>
+          <Field label="ID type" htmlFor="clientIdType">
+            <Select name="clientIdType" defaultValue={project.clientIdType ?? "none"}>
+              <SelectTrigger id="clientIdType">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Not set</SelectItem>
+                <SelectItem value="NRIC">NRIC</SelectItem>
+                <SelectItem value="PASSPORT">Passport</SelectItem>
+                <SelectItem value="BRN">Business registration</SelectItem>
+                <SelectItem value="ARMY">Army ID</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="ID number" htmlFor="clientIdNo">
+            <Input id="clientIdNo" name="clientIdNo" defaultValue={project.clientIdNo ?? ""} />
+          </Field>
+        </div>
       </section>
 
       <div className="border-t" />
