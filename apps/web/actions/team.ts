@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { Role } from "@veenix/shared";
-import { api, apiAction } from "@/lib/api";
+import { ApiError, api, apiAction } from "@/lib/api";
 import { optStr, str, type ActionResult } from "@/lib/actionResult";
 
 export async function setAssignees(projectId: string, assignees: { userId: string; role: "project_manager" | "site_staff" }[]): Promise<ActionResult> {
@@ -45,6 +45,7 @@ export async function shareDocument(type: string, id: string, phone: string | nu
     const { whatsappUrl } = await api<{ whatsappUrl: string }>(`/documents/${type}/${id}/share`, { method: "POST", body: { phone } });
     return { ok: true, whatsappUrl };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Could not create the share link" };
+    if (e instanceof ApiError) return { ok: false, error: e.message };
+    throw e; // redirects (expired session) must reach Next
   }
 }

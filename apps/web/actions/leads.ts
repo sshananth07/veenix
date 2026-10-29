@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { api, apiAction } from "@/lib/api";
+import { ApiError, api, apiAction } from "@/lib/api";
 import { parseAddress } from "@/lib/address";
 import { BAD_AMOUNT, date, fail, money, optStr, str, type ActionResult } from "@/lib/actionResult";
 
@@ -66,7 +66,8 @@ export async function convertLead(leadId: string, formData: FormData): Promise<A
       },
     }));
   } catch (e) {
-    return fail(e instanceof Error ? e.message : "Could not convert the lead");
+    if (e instanceof ApiError) return fail(e.message);
+    throw e; // redirects (expired session) must reach Next
   }
   revalidatePath("/leads");
   revalidatePath(`/leads/${leadId}`);

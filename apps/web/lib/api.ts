@@ -37,13 +37,15 @@ function onAuthError(e: unknown) {
   if (e instanceof ApiError && e.status === 401) redirect(e.code === "MFA_REQUIRED" ? "/setup-mfa" : "/login");
 }
 
-/** For server components: data or a Next.js 404/redirect. */
+/** For server components: data or a Next.js 404/redirect. A role refusal shows /forbidden (production hides thrown messages). */
+
 export async function api<T>(path: string, init?: Init): Promise<T> {
   try {
     return (await call(path, init)) as T;
   } catch (e) {
     onAuthError(e);
     if (e instanceof ApiError && e.status === 404) notFound();
+    if (e instanceof ApiError && e.status === 403) redirect("/forbidden");
     throw e;
   }
 }
