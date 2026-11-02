@@ -52,7 +52,12 @@ const dayLabel = (d: Date) => {
 
 /** The assistant, docked on the right of every dashboard screen. Opened from a project, it resumes that project's latest chat. */
 export function AssistantPanel() {
-  const { open, setOpen } = useContext(Ctx);
+  // Mounted only while open, so a closed panel holds no live-events connection.
+  return useContext(Ctx).open ? <PanelBody /> : null;
+}
+
+function PanelBody() {
+  const { setOpen } = useContext(Ctx);
   const pathname = usePathname();
   const pageProject = pathname.match(/^\/projects\/([a-f\d]{24})/i)?.[1] ?? null;
   const [chatId, setChatId] = useState<string | null>(null); // null = a new chat
@@ -63,7 +68,6 @@ export function AssistantPanel() {
 
   // On opening, and on moving to another project, pick up the latest chat for where the user is.
   useEffect(() => {
-    if (!open) return;
     let stale = false;
     setPicking(true);
     void listAssistantConversations("", pageProject).then((r) => {
@@ -74,7 +78,7 @@ export function AssistantPanel() {
     return () => {
       stale = true;
     };
-  }, [open, pageProject]);
+  }, [pageProject]);
 
   const load = useCallback(async () => {
     if (!chatId) return setConv(null);
@@ -86,22 +90,20 @@ export function AssistantPanel() {
   }, [chatId]);
 
   useEffect(() => {
-    if (!open) return;
     setConv(null);
     void load();
-  }, [open, load]);
+  }, [load]);
   useLiveEvents((e) => {
-    if (open && e.kind === "assistant") void load();
+    if (e.kind === "assistant") void load();
   });
   // ponytail: a slow poll while busy covers a dropped live stream; remove if the stream proves reliable.
   const busy = !!conv?.busy;
   useEffect(() => {
-    if (!open || !busy) return;
+    if (!busy) return;
     const t = setInterval(load, 5000);
     return () => clearInterval(t);
-  }, [open, busy, load]);
+  }, [busy, load]);
 
-  if (!open) return null;
   const iconButton = "rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground";
   const title = view === "history" ? "Chat history" : chatId ? (conv?.title ?? "…") : "New chat";
   const subtitle = view === "chat" ? (conv?.projectName ?? (!chatId && pageProject ? "About this project" : null)) : null;
