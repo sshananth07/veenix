@@ -96,7 +96,7 @@ Expected: PASS.
 
 `apply` runs in one transaction: find or create the work item, call `saveBomItem(projectId, null, input)` per line, and audit `assistant.budget_lines_applied`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("400 sq ft at a RM6,000 allowance is one line at RM15.00", async () => {
@@ -116,12 +116,12 @@ it("an accepted quotation's lines don't change", ...);
 it("unknown units are refused with the list of valid ones", ...);
 ```
 
-- [ ] **Step 2: Implement, then run the tests**
+- [x] **Step 2: Implement, then run the tests**
 
 Run: `pnpm --filter api test budget`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**: `feat(api): propose budget lines through the assistant`
+- [x] **Step 3: Commit**: `feat(api): propose budget lines through the assistant`
 
 ### Task 13.3: Propose quote acceptance and vendor payment
 

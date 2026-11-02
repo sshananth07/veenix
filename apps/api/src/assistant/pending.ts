@@ -14,8 +14,22 @@ export type Card = {
   lines: { label: string; value: string }[];
   changes: { label: string; before: string; after: string }[];
   missing: string[];
+  /** Fields the user may fill in on the card. key is a path into the action's input, e.g. "lines.0.totalSen". */
+  inputs?: { key: string; label: string; kind: "money" | "terms" }[];
   link?: string;
 };
+
+/** Applies card edits by path. Only keys the card offered can be edited. */
+function withEdits(input: unknown, card: Card, edits: Record<string, unknown>) {
+  const out = structuredClone(input) as Record<string, unknown>;
+  for (const [key, value] of Object.entries(edits)) {
+    if (!card.inputs?.some((i) => i.key === key)) throw rule(`${key} can't be edited here`);
+    const path = key.split(".");
+    const parent = path.slice(0, -1).reduce<Record<string, unknown>>((o, k) => o[k] as Record<string, unknown>, out);
+    parent[path.at(-1)!] = value;
+  }
+  return out;
+}
 
 interface ApprovalAction<I> {
   name: string;
@@ -72,7 +86,7 @@ export async function approve(actionId: Types.ObjectId, edits: Record<string, un
     const a = actions.get(p.toolName);
     if (!a) throw rule("This action is no longer available");
     if (!can(c.role as Role, a.permission)) throw forbidden();
-    const parsed = a.input.safeParse({ ...(p.input as object), ...edits });
+    const parsed = a.input.safeParse(withEdits(p.input, p.card as Card, edits));
     if (!parsed.success) throw rule(parsed.error.issues[0]?.message ?? "Check the details");
     const card = await a.validate(parsed.data);
     if (card.missing.length) throw rule(`Fill in: ${card.missing.join(", ")}`);

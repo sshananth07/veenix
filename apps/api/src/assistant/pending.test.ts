@@ -23,7 +23,7 @@ defineApprovalAction({
   description: "test",
   input: z.strictObject({ label: z.string(), price: z.int().nullable() }),
   permission: "bom:write",
-  validate: async ({ label, price }) => ({ title: label, lines: [], changes: [], missing: price == null ? ["Price"] : [] }),
+  validate: async ({ label, price }) => ({ title: label, lines: [], changes: [], missing: price == null ? ["Price"] : [], inputs: [{ key: "price", label: "Price", kind: "money" }] }),
   apply: async ({ label }) => {
     if (label === "explode") throw new Error("service refused");
     applied++;
