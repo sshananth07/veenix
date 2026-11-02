@@ -16,7 +16,7 @@ export function AuthForm({ title, subtitle, submitLabel, onSubmit, children, foo
   const [pending, start] = useTransition();
   return (
     <form
-      className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-6 shadow-sm"
+      className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-6 shadow-xs"
       action={(form) => start(async () => setError(await onSubmit(form)))}
     >
       <div>

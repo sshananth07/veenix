@@ -5,7 +5,8 @@ export const runtime = "nodejs";
 // Old URL /api/documents/rfqs/<projectId> is the bundle.
 const TYPES: Record<string, string> = { quotation: "quotation", invoice: "invoice", po: "po", rfq: "rfq", rfqs: "rfq-bundle" };
 
-export async function GET(req: Request, { params }: { params: { type: string; id: string } }) {
+export async function GET(req: Request, props: { params: Promise<{ type: string; id: string }> }) {
+  const params = await props.params;
   const type = TYPES[params.type];
   if (!type) return new Response("Not found", { status: 404 });
   const { orgId } = await requireOrg();

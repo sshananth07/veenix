@@ -7,9 +7,9 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "1mb", // files go straight to storage
     },
-    // Native or server-only packages that must not be bundled.
-    serverComponentsExternalPackages: ["@node-rs/argon2", "mongodb", "ioredis", "nodemailer"],
   },
+  // Native or server-only packages that must not be bundled.
+  serverExternalPackages: ["@node-rs/argon2", "mongodb", "ioredis", "nodemailer"],
 };
 
 export default nextConfig;

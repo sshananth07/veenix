@@ -30,7 +30,7 @@ export function LogActivityForm({ leadId }: { leadId: string }) {
           name="note"
           rows={2}
           placeholder="Add a note..."
-          className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
         />
       </div>
       <div className="mt-2 flex justify-end">

@@ -112,7 +112,7 @@ export function BomTab({ project, costs }: { project: ProjectDetail; costs: Reco
         const reason = lines.length === 0 ? "No BOM lines yet" : "Some lines are not priced yet";
         const lockedReason = lines.some((b) => poBomIds.has(b.id)) ? "A line here already has a purchase order" : null;
         return (
-          <section key={w.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
+          <section key={w.id} className="overflow-hidden rounded-xl border bg-card shadow-xs">
             <header className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
               <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Layers className="h-6 w-6" />
@@ -235,7 +235,7 @@ function Stat({
   good?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-4 rounded-xl border bg-card p-5 shadow-sm">
+    <div className="flex items-start gap-4 rounded-xl border bg-card p-5 shadow-xs">
       <span className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl", good ? "bg-emerald-100 text-emerald-700" : "bg-primary/10 text-primary")}>
         <Icon className="h-6 w-6" />
       </span>

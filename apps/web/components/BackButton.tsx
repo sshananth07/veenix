@@ -13,7 +13,7 @@ export function BackButton({ fallbackHref, label }: { fallbackHref: string; labe
     <button
       type="button"
       onClick={() => (window.history.length > 1 ? router.back() : router.push(fallbackHref))}
-      className="group inline-flex items-center gap-2 rounded-full border bg-card py-1.5 pl-2 pr-4 text-sm font-medium text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
+      className="group inline-flex items-center gap-2 rounded-full border bg-card py-1.5 pl-2 pr-4 text-sm font-medium text-muted-foreground shadow-xs transition-all hover:border-primary/40 hover:text-primary hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
     >
       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
         <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />

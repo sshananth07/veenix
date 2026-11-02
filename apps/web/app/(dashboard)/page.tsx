@@ -143,7 +143,7 @@ export default async function HomePage() {
           </h1>
           <p className="mt-1 text-muted-foreground">Here&apos;s what&apos;s happening with your renovation business today.</p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground shadow-sm">
+        <div className="inline-flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground shadow-xs">
           <CalendarDays className="h-4 w-4" />
           {new Intl.DateTimeFormat("en-MY", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).format(now)}
         </div>
@@ -154,7 +154,7 @@ export default async function HomePage() {
           <Link
             key={k.label}
             href={k.href}
-            className="group flex items-start gap-4 rounded-xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group flex items-start gap-4 rounded-xl border bg-card p-5 shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-full", k.tint)}>
               {k.icon ? <k.icon className="h-6 w-6" /> : <span className="text-sm font-bold">RM</span>}
@@ -177,7 +177,7 @@ export default async function HomePage() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
-        <section className="rounded-xl border bg-card p-5 shadow-sm">
+        <section className="rounded-xl border bg-card p-5 shadow-xs">
           <div className="mb-4 flex items-center gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
               <CircleAlert className="h-5 w-5" />
@@ -255,7 +255,7 @@ export default async function HomePage() {
           )}
         </section>
 
-        <section className="rounded-xl border bg-card p-5 shadow-sm">
+        <section className="rounded-xl border bg-card p-5 shadow-xs">
           <div className="mb-4 flex items-center gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <BarChart3 className="h-5 w-5" />

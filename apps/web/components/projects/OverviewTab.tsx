@@ -167,7 +167,7 @@ export function OverviewTab({
             {details.map((d) => (
               <div key={d.label} className="grid grid-cols-[130px_1fr] gap-3">
                 <dt className="text-muted-foreground">{d.label}</dt>
-                <dd className="min-w-0 break-words font-medium">
+                <dd className="min-w-0 wrap-break-word font-medium">
                   <span className="whitespace-pre-line">{d.value}</span>
                   {d.hint && <span className="block text-xs font-normal text-muted-foreground">{d.hint}</span>}
                 </dd>
@@ -308,7 +308,7 @@ export function OverviewTab({
               href={`/projects/${project.id}?tab=${c.tab}`}
               replace
               scroll={false}
-              className="group flex flex-col rounded-xl border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="group flex flex-col rounded-xl border bg-card p-4 shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div className="flex items-center justify-between">
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -333,7 +333,7 @@ export function OverviewTab({
 
 function Card({ title, icon: Icon, aside, children }: { title: string; icon: typeof Hammer; aside?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border bg-card p-5 shadow-sm">
+    <section className="rounded-xl border bg-card p-5 shadow-xs">
       <div className="mb-5 flex items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Icon className="h-5 w-5" />

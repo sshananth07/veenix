@@ -61,7 +61,7 @@ export function NavBar({ userName, orgs, currentOrgId, role }: { userName: strin
           {orgs.length > 1 && <OrgSwitcher orgs={orgs} currentOrgId={currentOrgId} />}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button aria-label="Account menu" className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <button aria-label="Account menu" className="rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                 <Avatar name={userName} className="h-9 w-9" />
               </button>
             </DropdownMenuTrigger>

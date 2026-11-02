@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
 
 type Search = { q?: string; trade?: string; status?: string };
 
-export default async function VendorsPage({ searchParams }: { searchParams: Search }) {
+export default async function VendorsPage(props: { searchParams: Promise<Search> }) {
+  const searchParams = await props.searchParams;
   // The API query is strict: only send what is set and valid.
   const params = new URLSearchParams();
   if (searchParams.q?.trim()) params.set("q", searchParams.q.trim());
@@ -33,7 +34,7 @@ export default async function VendorsPage({ searchParams }: { searchParams: Sear
         <VendorFormDialog />
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
         {vendors.length === 0 ? (
           <div className="flex flex-col items-center px-4 py-16 text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">

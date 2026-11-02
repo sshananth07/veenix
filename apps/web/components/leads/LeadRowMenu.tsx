@@ -10,7 +10,7 @@ export function LeadRowMenu({ leadId, name, projectId }: { leadId: string; name:
       <DropdownMenuTrigger asChild>
         <button
           aria-label={`Actions for ${name}`}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>

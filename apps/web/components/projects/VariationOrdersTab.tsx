@@ -42,7 +42,7 @@ export function VariationOrdersTab({ project }: { project: ProjectDetail }) {
         />
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>

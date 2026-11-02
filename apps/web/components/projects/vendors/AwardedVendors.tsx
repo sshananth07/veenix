@@ -26,7 +26,7 @@ export function AwardedVendors({ items }: { items: { bom: Bom; rfq: Rfq | undefi
         const status = over ? { label: "Over budget", pill: "bg-red-100 text-red-800" } : fullyPaid ? { label: "Fully paid", pill: "bg-emerald-100 text-emerald-800" } : { label: "On track", pill: "bg-emerald-100 text-emerald-800" };
 
         return (
-          <article key={po.id} id={`pkg-${bom.id}`} className="scroll-mt-24 grid overflow-hidden rounded-xl border bg-card shadow-sm lg:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]">
+          <article key={po.id} id={`pkg-${bom.id}`} className="scroll-mt-24 grid overflow-hidden rounded-xl border bg-card shadow-xs lg:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]">
             <div className="space-y-4 p-5 lg:border-r">
               <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">

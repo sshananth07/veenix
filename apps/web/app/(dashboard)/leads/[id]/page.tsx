@@ -28,7 +28,8 @@ import { ConvertLeadDialog } from "@/components/leads/ConvertLeadDialog";
 import { LeadFormDialog } from "@/components/leads/LeadFormDialog";
 import { LogActivityForm } from "@/components/leads/LogActivityForm";
 
-export default async function LeadDetailPage({ params, searchParams }: { params: { id: string }; searchParams: { edit?: string } }) {
+export default async function LeadDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ edit?: string }> }) {
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const lead = await api<LeadDetailDto>(`/leads/${params.id}`);
 
   const budget = lead.budgetMin != null && lead.budgetMax != null ? `${formatCurrency(lead.budgetMin)} – ${formatCurrency(lead.budgetMax)}` : null;
@@ -50,7 +51,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
     <div className="space-y-5">
       <BackButton fallbackHref="/leads" label="Leads" />
 
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-5 shadow-xs">
         <div className="flex flex-wrap items-center gap-4">
           <Avatar name={lead.name} className="h-14 w-14 text-base" />
           <div>
@@ -116,7 +117,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-        <section className="rounded-xl border bg-card p-5 shadow-sm">
+        <section className="rounded-xl border bg-card p-5 shadow-xs">
           <h2 className="mb-4 font-semibold">Lead Details</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {tiles.map((t) => (
@@ -136,7 +137,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           </div>
         </section>
 
-        <section className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
+        <section className="flex flex-col rounded-xl border bg-card p-5 shadow-xs">
           <h2 className="mb-4 font-semibold">Activity ({lead.activities.length})</h2>
           <LogActivityForm leadId={lead.id} />
           <ol className="relative mt-5 space-y-5 border-l pl-6">
@@ -146,7 +147,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               return (
                 <li key={a.id} className="relative">
                   <span
-                    className={`absolute -left-[31px] flex h-6 w-6 items-center justify-center rounded-full border-2 border-card ${
+                    className={`absolute left-[-31px] flex h-6 w-6 items-center justify-center rounded-full border-2 border-card ${
                       system ? "bg-muted text-muted-foreground" : Icon === CheckCircle2 ? "bg-emerald-100 text-emerald-700" : "bg-primary/10 text-primary"
                     }`}
                   >

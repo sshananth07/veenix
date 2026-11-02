@@ -21,7 +21,7 @@ export const warrantyLabel = (months: number) => {
 // package, one row per invited vendor.
 export function InvitedVendorsTable({ items, vendors }: { items: { bom: Bom; rfq: Rfq }[]; vendors: Vendor[] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+    <div className="overflow-x-auto rounded-xl border bg-card shadow-xs">
       <table className="w-full min-w-[1080px] text-sm">
         <thead>
           <tr className="border-b bg-muted/30 text-left text-xs font-medium text-muted-foreground">

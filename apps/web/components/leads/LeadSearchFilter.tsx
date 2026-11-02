@@ -69,7 +69,7 @@ export function LeadSearchFilter() {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by name, phone or address..."
           aria-label="Search leads"
-          className="h-10 w-full min-w-[240px] rounded-lg border border-input bg-card pl-9 pr-9 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:w-[300px]"
+          className="h-10 w-full min-w-[240px] rounded-lg border border-input bg-card pl-9 pr-9 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring sm:w-[300px]"
         />
         {q && (
           <button

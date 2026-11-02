@@ -69,7 +69,7 @@ export function PaymentsTab({ project, selectedInvoiceId }: { project: ProjectDe
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
-        <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <section className="overflow-hidden rounded-xl border bg-card shadow-xs">
           <div className="border-b px-5 py-4">
             <h3 className="font-semibold">Payment milestones</h3>
             <p className="text-xs text-muted-foreground">From the payment terms on the signed quotation. Each milestone raises its own invoice.</p>
@@ -147,7 +147,7 @@ function TaxInvoiceCard({ project, milestone }: { project: ProjectDetail; milest
   const invoice = milestone.invoice!;
   const total = invoice.amount + invoice.sstAmount;
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+    <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
       <div className="flex items-start justify-between gap-3 border-b px-5 py-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tax Invoice</div>
@@ -272,7 +272,7 @@ function NoInvoiceCard() {
 
 function StatCard({ icon: Icon, tint, label, value, sub }: { icon: typeof CheckCircle2; tint: string; label: string; value: string; sub: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3.5 shadow-sm">
+    <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3.5 shadow-xs">
       <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${tint}`}>
         <Icon className="h-5 w-5" />
       </span>

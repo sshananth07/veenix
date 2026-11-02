@@ -11,7 +11,7 @@ export default async function OnboardingPage() {
   const me = await apiRaw<MeDto>("/me");
   if (me.memberships.length > 0) redirect("/");
   return (
-    <form action={createOrganization} className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-6 shadow-sm">
+    <form action={createOrganization} className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-6 shadow-xs">
       <div>
         <h1 className="text-xl font-semibold">Set up your company</h1>
         <p className="mt-1 text-sm text-muted-foreground">Were you invited? Open the link in your invitation email instead.</p>

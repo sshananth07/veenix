@@ -79,7 +79,7 @@ export function QuotationTab({
         </nav>
 
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border bg-card p-1 text-sm shadow-sm">
+          <div className="flex rounded-lg border bg-card p-1 text-sm shadow-xs">
             {[
               ["Internal view", false],
               ["Client view", true],
@@ -136,7 +136,7 @@ export function QuotationTab({
       <section className="space-y-4">
         <h2 className="text-lg font-semibold tracking-tight">{clientView ? "Quotation (Client View)" : "Work Item & Pricing (Internal View)"}</h2>
 
-        <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
           <QuotationTable groups={groups} clientView={clientView} editable={!clientView && isDraft} minMarkupPct={settings.minMarkupPct} />
         </div>
 
@@ -169,7 +169,7 @@ function ConversationSection({ quotation, clientName, open }: { quotation: Quota
   const asked = events.filter((e) => e.type === "QUESTIONED").length;
 
   return (
-    <section className="rounded-xl border bg-card p-5 shadow-sm">
+    <section className="rounded-xl border bg-card p-5 shadow-xs">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold">Conversation with client</h3>
@@ -344,7 +344,7 @@ function Timeline({ quotation }: { quotation: Quotation }) {
   const currentIndex = steps.findIndex((s) => !s.done);
 
   return (
-    <ol className="grid grid-cols-4 rounded-xl border bg-card px-3 py-5 shadow-sm sm:px-6" aria-label="Quotation progress">
+    <ol className="grid grid-cols-4 rounded-xl border bg-card px-3 py-5 shadow-xs sm:px-6" aria-label="Quotation progress">
       {steps.map((s, i) => {
         const isCurrent = !superseded && i === currentIndex;
         return (
@@ -378,7 +378,7 @@ function Timeline({ quotation }: { quotation: Quotation }) {
 
 function SummaryCard({ totals, sstBps }: { totals: ReturnType<typeof quotationTotals>; sstBps: number }) {
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-sm">
+    <div className="rounded-xl border bg-card p-5 shadow-xs">
       <h3 className="mb-3 font-semibold">Quotation Summary</h3>
       <dl className="space-y-2 text-sm">
         <div className="flex justify-between">
@@ -400,7 +400,7 @@ function SummaryCard({ totals, sstBps }: { totals: ReturnType<typeof quotationTo
 
 function TermsCard({ terms, amounts, total }: { terms: Quotation["terms"]; amounts: number[]; total: number }) {
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-sm">
+    <div className="rounded-xl border bg-card p-5 shadow-xs">
       <h3 className="mb-3 font-semibold">Payment terms</h3>
       {terms.length === 0 ? (
         <p className="text-sm text-muted-foreground">No payment terms set yet.</p>
@@ -484,7 +484,7 @@ function Notice({
   const iconTone = { success: "bg-white text-emerald-600", warn: "bg-white text-amber-600", info: "bg-white text-blue-600", muted: "bg-white text-muted-foreground" }[tone];
   return (
     <div className={cn("flex flex-wrap items-center gap-4 rounded-xl border px-4 py-3.5 text-sm", style)}>
-      <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-sm", iconTone)}>
+      <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-xs", iconTone)}>
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">{children}</div>
@@ -504,7 +504,7 @@ function EmptyState({
 }) {
   const pct = readiness.total > 0 ? Math.round((readiness.priced / readiness.total) * 100) : 0;
   return (
-    <div className="mx-auto max-w-2xl rounded-xl border bg-card p-8 shadow-sm">
+    <div className="mx-auto max-w-2xl rounded-xl border bg-card p-8 shadow-xs">
       <h2 className="text-lg font-semibold tracking-tight">{readiness.ready ? "Ready to create the quotation" : "Price everything first"}</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         A quotation can only be created once every line has a firm price: an accepted vendor quote for outsourced work, and a costed labour and materials line for self-performed work.

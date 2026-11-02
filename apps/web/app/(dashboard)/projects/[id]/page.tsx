@@ -15,13 +15,8 @@ import { VariationOrdersTab } from "@/components/projects/VariationOrdersTab";
 import { PaymentsTab } from "@/components/projects/PaymentsTab";
 import { FilesTab } from "@/components/projects/FilesTab";
 
-export default async function ProjectDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: { tab?: string; v?: string; view?: string; invoice?: string };
-}) {
+export default async function ProjectDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; v?: string; view?: string; invoice?: string }> }) {
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const { role } = await requireOrg();
   const [project, members] = await Promise.all([
     api<ProjectDetailDto>(`/projects/${params.id}`),

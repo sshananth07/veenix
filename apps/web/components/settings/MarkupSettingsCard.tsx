@@ -17,7 +17,7 @@ export function MarkupSettingsCard({ settings }: { settings: { defaultMarkupPct:
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   return (
-    <section className="rounded-xl border bg-card p-5 shadow-sm">
+    <section className="rounded-xl border bg-card p-5 shadow-xs">
       <h2 className="mb-4 flex items-center gap-2 font-semibold">
         <Percent className="h-4 w-4 text-primary" />
         Markup settings

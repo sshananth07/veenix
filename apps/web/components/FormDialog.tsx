@@ -100,7 +100,7 @@ export function FormDialog({
               <DialogTitle className="text-xl">{title}</DialogTitle>
               {description && <DialogDescription className="mt-1.5">{description}</DialogDescription>}
             </div>
-            <DialogClose className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+            <DialogClose className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring">
               <X className="h-5 w-5" />
               <span className="sr-only">Close</span>
             </DialogClose>

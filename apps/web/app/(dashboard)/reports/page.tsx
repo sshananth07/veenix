@@ -29,7 +29,7 @@ export default async function ReportsPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((k) => (
-          <div key={k.label} className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3.5 shadow-sm">
+          <div key={k.label} className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3.5 shadow-xs">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <k.icon className="h-5 w-5" />
             </span>
@@ -43,7 +43,7 @@ export default async function ReportsPage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-xl border bg-card p-5 shadow-sm">
+        <section className="rounded-xl border bg-card p-5 shadow-xs">
           <h2 className="mb-1 flex items-center gap-2 font-semibold">
             <TrendingUp className="h-4 w-4 text-primary" />
             Lead source performance
@@ -70,7 +70,7 @@ export default async function ReportsPage() {
           )}
         </section>
 
-        <section className="rounded-xl border bg-card p-5 shadow-sm">
+        <section className="rounded-xl border bg-card p-5 shadow-xs">
           <h2 className="mb-1 flex items-center gap-2 font-semibold">
             <HandCoins className="h-4 w-4 text-primary" />
             Vendor spend
@@ -101,7 +101,7 @@ export default async function ReportsPage() {
         </section>
       </div>
 
-      <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <section className="overflow-hidden rounded-xl border bg-card shadow-xs">
         <div className="border-b px-5 py-4">
           <h2 className="flex items-center gap-2 font-semibold">
             <Percent className="h-4 w-4 text-primary" />

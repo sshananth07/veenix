@@ -39,7 +39,7 @@ export default async function SettingsPage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
-        <nav aria-label="Settings sections" className="h-fit rounded-xl border bg-card p-2 shadow-sm">
+        <nav aria-label="Settings sections" className="h-fit rounded-xl border bg-card p-2 shadow-xs">
           <ul className="space-y-1">
             {NAV.filter((item) => item.href !== "#einvoice" || canManageOrg).map((item, i) => (
               <li key={item.label + i}>
@@ -53,7 +53,7 @@ export default async function SettingsPage() {
         </nav>
 
         <div className="grid gap-5">
-          <section id="letterhead" className="grid gap-5 rounded-xl border bg-card p-5 shadow-sm md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+          <section id="letterhead" className="grid gap-5 rounded-xl border bg-card p-5 shadow-xs md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
             <div>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 font-semibold">
@@ -87,7 +87,7 @@ export default async function SettingsPage() {
             </div>
           </section>
 
-          <section id="bank" className="rounded-xl border bg-card p-5 shadow-sm">
+          <section id="bank" className="rounded-xl border bg-card p-5 shadow-xs">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="flex items-center gap-2 font-semibold">
                 <CreditCard className="h-4 w-4 text-primary" />
@@ -108,7 +108,7 @@ export default async function SettingsPage() {
           </div>
 
           {canManageOrg && (
-            <section id="einvoice" className="rounded-xl border bg-card p-5 shadow-sm">
+            <section id="einvoice" className="rounded-xl border bg-card p-5 shadow-xs">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 font-semibold">
                   <ReceiptText className="h-4 w-4 text-primary" />

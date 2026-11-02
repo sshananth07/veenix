@@ -17,7 +17,8 @@ const TABS = [
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
-export default async function VendorDetailPage({ params, searchParams }: { params: { id: string }; searchParams: { tab?: string } }) {
+export default async function VendorDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const vendor = await api<VendorDetailDto>(`/vendors/${params.id}`);
   vendor.rfqQuotes.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime()); // newest first, as before
 
@@ -35,7 +36,7 @@ export default async function VendorDetailPage({ params, searchParams }: { param
     <div className="space-y-5">
       <BackButton fallbackHref="/vendors" label="Vendors" />
 
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-5 shadow-xs">
         <div className="flex items-center gap-4">
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Store className="h-6 w-6" />
@@ -51,7 +52,7 @@ export default async function VendorDetailPage({ params, searchParams }: { param
         <VendorFormDialog vendor={vendor} />
       </div>
 
-      <nav aria-label="Vendor sections" className="overflow-x-auto rounded-xl border bg-card p-1 shadow-sm">
+      <nav aria-label="Vendor sections" className="overflow-x-auto rounded-xl border bg-card p-1 shadow-xs">
         <ul className="flex min-w-max gap-1">
           {TABS.map((t) => (
             <li key={t.key}>
@@ -73,7 +74,7 @@ export default async function VendorDetailPage({ params, searchParams }: { param
 
       {tab === "details" && (
         <div className="grid gap-5 lg:grid-cols-2">
-          <section className="rounded-xl border bg-card p-5 shadow-sm">
+          <section className="rounded-xl border bg-card p-5 shadow-xs">
             <h2 className="mb-4 flex items-center gap-2 font-semibold">
               <Building2 className="h-4 w-4 text-primary" />
               Company details
@@ -93,7 +94,7 @@ export default async function VendorDetailPage({ params, searchParams }: { param
             )}
           </section>
 
-          <section className="rounded-xl border bg-card p-5 shadow-sm">
+          <section className="rounded-xl border bg-card p-5 shadow-xs">
             <h2 className="mb-4 font-semibold">Trade &amp; specialisation</h2>
             {trades.length > 0 ? (
               <div className="flex flex-wrap gap-2">
@@ -115,7 +116,7 @@ export default async function VendorDetailPage({ params, searchParams }: { param
       )}
 
       {tab === "jobs" && (
-        <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <section className="overflow-hidden rounded-xl border bg-card shadow-xs">
           {vendor.purchaseOrders.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-muted-foreground">No jobs with this vendor yet.</p>
           ) : (
@@ -140,7 +141,7 @@ export default async function VendorDetailPage({ params, searchParams }: { param
       )}
 
       {tab === "pos" && (
-        <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <section className="overflow-hidden rounded-xl border bg-card shadow-xs">
           {vendor.purchaseOrders.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-muted-foreground">No purchase orders yet.</p>
           ) : (
@@ -181,7 +182,7 @@ export default async function VendorDetailPage({ params, searchParams }: { param
 
       {tab === "documents" && (
         <section className="space-y-4">
-          <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
             <div className="border-b px-5 py-3 text-sm font-semibold">Quotes submitted</div>
             {quoteDocs.length === 0 ? (
               <p className="px-5 py-6 text-center text-sm text-muted-foreground">No quote documents on file.</p>
@@ -204,7 +205,7 @@ export default async function VendorDetailPage({ params, searchParams }: { param
             )}
           </div>
 
-          <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
             <div className="border-b px-5 py-3 text-sm font-semibold">Invoices received</div>
             {invoiceDocs.length === 0 ? (
               <p className="px-5 py-6 text-center text-sm text-muted-foreground">No vendor invoices on file.</p>

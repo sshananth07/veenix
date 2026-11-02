@@ -15,7 +15,7 @@ export function ProjectTabs({
   badges: Partial<Record<ProjectTabKey, { text: string; tone: "info" | "alert" }>>;
 }) {
   return (
-    <nav aria-label="Project sections" className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+    <nav aria-label="Project sections" className="overflow-x-auto rounded-xl border bg-card shadow-xs">
       <ul className="flex min-w-max gap-1 p-1">
         {PROJECT_TABS.map((tab) => {
           const badge = badges[tab.key];

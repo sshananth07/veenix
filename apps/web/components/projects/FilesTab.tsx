@@ -45,7 +45,7 @@ export function FilesTab({ project }: { project: ProjectDetail }) {
         </div>
       </div>
 
-      <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
+      <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-xs">
         {files.map((f) => {
           const { icon: Icon, tint } = ICONS[f.contentType] ?? { icon: File, tint: "bg-muted text-muted-foreground" };
           return (

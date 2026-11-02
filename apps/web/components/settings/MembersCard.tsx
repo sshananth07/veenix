@@ -53,7 +53,7 @@ function RoleSelect({ member }: { member: MemberDto }) {
 
 export function MembersCard({ members, invitations }: { members: MemberDto[]; invitations: InvitationDto[] }) {
   return (
-    <section id="users" className="rounded-xl border bg-card p-5 shadow-sm">
+    <section id="users" className="rounded-xl border bg-card p-5 shadow-xs">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <ShieldCheck className="h-5 w-5 text-primary" />

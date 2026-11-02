@@ -58,7 +58,7 @@ export function VendorSearchFilter({ trades }: { trades: string[] }) {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search vendor name, trade or job..."
           aria-label="Search vendors"
-          className="h-10 w-full min-w-[240px] rounded-lg border border-input bg-card pl-9 pr-9 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:w-[280px]"
+          className="h-10 w-full min-w-[240px] rounded-lg border border-input bg-card pl-9 pr-9 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring sm:w-[280px]"
         />
         {q && (
           <button type="button" aria-label="Clear search" className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:bg-muted" onClick={() => { setQ(""); update({ q: null }); }}>

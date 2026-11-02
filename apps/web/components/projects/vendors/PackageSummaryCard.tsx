@@ -40,7 +40,7 @@ export function PackageSummaryCard({
   const target = po || quotes.length > 0 ? `#pkg-${bom.id}` : null;
 
   return (
-    <article className="flex min-w-0 flex-col rounded-xl border bg-card p-4 shadow-sm">
+    <article className="flex min-w-0 flex-col rounded-xl border bg-card p-4 shadow-xs">
       <div className="flex items-start gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Package className="h-5 w-5" />

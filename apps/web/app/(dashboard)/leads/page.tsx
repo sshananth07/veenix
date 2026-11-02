@@ -14,7 +14,8 @@ export const dynamic = "force-dynamic";
 
 type Search = { view?: string; q?: string; page?: string; source?: string; status?: string };
 
-export default async function LeadsPage({ searchParams }: { searchParams: Search }) {
+export default async function LeadsPage(props: { searchParams: Promise<Search> }) {
+  const searchParams = await props.searchParams;
   const view = searchParams.view === "converted" || searchParams.view === "all" ? searchParams.view : "open";
   const q = (searchParams.q ?? "").trim();
   const page = Math.max(1, Number(searchParams.page) || 1);
@@ -67,7 +68,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Search
                 href={href({ view: tab.key === "open" ? null : tab.key, page: null })}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition-colors",
+                  "rounded-lg border px-4 py-2 text-sm font-medium shadow-xs transition-colors",
                   active ? "border-primary bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"
                 )}
               >
@@ -89,7 +90,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Search
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
         {leads.length === 0 ? (
           <div className="flex flex-col items-center px-4 py-16 text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">

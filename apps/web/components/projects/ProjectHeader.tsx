@@ -61,7 +61,7 @@ export function ProjectHeader({ project, members }: { project: ProjectDetail; me
             <img
               src={`/api/uploads/photo/${project.id}?v=${encodeURIComponent(project.photoPath)}`}
               alt=""
-              className="h-[74px] w-[100px] shrink-0 rounded-lg border object-cover shadow-sm"
+              className="h-[74px] w-[100px] shrink-0 rounded-lg border object-cover shadow-xs"
             />
           ) : (
             <div className="flex h-[74px] w-[100px] shrink-0 items-center justify-center rounded-lg border bg-muted/50 text-muted-foreground">
@@ -130,7 +130,7 @@ export function ProjectHeader({ project, members }: { project: ProjectDetail; me
           Cancelled{project.cancelReason ? `: ${project.cancelReason}` : ""}
         </div>
       ) : (
-        <ol className="grid grid-cols-4 rounded-xl border bg-card px-3 py-6 shadow-sm sm:px-6" aria-label="Project stage">
+        <ol className="grid grid-cols-4 rounded-xl border bg-card px-3 py-6 shadow-xs sm:px-6" aria-label="Project stage">
           {JOURNEY.map((stage, i) => {
             const done = i < stageIndex || completed;
             const current = i === stageIndex && !completed;
