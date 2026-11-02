@@ -63,3 +63,23 @@ const toolCallSchema = new Schema(
 toolCallSchema.index({ orgId: 1, conversationId: 1, toolUseId: 1 }, { unique: true });
 toolCallSchema.plugin(tenantPlugin);
 export const AssistantToolCallModel = model("AssistantToolCall", toolCallSchema);
+
+/** An action the assistant proposed. Nothing changes until its creator taps Approve. */
+const pendingActionSchema = new Schema(
+  {
+    orgId: orgIdField,
+    userId: { type: ObjectId, required: true },
+    conversationId: { type: ObjectId, required: true },
+    messageId: { type: ObjectId, required: true },
+    toolName: { type: String, required: true },
+    input: { type: Mixed, required: true },
+    card: { type: Mixed, required: true },
+    status: { type: String, enum: ["pending", "applied", "rejected"], default: "pending" },
+    expiresAt: { type: Date, required: true },
+    result: { type: Mixed, default: null },
+  },
+  { collection: "pending_actions", timestamps: true },
+);
+pendingActionSchema.index({ orgId: 1, conversationId: 1 });
+pendingActionSchema.plugin(tenantPlugin);
+export const PendingActionModel = model("PendingAction", pendingActionSchema);

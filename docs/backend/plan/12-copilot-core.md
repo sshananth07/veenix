@@ -438,7 +438,7 @@ A failure rolls everything back and the action stays pending.
 
 Routes, all `@Can()` with the permission checked inside: `POST /v1/assistant/actions/:id/approve`, `POST /v1/assistant/actions/:id/reject`, `POST /v1/assistant/tool-calls/:id/undo`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("another user can't approve", ...);
@@ -453,14 +453,14 @@ it("registering an action creates a deferred propose_ tool at approval level", .
 it("propose_assign_project_staff shows current and new assignees and changes nothing before approval", ...);
 ```
 
-- [ ] **Step 2: Implement.** Add `undo` to `add_project_update` (remove it), `create_task` (remove it) and `set_project_stage` (restore the previous values, only if `stage` still matches).
+- [x] **Step 2: Implement.** Add `undo` to `add_project_update` (remove it), `create_task` (remove it) and `set_project_stage` (restore the previous values, only if `stage` still matches).
 
-- [ ] **Step 3: Run the tests**
+- [x] **Step 3: Run the tests**
 
 Run: `pnpm --filter api test pending`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**: `feat(api): approval cards and undo`
+- [x] **Step 4: Commit**: `feat(api): approval cards and undo`
 
 ### Task 12.8: In-app chat
 

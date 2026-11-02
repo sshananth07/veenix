@@ -1,9 +1,12 @@
 import { Types } from "mongoose";
 import { z } from "zod";
-import { getPackages, PROJECT_STAGES, SITE_UPDATE_KINDS, siteUpdateInput, taskInput, type ProjectStage } from "@veenix/shared";
+import { ASSIGNABLE_ROLES, getPackages, PROJECT_STAGES, SITE_UPDATE_KINDS, siteUpdateInput, taskInput, type ProjectStage } from "@veenix/shared";
 import { audit } from "../audit/audit";
 import { rule } from "../common/errors";
+import { loadProject } from "../projects/project.model";
 import { ProjectsService } from "../projects/projects.service";
+import { UserModel } from "../users/user.model";
+import { defineApprovalAction } from "./pending";
 import { search } from "../search/search";
 import { TaskModel } from "../tasks/task.model";
 import { TasksService } from "../tasks/tasks.service";
@@ -116,5 +119,34 @@ defineTool({
   run: async ({ request }, c) => {
     await audit("assistant.unsupported_request", "conversation", c.conversationId, { request });
     return { content: "Noted. Tell the user this isn't available yet." };
+  },
+});
+
+// ---- Action catalogue: approval cards around existing service methods ----
+
+const assignInput = z.strictObject({ projectId: id, assignees: z.array(z.strictObject({ userId: id, role: z.enum(ASSIGNABLE_ROLES) })).max(50) });
+
+defineApprovalAction({
+  name: "assign_project_staff",
+  description: "Set who is assigned to a project (project managers and site staff). Give the full new list.",
+  input: assignInput,
+  permission: "project:assign",
+  validate: async ({ projectId, assignees }) => {
+    const project = await loadProject(projectId);
+    const ids = [...project.assignees.map((a) => a.userId), ...assignees.map((a) => new Types.ObjectId(a.userId))];
+    const users = await UserModel.find({ _id: { $in: ids } }).select("name").lean();
+    const who = (list: { userId: Types.ObjectId | string; role: string }[]) =>
+      list.map((a) => `${users.find((u) => u._id.equals(a.userId))?.name || "Unknown member"} (${a.role.replace("_", " ")})`).join(", ") || "Nobody";
+    return {
+      title: `Assign staff to ${project.name}`,
+      lines: [{ label: "Project", value: `${project.name} (${project.code})` }],
+      changes: [{ label: "Assigned", before: who(project.assignees), after: who(assignees) }],
+      missing: [],
+      link: `/projects/${projectId}`,
+    };
+  },
+  apply: async ({ projectId, assignees }) => {
+    await projects.setAssignees(new Types.ObjectId(projectId), { assignees });
+    return { assigned: assignees.length };
   },
 });

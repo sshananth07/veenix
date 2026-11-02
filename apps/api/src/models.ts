@@ -19,3 +19,4 @@ import "./files/file.model";
 import "./documents/document.model";
 import "./updates/site-update.model";
 import "./tasks/task.model";
+import "./assistant/models";
