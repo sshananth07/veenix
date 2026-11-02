@@ -238,7 +238,7 @@ All tenant collections use `tenantPlugin`. Names are the builder's to adjust.
 |---|---|---|---|
 | `whatsapp_links` | No (read by the webhook) | normalised phone (unique), `userId`, active `orgId`, verified time | |
 | `whatsapp_events` | No | WhatsApp message ID (unique), raw payload, status | TTL on raw payload |
-| `assistant_conversations` | Yes | `userId`, channel, `projectId` or null | One WhatsApp thread per user. In-app, one per user and project (author's call) |
+| `assistant_conversations` | Yes | `userId`, channel, `projectId` or null, title, last message time | One WhatsApp thread per user. In-app (**owner**): many chats per user, stored, searchable and deletable |
 | `assistant_messages` | Yes | conversation, role, raw content blocks, transcript, attachment keys, source event | Append-only |
 | `assistant_tool_calls` | Yes | conversation and `tool_use.id` (unique), result, undo data | Gives retry safety and undo |
 | `pending_actions` | Yes | `userId`, tool, validated input, expiry, status, result | |

@@ -131,8 +131,8 @@ Concretely:
 - [x] 12.5b `query_records` (with tests)
 - [x] 12.6 Turn loop (with tests); live check waits for `OPENAI_API_KEY`
 - [x] 12.7 Approval and undo (with tests)
-- [ ] 12.8 In-app chat
-- [ ] 12.9 Updates tab and tasks screen
+- [x] 12.8 In-app chat
+- [x] 12.9 Updates tab and tasks screen
 
 ### 13 Copilot procurement and budget
 - [ ] 13.1 Record a vendor quote (with tests)

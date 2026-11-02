@@ -479,11 +479,11 @@ Expected: PASS.
 - Produces:
   - `POST /v1/assistant/messages` (`@Can()`, `@RateLimit(20)`): `{ projectId: objectId | null, text (1–4000), photos: uploadRef[] (max 5) }` → `{ conversationId }`
   - `GET /v1/assistant/conversation?projectId=` → `AssistantConversationDto`: `{ id, messages: { id, role: "user" | "assistant", text, photos, cards, tables, createdAt, status }[], busy: boolean }`. `tables` holds the `display` values from `query_records`.
-  - One conversation per user and project in-app.
+  - **Owner (changed during the build):** in-app, a user keeps many chats, each stored, listed in a history view, searchable (title and message text) and deletable: `GET /v1/assistant/conversations?q=&projectId=`, `GET /v1/assistant/conversations/:id`, `DELETE /v1/assistant/conversations/:id`. `POST /v1/assistant/messages` takes `conversationId` (null starts a new chat). Opened from a project, the panel resumes that project's latest chat. Deleting a chat keeps the changes it made and any photo a site update reuses.
 
 The DTO is built for display. It never exposes raw blocks, tool inputs or thinking.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 it("a user only ever gets their own conversation", ...);
@@ -491,19 +491,19 @@ it("the display DTO contains no thinking or tool_use blocks", ...);
 it("photos must be real uploads in this organization", ...); // through claim()
 ```
 
-- [ ] **Step 2: Implement the API, then run its tests**
+- [x] **Step 2: Implement the API, then run its tests**
 
 Run: `pnpm --filter api test assistant.controller`
 Expected: PASS.
 
-- [ ] **Step 3: Build the panel.** A button in the dashboard layout opens a right-side panel available on every screen, showing the current project's conversation when opened from a project page. It has a text box, photo upload (existing presign flow, purpose `photos`), a busy state, action cards with Approve and Reject, and Undo on applied replies. `ActionCard` shows `changes` as current and new values. `ChatMessage` shows `tables` as plain tables, with no charts. `useLiveEvents` refetches on `kind: "assistant"`. Show the role's error when an action is refused.
+- [x] **Step 3: Build the panel.** A button in the dashboard layout opens a right-side panel available on every screen, showing the current project's conversation when opened from a project page. It has a text box, photo upload (existing presign flow, purpose `photos`), a busy state, action cards with Approve and Reject, and Undo on applied replies. `ActionCard` shows `changes` as current and new values. `ChatMessage` shows `tables` as plain tables, with no charts. `useLiveEvents` refetches on `kind: "assistant"`. Show the role's error when an action is refused.
 
-- [ ] **Step 4: Check it.**
+- [x] **Step 4: Check it.** *(Build, typecheck and the panel checked in the browser. The site-staff chat checks need a model reply, so they wait for `OPENAI_API_KEY`.)*
 
 Run: `pnpm --filter web build; pnpm -r typecheck`
 Expected: both succeed. Then, in the running app, as site staff: add an update to an assigned project, undo it, and ask about an unassigned project (the assistant can't find it).
 
-- [ ] **Step 5: Commit**: `feat(web): assistant chat panel`
+- [x] **Step 5: Commit**: `feat(web): assistant chat panel`
 
 ### Task 12.9: Updates tab and tasks screen
 
@@ -513,11 +513,11 @@ Expected: both succeed. Then, in the running app, as site staff: add an update t
 
 Staff must be able to check and correct what the assistant did without WhatsApp.
 
-- [ ] **Step 1: Build.** The Updates tab lists a project's updates: kind, text, photos, author, time and whether it came from the assistant. Anyone with `update:write` can add or delete one. The Tasks page lists the user's tasks with complete and delete, and a project's tasks appear on its tab.
+- [x] **Step 1: Build.** The Updates tab lists a project's updates: kind, text, photos, author, time and whether it came from the assistant. Anyone with `update:write` can add or delete one. The Tasks page lists the user's tasks with complete and delete, and a project's tasks appear on its tab.
 
-- [ ] **Step 2: Check it.**
+- [x] **Step 2: Check it.** *(Build and both screens checked in the browser. "An update added through chat appears without a reload" waits for `OPENAI_API_KEY`.)*
 
 Run: `pnpm --filter web build`
 Expected: succeeds. Then an update added through chat appears on the tab without a manual reload.
 
-- [ ] **Step 3: Commit**: `feat(web): project updates tab and tasks screen`
+- [x] **Step 3: Commit**: `feat(web): project updates tab and tasks screen`
