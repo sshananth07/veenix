@@ -15,7 +15,7 @@ export function costMicros(u: OpenAI.Responses.ResponseUsage): number {
   return Math.ceil((u.input_tokens - cached - written) * 2 + cached * 0.1 + written * 2.5 + u.output_tokens * 10);
 }
 
-const spendKey = (orgId: string) => `llm:spend:${orgId}:${new Date().toISOString().slice(0, 10)}`;
+export const spendKey = (orgId: string) => `llm:spend:${orgId}:${new Date().toISOString().slice(0, 10)}`;
 
 export async function addSpend(orgId: string, micros: number) {
   const key = spendKey(orgId);

@@ -11,7 +11,8 @@
     "storage:init": "tsx scripts/storage-init.ts",
     "db:indexes": "tsx scripts/db-indexes.ts",
     "migrate:sqlite": "tsx scripts/migrate-from-sqlite.ts",
-    "search:rebuild": "tsx scripts/search-rebuild.ts"
+    "search:rebuild": "tsx scripts/search-rebuild.ts",
+    "eval": "tsx evals/assistant.eval.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

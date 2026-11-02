@@ -139,7 +139,7 @@ Concretely:
 - [x] 13.2 Propose budget lines (with tests)
 - [x] 13.3 Propose quote acceptance and vendor payment (with tests)
 - [x] 13.3b Financial questions and procurement catalogue (with tests)
-- [ ] 13.4 Assistant evaluation
+- [x] 13.4 Assistant evaluation; the paid run waits for `OPENAI_API_KEY`
 
 ### 14 Copilot on WhatsApp
 - [ ] 14.1 Phone linking (with tests)
