@@ -7,10 +7,16 @@ import { asOrg, newId } from "../../test/ctx";
 
 describe("live", () => {
   it("filters events by project scope", () => {
-    expect(visible({ kind: "project", projectId: "p1" }, ["p1"])).toBe(true);
-    expect(visible({ kind: "project", projectId: "p2" }, ["p1"])).toBe(false);
-    expect(visible({ kind: "lead", id: "l1" }, ["p1"])).toBe(false);
-    expect(visible({ kind: "lead", id: "l1" }, "all")).toBe(true);
+    expect(visible({ kind: "project", projectId: "p1" }, ["p1"], "u1")).toBe(true);
+    expect(visible({ kind: "project", projectId: "p2" }, ["p1"], "u1")).toBe(false);
+    expect(visible({ kind: "lead", id: "l1" }, ["p1"], "u1")).toBe(false);
+    expect(visible({ kind: "lead", id: "l1" }, "all", "u1")).toBe(true);
+  });
+
+  it("an event with a userId only reaches that user", () => {
+    const e = { kind: "assistant", userId: "u1" } as const;
+    expect(visible(e, "all", "u1")).toBe(true);
+    expect(visible(e, "all", "u2")).toBe(false); // owners don't see other people's chats
   });
 
   it("publishes only after commit", async () => {
@@ -27,8 +33,9 @@ describe("live", () => {
 
   it("round-trips a ticket carrying the scope", async () => {
     const org = newId(), p = newId();
-    const t = await asOrg(org, () => issueTicket(), { projectScope: [p] });
-    expect(await readTicket(t)).toEqual({ orgId: String(org), scope: [String(p)] });
+    const u = newId();
+    const t = await asOrg(org, () => issueTicket(), { projectScope: [p], userId: u });
+    expect(await readTicket(t)).toEqual({ orgId: String(org), scope: [String(p)], userId: String(u) });
     await expect(readTicket("junk")).rejects.toThrow("expired");
   });
 });

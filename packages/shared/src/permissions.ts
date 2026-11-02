@@ -25,6 +25,9 @@ export const PERMISSIONS = [
   "file:write",
   "document:send",
   "report:read",
+  "update:write",
+  "task:write",
+  "concept:generate",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -32,7 +35,7 @@ export type Permission = (typeof PERMISSIONS)[number];
 export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
   owner: PERMISSIONS,
   admin: PERMISSIONS,
-  sales: ["lead:read", "lead:write", "project:read", "vendor:read"],
+  sales: ["lead:read", "lead:write", "project:read", "vendor:read", "task:write", "concept:generate"],
   project_manager: [
     "project:read",
     "project:write",
@@ -46,9 +49,12 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "vo:record",
     "file:write",
     "document:send",
+    "update:write",
+    "task:write",
+    "concept:generate",
   ],
-  site_staff: ["project:read", "file:write"],
-  procurement: ["project:read", "vendor:read", "vendor:write", "procurement:write", "file:write", "document:send"],
+  site_staff: ["project:read", "file:write", "update:write", "task:write"],
+  procurement: ["project:read", "vendor:read", "vendor:write", "procurement:write", "file:write", "document:send", "update:write", "task:write"],
   finance: [
     "project:read",
     "vendor:read",
@@ -58,6 +64,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "einvoice:submit",
     "document:send",
     "report:read",
+    "task:write",
   ],
 };
 

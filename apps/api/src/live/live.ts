@@ -9,7 +9,8 @@ import { unauthenticated } from "../common/errors";
 import { redis } from "../common/redis";
 import { afterCommit } from "../common/tx";
 
-export type LiveEvent = { kind: "project" | "lead" | "vendor" | "org"; id?: string; projectId?: string };
+/** An event with a userId (the assistant's replies) reaches only that user, whatever their role. */
+export type LiveEvent = { kind: "project" | "lead" | "vendor" | "org" | "assistant"; id?: string; projectId?: string; userId?: string };
 type Scope = "all" | string[];
 
 /** Tells open screens something changed. Ids only; screens refetch through the normal, permission-checked API. */
@@ -18,7 +19,8 @@ export function changed(e: LiveEvent) {
   afterCommit(() => redis.publish(`live:${orgId}`, JSON.stringify(e)));
 }
 
-export function visible(e: LiveEvent, scope: Scope) {
+export function visible(e: LiveEvent, scope: Scope, userId: string) {
+  if (e.userId) return e.userId === userId;
   if (scope === "all") return true;
   return !!e.projectId && scope.includes(e.projectId);
 }
@@ -34,10 +36,10 @@ export function issueTicket() {
     .sign(secret);
 }
 
-export async function readTicket(ticket: string): Promise<{ orgId: string; scope: Scope }> {
+export async function readTicket(ticket: string): Promise<{ orgId: string; scope: Scope; userId: string }> {
   try {
     const { payload } = await jwtVerify(ticket, secret, { algorithms: ["HS256"] });
-    return { orgId: String(payload.org), scope: payload.scope as Scope };
+    return { orgId: String(payload.org), scope: payload.scope as Scope, userId: String(payload.sub) };
   } catch {
     throw unauthenticated("UNAUTHENTICATED", "The live updates link expired");
   }
@@ -56,7 +58,7 @@ function subscriber() {
   return sub;
 }
 
-export function liveStream(orgId: string, scope: Scope): Observable<MessageEvent> {
+export function liveStream(orgId: string, scope: Scope, userId: string): Observable<MessageEvent> {
   return new Observable<MessageEvent>((out) => {
     const channel = `live:${orgId}`;
     if ((refs.get(channel) ?? 0) === 0) void subscriber().subscribe(channel);
@@ -64,7 +66,7 @@ export function liveStream(orgId: string, scope: Scope): Observable<MessageEvent
 
     const onMessage = (raw: string) => {
       const e = JSON.parse(raw) as LiveEvent;
-      if (visible(e, scope)) out.next({ data: e });
+      if (visible(e, scope, userId)) out.next({ data: e });
     };
     emitter.on(channel, onMessage);
     const ping = setInterval(() => out.next({ type: "ping", data: "" }), 25_000);

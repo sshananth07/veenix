@@ -14,6 +14,6 @@ export class LiveController {
   // The stream ends when the function hits its time limit; the browser reconnects with a new ticket.
   @Public() @Sse()
   stream(@Query("ticket") ticket = ""): Observable<MessageEvent> {
-    return from(readTicket(ticket)).pipe(switchMap((t) => liveStream(t.orgId, t.scope)));
+    return from(readTicket(ticket)).pipe(switchMap((t) => liveStream(t.orgId, t.scope, t.userId)));
   }
 }
