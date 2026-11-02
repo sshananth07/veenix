@@ -52,11 +52,16 @@ defineTool({
     }
     await procurement.quoteReceived(qid, body);
     const saved = (await RfqModel.findOne({ "quotes._id": qid }).lean())!.quotes.find((q) => q._id.equals(qid))!;
-    return { content: `Recorded ${vendor}'s quote of ${price}.`, undo: { quoteId, receivedAt: saved.receivedAt!.toISOString() } };
+    // What undo expects to find: anything different means someone changed it since.
+    const expected = {
+      receivedAt: saved.receivedAt!.toISOString(), quotedPrice: saved.quotedPrice, leadTimeDays: saved.leadTimeDays, warrantyMonths: saved.warrantyMonths,
+      notes: saved.notes ?? null, attachmentPath: saved.attachmentPath ?? null,
+    };
+    return { content: `Recorded ${vendor}'s quote of ${price}.`, undo: { quoteId, expected } };
   },
   undo: async (data) => {
-    const d = data as { quoteId: string; receivedAt: string };
-    await procurement.clearReceivedQuote(new Types.ObjectId(d.quoteId), { receivedAt: new Date(d.receivedAt) });
+    const { quoteId, expected } = data as { quoteId: string; expected: { receivedAt: string; quotedPrice: number; leadTimeDays: number; warrantyMonths: number; notes: string | null; attachmentPath: string | null } };
+    await procurement.clearReceivedQuote(new Types.ObjectId(quoteId), { ...expected, receivedAt: new Date(expected.receivedAt) });
   },
 });
 
@@ -133,7 +138,7 @@ defineApprovalAction({
         return;
       }
       const cost = lineTotal(l.qty, l.unitCost);
-      const stated = l.totalSen != null && l.unitCostSen == null && l.totalSen !== cost ? ` (stated ${formatMoney2(l.totalSen)})` : "";
+      const stated = l.totalSen != null && l.totalSen !== cost ? ` (stated ${formatMoney2(l.totalSen)})` : "";
       card.lines.push({
         label,
         value: `${where}: ${formatNumber(l.qty)} ${l.unit} × ${formatMoney2(l.unitCost)} = ${formatMoney2(cost)} cost${stated}, ${formatMoney2(withMarkup(cost, org.defaultMarkupPct))} to the client (${org.defaultMarkupPct}% markup)${self}`,

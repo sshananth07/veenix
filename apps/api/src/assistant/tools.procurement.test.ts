@@ -89,6 +89,17 @@ describe("record_vendor_quote", () => {
     expect((await loadQuote(q)).quotedPrice).toBe(480_000);
   });
 
+  it("undo refuses when the price was edited in the app since", async () => {
+    const { quoteIds: [q] } = await seedPackage(["Ali"]);
+    const use = quote(q, 500_000);
+    await asOwner(() => executeTool(tc(), use));
+    // The app's "quote received" form edits a received quote in place and keeps receivedAt.
+    await asOwner(() => new ProcurementService().quoteReceived(q, { quotedPrice: 510_000, leadTimeDays: 0, warrantyMonths: 0, notes: null, file: null }));
+    const call = (await asOwner(() => AssistantToolCallModel.findOne({ toolUseId: use.id }).lean()))!;
+    await expect(asOwner(() => undoToolCall(call._id))).rejects.toThrow("This has changed since");
+    expect((await loadQuote(q)).quotedPrice).toBe(510_000);
+  });
+
   it("a quoteId from another organization is not found", async () => {
     const { quoteIds: [q] } = await seedPackage(["Ali"]);
     const r = await asOrg(newId(), () => executeTool(tc(), quote(q, 500_000)));

@@ -65,6 +65,11 @@ describe("propose_budget_lines", () => {
     expect(values(card)).toContain("stated RM 100.00");
   });
 
+  it("a stated rate that disagrees with the stated total shows both", async () => {
+    const { card } = await propose(await newProject(), { qty: 3, unit: "unit", totalSen: 10_000, unitCostSen: 3000 });
+    expect(values(card)).toContain("3 unit × RM 30.00 = RM 90.00 cost (stated RM 100.00)");
+  });
+
   it("a line with no price can't be approved until a price is entered", async () => {
     const p = await newProject();
     const { card, id, r } = await propose(p, { qty: 400, unit: "sq ft" });

@@ -111,11 +111,13 @@ export class ProcurementService {
     touched(rfq.projectId);
   }
 
-  /** Undoes a recorded first quote: back to invited. Refused once anything has moved on since. */
-  async clearReceivedQuote(quoteId: Id, expected: { receivedAt: Date }) {
+  /** Undoes a recorded first quote: back to invited. Refused once anything has moved on since, including an edit in the app. */
+  async clearReceivedQuote(quoteId: Id, expected: { receivedAt: Date; quotedPrice: number; leadTimeDays: number; warrantyMonths: number; notes: string | null; attachmentPath: string | null }) {
     const { rfq, quote } = await rfqWithQuote(quoteId);
     await assertNotAwarded(rfq._id);
-    if (quote.revisions.length || quote.receivedAt?.getTime() !== expected.receivedAt.getTime()) throw rule("This has changed since. Open it in Veenix.");
+    const same = quote.receivedAt?.getTime() === expected.receivedAt.getTime() && quote.quotedPrice === expected.quotedPrice && quote.leadTimeDays === expected.leadTimeDays
+      && quote.warrantyMonths === expected.warrantyMonths && (quote.notes ?? null) === expected.notes && (quote.attachmentPath ?? null) === expected.attachmentPath;
+    if (quote.revisions.length || !same) throw rule("This has changed since. Open it in Veenix.");
     quote.set({ quotedPrice: 0, leadTimeDays: 0, warrantyMonths: 0, notes: null, receivedAt: null, attachmentPath: null, attachmentName: null });
     await rfq.save();
     touched(rfq.projectId);
