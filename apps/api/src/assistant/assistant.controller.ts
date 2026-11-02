@@ -118,7 +118,7 @@ export async function getConversation(id: Types.ObjectId): Promise<AssistantConv
         const card = a.card as Card;
         return {
           id: String(a._id), status: a.status, expired: a.expiresAt < new Date(), title: card.title,
-          lines: card.lines, changes: card.changes, missing: card.missing, link: card.link ?? null,
+          lines: card.lines, changes: card.changes, missing: card.missing, inputs: card.inputs ?? [], link: card.link ?? null,
         };
       }),
     });

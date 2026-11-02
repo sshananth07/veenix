@@ -138,7 +138,7 @@ The two tools here and `propose_budget_lines` in Task 13.2 are registered with `
 
 `validate` also runs the same checks as the service before showing a card, so staff don't approve something that will fail: the quote is received and the package isn't awarded; the milestone is `INVOICED` and the amount is within the milestone.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("no PO exists until approval", ...);
@@ -149,14 +149,14 @@ it("procurement staff can't propose a payment", ...);
 it("the approver's permission is checked again at approval", ...);
 ```
 
-- [ ] **Step 2: Implement.** `ActionCard` gains editable fields for `card.missing`: price per line, and payment terms.
+- [x] **Step 2: Implement.** `ActionCard` gains editable fields for `card.missing`: price per line, and payment terms.
 
-- [ ] **Step 3: Run the tests**
+- [x] **Step 3: Run the tests**
 
 Run: `pnpm --filter api test approvals; pnpm --filter web build`
 Expected: PASS and a successful build.
 
-- [ ] **Step 4: Commit**: `feat(api): propose quote acceptance and vendor payments`
+- [x] **Step 4: Commit**: `feat(api): propose quote acceptance and vendor payments`
 
 ### Task 13.3b: Financial questions and procurement catalogue
 

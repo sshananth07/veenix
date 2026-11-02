@@ -137,7 +137,7 @@ Concretely:
 ### 13 Copilot procurement and budget
 - [x] 13.1 Record a vendor quote (with tests)
 - [x] 13.2 Propose budget lines (with tests)
-- [ ] 13.3 Propose quote acceptance and vendor payment (with tests)
+- [x] 13.3 Propose quote acceptance and vendor payment (with tests)
 - [ ] 13.3b Financial questions and procurement catalogue (with tests)
 - [ ] 13.4 Assistant evaluation
 

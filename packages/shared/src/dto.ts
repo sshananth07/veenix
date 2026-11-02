@@ -190,6 +190,8 @@ export interface TaskDto {
 export interface AssistantCardDto {
   id: Id; status: "pending" | "applied" | "rejected"; expired: boolean; title: string;
   lines: { label: string; value: string }[]; changes: { label: string; before: string; after: string }[]; missing: string[]; link: string | null;
+  /** Fields the user fills in on the card before approving. Money is sent in sen; terms as { label, pct }[]. */
+  inputs: { key: string; label: string; kind: "money" | "terms" }[];
 }
 export interface AssistantMessageDto {
   id: Id; role: "user" | "assistant"; text: string; createdAt: Date;

@@ -16,11 +16,12 @@ export const sendAssistantMessage = async (input: { conversationId: string | nul
   apiActionData<{ conversationId: string }>("/assistant/messages", { method: "POST", body: input });
 
 // Approving or undoing changes records other screens show, so refresh them.
-async function act(path: string) {
-  const r = await apiAction(path, { method: "POST", body: {} });
+async function act(path: string, body: object = {}) {
+  const r = await apiAction(path, { method: "POST", body });
   revalidatePath("/", "layout");
   return r;
 }
-export const approveAssistantAction = async (id: string) => act(`/assistant/actions/${id}/approve`);
+/** edits fill the card's inputs, keyed by their path. */
+export const approveAssistantAction = async (id: string, edits: Record<string, unknown> = {}) => act(`/assistant/actions/${id}/approve`, { edits });
 export const rejectAssistantAction = async (id: string) => act(`/assistant/actions/${id}/reject`);
 export const undoAssistantChange = async (toolCallId: string) => act(`/assistant/tool-calls/${toolCallId}/undo`);

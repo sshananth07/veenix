@@ -24,7 +24,7 @@ const termRows = (amount: number, terms: Terms) => {
   return terms.map((t, i) => ({ seq: i + 1, label: t.label, pct: t.pct, amount: amounts[i] }));
 };
 
-async function rfqWithQuote(quoteId: Id) {
+export async function rfqWithQuote(quoteId: Id) {
   const rfq = await RfqModel.findOne({ "quotes._id": quoteId });
   if (!rfq) throw notFound("Quote");
   return { rfq, quote: findSub(rfq.quotes, quoteId)! };
@@ -34,10 +34,23 @@ async function assertNotAwarded(rfqId: Id, message = "This package has already b
   if (await PurchaseOrderModel.exists({ rfqId })) throw rule(message);
 }
 
-async function poWithMilestone(milestoneId: Id) {
+/** acceptQuote's checks, also run by the assistant before it shows a card. */
+export async function assertCanAccept(rfqId: Id, quote: { receivedAt?: Date | null; quotedPrice: number }) {
+  if (!quote.receivedAt || quote.quotedPrice <= 0) throw rule("Mark the quote as received first");
+  await assertNotAwarded(rfqId, "A quote has already been accepted for this package");
+}
+
+export async function poWithMilestone(milestoneId: Id) {
   const po = await PurchaseOrderModel.findOne({ "milestones._id": milestoneId });
   if (!po) throw notFound("Payment milestone");
   return { po, milestone: findSub(po.milestones, milestoneId)! };
+}
+
+/** recordPayment's checks, also run by the assistant before it shows a card. */
+export function assertCanPay(milestone: { status?: string | null; amount: number }, paidAmount: number) {
+  if (milestone.status === "PAID") throw rule("This milestone is already paid");
+  if (milestone.status !== "INVOICED") throw rule("Attach the vendor's invoice before recording payment");
+  if (paidAmount > milestone.amount) throw rule(`The amount paid can't be more than the milestone amount (${formatCurrency(milestone.amount)})`);
 }
 
 const touched = (projectId: Id) => changed({ kind: "project", projectId: String(projectId) });
@@ -125,8 +138,7 @@ export class ProcurementService {
   async acceptQuote(quoteId: Id, input: { terms: Terms; deliveryBy: Date | null; remarks: string | null }) {
     return tx(async () => {
       const { rfq, quote } = await rfqWithQuote(quoteId);
-      if (!quote.receivedAt || quote.quotedPrice <= 0) throw rule("Mark the quote as received first");
-      await assertNotAwarded(rfq._id, "A quote has already been accepted for this package");
+      await assertCanAccept(rfq._id, quote);
       const project = await loadProject(rfq.projectId);
       const bom = findSub(project.bomItems, rfq.bomItemId);
       if (!bom) throw notFound("BOM line");
@@ -179,9 +191,7 @@ export class ProcurementService {
   async recordPayment(milestoneId: Id, input: { paidAmount: number; paidDate: Date | null; method: string; bankRef: string | null; paidFrom: string | null }) {
     await tx(async () => {
       const { po, milestone } = await poWithMilestone(milestoneId);
-      if (milestone.status === "PAID") throw rule("This milestone is already paid");
-      if (milestone.status !== "INVOICED") throw rule("Attach the vendor's invoice before recording payment");
-      if (input.paidAmount > milestone.amount) throw rule(`The amount paid can't be more than the milestone amount (${formatCurrency(milestone.amount)})`);
+      assertCanPay(milestone, input.paidAmount);
       milestone.set({ status: "PAID", paidAmount: input.paidAmount, paidDate: input.paidDate ?? new Date(), method: input.method, bankRef: input.bankRef, paidFrom: input.paidFrom });
       po.status = po.milestones.every((m) => m.status === "PAID") ? "PAID" : "ISSUED";
       await po.save();

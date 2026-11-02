@@ -1,10 +1,12 @@
 import { Types } from "mongoose";
 import { z } from "zod";
-import { bomItemInput, formatMoney2, formatNumber, lineTotal, PERFORMED_BY, quoteInput, withMarkup, WORK_UNITS } from "@veenix/shared";
+import {
+  acceptQuoteInput, allocate, bomItemInput, formatDate, formatMoney2, formatNumber, lineTotal, PERFORMED_BY, quoteInput, vendorPaymentInput, withMarkup, WORK_UNITS,
+} from "@veenix/shared";
 import { audit } from "../audit/audit";
 import { notFound, rule } from "../common/errors";
 import { loadOrg } from "../orgs/org.model";
-import { ProcurementService } from "../procurement/procurement.service";
+import { assertCanAccept, assertCanPay, poWithMilestone, ProcurementService, rfqWithQuote } from "../procurement/procurement.service";
 import { RfqModel } from "../procurement/rfq.model";
 import { BomService } from "../projects/bom.service";
 import { loadProject } from "../projects/project.model";
@@ -150,5 +152,89 @@ defineApprovalAction({
     }
     await audit("assistant.budget_lines_applied", "project", projectId, { lines: lines.length }, projectId);
     return { lines: lines.length };
+  },
+});
+
+// ---- Accepting a quote and paying a vendor ----
+
+const vendorName = async (vendorId: Types.ObjectId) => (await VendorModel.findById(vendorId).select("name").lean())?.name ?? "Unknown vendor";
+const terms = z.array(z.strictObject({ label: z.string().trim().min(1).max(120), pct: z.int().min(1).max(100) })).min(1).max(20);
+const termsText = (amount: number, rows: { label: string; pct: number }[]) => {
+  const amounts = allocate(amount, rows);
+  return rows.map((t, i) => `${t.label} ${t.pct}% (${formatMoney2(amounts[i])})`).join(", ");
+};
+
+defineApprovalAction({
+  name: "accept_quote",
+  description:
+    "Accept a vendor's received quote, which creates the purchase order. terms are the vendor payment terms the user stated, totalling 100%; null if not stated, and the user fills them in on the card.",
+  input: z.strictObject({ quoteId: id, terms: terms.nullable(), deliveryBy: z.iso.date().nullable(), remarks: z.string().trim().max(2000).nullable() }),
+  permission: "procurement:write",
+  deferred: false,
+  validate: async ({ quoteId, terms, deliveryBy, remarks }) => {
+    const { rfq, quote } = await rfqWithQuote(new Types.ObjectId(quoteId));
+    await assertCanAccept(rfq._id, quote);
+    if (terms) {
+      const checked = acceptQuoteInput.safeParse({ terms, deliveryBy, remarks });
+      if (!checked.success) throw rule(checked.error.issues[0].message);
+    }
+    const [vendor, project] = await Promise.all([vendorName(quote.vendorId), loadProject(rfq.projectId)]);
+    const pkg = project.bomItems.find((b) => b._id.equals(rfq.bomItemId))?.workPackage ?? "the package";
+    return {
+      title: `Accept ${vendor}'s quote for ${pkg}`,
+      lines: [
+        { label: "Vendor", value: vendor },
+        { label: "Package", value: `${pkg} (${project.name})` },
+        { label: "Amount", value: formatMoney2(quote.quotedPrice) },
+        ...(terms ? [{ label: "Terms", value: termsText(quote.quotedPrice, terms) }] : []),
+        ...(deliveryBy ? [{ label: "Delivery by", value: formatDate(deliveryBy) }] : []),
+        ...(remarks ? [{ label: "Remarks", value: remarks }] : []),
+        { label: "Creates", value: "A purchase order to this vendor" },
+      ],
+      changes: [],
+      missing: terms ? [] : ["Payment terms"],
+      inputs: terms ? [] : [{ key: "terms", label: "Payment terms", kind: "terms" }],
+      link: `/projects/${rfq.projectId}?tab=vendors`,
+    };
+  },
+  apply: async ({ quoteId, terms, deliveryBy, remarks }) => procurement.acceptQuote(new Types.ObjectId(quoteId), acceptQuoteInput.parse({ terms, deliveryBy, remarks })),
+});
+
+const paymentInput = z.strictObject({
+  milestoneId: id,
+  paidAmountSen: z.int().positive(),
+  paidDate: z.iso.date().nullable(),
+  method: z.string().trim().min(1).max(40).nullable(),
+  bankRef: z.string().trim().max(80).nullable(),
+});
+
+defineApprovalAction({
+  name: "vendor_payment",
+  description: "Record a payment made to a vendor against an invoiced PO payment milestone (milestoneId from get_project). Use the amount the user stated.",
+  input: paymentInput,
+  permission: "vendor_payment:write",
+  deferred: false,
+  validate: async ({ milestoneId, paidAmountSen, paidDate, method, bankRef }) => {
+    const { po, milestone } = await poWithMilestone(new Types.ObjectId(milestoneId));
+    assertCanPay(milestone, paidAmountSen);
+    const vendor = await vendorName(po.vendorId);
+    return {
+      title: `Record a payment to ${vendor}`,
+      lines: [
+        { label: "PO", value: `${po.code} · ${po.description}` },
+        { label: "Milestone", value: `${milestone.label} (${formatMoney2(milestone.amount)})` },
+        { label: "Paying", value: formatMoney2(paidAmountSen) },
+        { label: "Paid on", value: paidDate ? formatDate(paidDate) : "Today" },
+        { label: "Method", value: method ?? "Bank Transfer" },
+        ...(bankRef ? [{ label: "Bank ref", value: bankRef }] : []),
+      ],
+      changes: [],
+      missing: [],
+      link: `/projects/${po.projectId}?tab=vendors`,
+    };
+  },
+  apply: async ({ milestoneId, paidAmountSen, paidDate, method, bankRef }) => {
+    await procurement.recordPayment(new Types.ObjectId(milestoneId), vendorPaymentInput.parse({ paidAmount: paidAmountSen, paidDate, method: method ?? undefined, bankRef, paidFrom: null }));
+    return { paid: paidAmountSen };
   },
 });
