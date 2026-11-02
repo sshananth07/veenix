@@ -175,7 +175,7 @@ The lettered number keeps Task 13.4 stable.
 
 The app shows project money to every `project:read` role, so a record's money fields follow `project:read`. Only sums across records need `report:read`, as Task 12.5b already enforces.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("sums vendor payments for a month, calculated by the server", async () => { /* owner, seeded POs: exact total in sen */ });
@@ -188,12 +188,12 @@ it("propose_set_po_terms shows current and new terms and changes nothing before 
 it("approved PO terms go through setPoTerms, including its total-of-100% rule", async () => { /* ... */ });
 ```
 
-- [ ] **Step 2: Implement, then run the tests**
+- [x] **Step 2: Implement, then run the tests**
 
 Run: `pnpm --filter api test financial`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**: `feat(api): financial questions and procurement catalogue actions`
+- [x] **Step 3: Commit**: `feat(api): financial questions and procurement catalogue actions`
 
 ### Task 13.4: Assistant evaluation
 

@@ -138,7 +138,7 @@ Concretely:
 - [x] 13.1 Record a vendor quote (with tests)
 - [x] 13.2 Propose budget lines (with tests)
 - [x] 13.3 Propose quote acceptance and vendor payment (with tests)
-- [ ] 13.3b Financial questions and procurement catalogue (with tests)
+- [x] 13.3b Financial questions and procurement catalogue (with tests)
 - [ ] 13.4 Assistant evaluation
 
 ### 14 Copilot on WhatsApp

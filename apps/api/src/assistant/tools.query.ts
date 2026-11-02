@@ -3,7 +3,14 @@ import { z } from "zod";
 import { can, formatDate, formatMoney2, type Permission, type Role } from "@veenix/shared";
 import { ctx } from "../common/context";
 import { forbidden, rule } from "../common/errors";
+import { InvoiceModel } from "../billing/invoice.model";
+import { DashboardService } from "../dashboard/dashboard.service";
+import { LeadModel } from "../leads/lead.model";
+import { PurchaseOrderModel } from "../procurement/purchase-order.model";
 import { ProjectModel } from "../projects/project.model";
+import { QuotationModel } from "../quotations/quotation.model";
+import { VariationOrderModel } from "../variations/variation-order.model";
+import { VendorModel } from "../vendors/vendor.model";
 import { SiteUpdateModel } from "../updates/site-update.model";
 import { TaskModel } from "../tasks/task.model";
 import { taskScope } from "../tasks/tasks.service";
@@ -172,17 +179,108 @@ defineTool<QueryInput>({
   run: runQuery,
 });
 
+const dashboard = new DashboardService();
+
+defineTool({
+  name: "get_business_report",
+  description: "The business report: lead win rates by source, signed deals, margins on signed projects, and spend committed and paid per vendor. Money is in sen.",
+  input: z.strictObject({}),
+  permission: "report:read",
+  level: "read",
+  run: async () => ({ content: JSON.stringify(await dashboard.reports()) }),
+});
+
 const id = (label: string): QueryField => ({ type: "id", label });
 const str = (label: string): QueryField => ({ type: "string", label });
 const date = (label: string): QueryField => ({ type: "date", label });
+const money = (label: string): QueryField => ({ type: "money", label });
+const num = (label: string): QueryField => ({ type: "number", label });
 
-// Money fields on projects wait for plan 13.
+// Headline fields only. A record's money follows its read permission, as in the app; sums of money need report:read.
+// lineItems stays out of every entity.
 defineQueryEntity("projects", {
   model: ProjectModel,
   permission: "project:read",
   fields: {
     _id: id("Project id"), code: str("Code"), name: str("Name"), clientName: str("Client"), stage: str("Stage"), city: str("City"),
     state: str("State"), createdAt: date("Created"), stageEnteredAt: date("In stage since"), targetStart: date("Target start"), targetHandover: date("Target handover"),
+    contractValue: money("Contract value"), budgetMin: money("Budget from"), budgetMax: money("Budget to"),
+  },
+});
+
+defineQueryEntity("client_milestones", {
+  model: ProjectModel,
+  permission: "project:read",
+  unwind: "milestones",
+  fields: {
+    _id: id("Project id"), code: str("Project code"), name: str("Project"), "milestones.name": str("Milestone"), "milestones.pct": num("Percent"),
+    "milestones.amount": money("Amount"), "milestones.status": str("Status"),
+  },
+});
+
+defineQueryEntity("purchase_orders", {
+  model: PurchaseOrderModel,
+  permission: "project:read",
+  fields: {
+    _id: id("PO id"), code: str("Code"), projectId: id("Project id"), vendorId: id("Vendor id"), description: str("Description"), amount: money("Amount"),
+    status: str("Status"), issueDate: date("Issued"), deliveryBy: date("Delivery by"),
+  },
+});
+
+defineQueryEntity("po_milestones", {
+  model: PurchaseOrderModel,
+  permission: "project:read",
+  unwind: "milestones",
+  fields: {
+    _id: id("PO id"), code: str("PO code"), projectId: id("Project id"), vendorId: id("Vendor id"), "milestones.label": str("Milestone"),
+    "milestones.amount": money("Amount"), "milestones.status": str("Status"), "milestones.invoiceNo": str("Vendor invoice no."),
+    "milestones.invoiceDate": date("Invoiced"), "milestones.paidAmount": money("Paid"), "milestones.paidDate": date("Paid on"), "milestones.method": str("Method"),
+  },
+});
+
+defineQueryEntity("invoices", {
+  model: InvoiceModel,
+  permission: "project:read",
+  fields: {
+    _id: id("Invoice id"), code: str("Code"), projectId: id("Project id"), invoiceDate: date("Invoice date"), dueDate: date("Due"),
+    amount: money("Amount before SST"), sstAmount: money("SST"), status: str("Status"), "einvoice.status": str("e-Invoice status"),
+  },
+});
+
+defineQueryEntity("quotations", {
+  model: QuotationModel,
+  permission: "project:read",
+  fields: {
+    _id: id("Quotation id"), code: str("Code"), revision: num("Revision"), projectId: id("Project id"), status: str("Status"),
+    sentAt: date("Sent"), acceptedAt: date("Accepted"), signedBy: str("Signed by"), createdAt: date("Created"),
+  },
+});
+
+defineQueryEntity("variation_orders", {
+  model: VariationOrderModel,
+  permission: "project:read",
+  fields: {
+    _id: id("VO id"), code: str("Code"), projectId: id("Project id"), title: str("Title"), reason: str("Reason"), amount: money("Amount"),
+    status: str("Status"), raisedAt: date("Raised"),
+  },
+});
+
+defineQueryEntity("vendors", {
+  model: VendorModel,
+  permission: "vendor:read",
+  fields: {
+    _id: id("Vendor id"), name: str("Name"), type: str("Trade"), location: str("Location"), active: { type: "boolean", label: "Active" },
+    jobsCount: num("Jobs"), experienceYears: num("Years of experience"),
+  },
+});
+
+defineQueryEntity("leads", {
+  model: LeadModel,
+  permission: "lead:read",
+  fields: {
+    _id: id("Lead id"), code: str("Code"), name: str("Name"), source: str("Source"), campaign: str("Campaign"), status: str("Status"),
+    propertyType: str("Property type"), city: str("City"), state: str("State"), budgetMin: money("Budget from"), budgetMax: money("Budget to"),
+    surveyAt: date("Site survey"), createdAt: date("Created"),
   },
 });
 

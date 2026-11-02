@@ -46,6 +46,11 @@ export async function poWithMilestone(milestoneId: Id) {
   return { po, milestone: findSub(po.milestones, milestoneId)! };
 }
 
+/** setPoTerms's check, also run by the assistant before it shows a card. */
+export function assertTermsEditable(po: { milestones: { status?: string | null }[] }) {
+  if (po.milestones.some((m) => m.status !== "PENDING")) throw rule("Payment terms are locked once a vendor invoice has been attached");
+}
+
 /** recordPayment's checks, also run by the assistant before it shows a card. */
 export function assertCanPay(milestone: { status?: string | null; amount: number }, paidAmount: number) {
   if (milestone.status === "PAID") throw rule("This milestone is already paid");
@@ -167,7 +172,7 @@ export class ProcurementService {
     await tx(async () => {
       const po = await PurchaseOrderModel.findById(poId);
       if (!po) throw notFound("Purchase order");
-      if (po.milestones.some((m) => m.status !== "PENDING")) throw rule("Payment terms are locked once a vendor invoice has been attached");
+      assertTermsEditable(po);
       po.set("milestones", termRows(po.amount, input.terms));
       await po.save();
       await audit("po.terms_changed", "purchase_order", po._id, { terms: input.terms }, po.projectId);

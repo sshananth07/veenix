@@ -1,15 +1,17 @@
 import { Types } from "mongoose";
 import { z } from "zod";
 import {
-  acceptQuoteInput, allocate, bomItemInput, formatDate, formatMoney2, formatNumber, lineTotal, PERFORMED_BY, quoteInput, vendorPaymentInput, withMarkup, WORK_UNITS,
+  acceptQuoteInput, allocate, bomItemInput, formatDate, formatMoney2, formatNumber, lineTotal, PERFORMED_BY, poTermsInput, quoteInput, requestQuotesInput,
+  vendorPaymentInput, withMarkup, WORK_UNITS,
 } from "@veenix/shared";
 import { audit } from "../audit/audit";
 import { notFound, rule } from "../common/errors";
 import { loadOrg } from "../orgs/org.model";
-import { assertCanAccept, assertCanPay, poWithMilestone, ProcurementService, rfqWithQuote } from "../procurement/procurement.service";
+import { assertCanAccept, assertCanPay, assertTermsEditable, poWithMilestone, ProcurementService, rfqWithQuote } from "../procurement/procurement.service";
+import { PurchaseOrderModel } from "../procurement/purchase-order.model";
 import { RfqModel } from "../procurement/rfq.model";
 import { BomService } from "../projects/bom.service";
-import { loadProject } from "../projects/project.model";
+import { loadProject, loadProjectBy } from "../projects/project.model";
 import { VendorModel } from "../vendors/vendor.model";
 import { defineApprovalAction, type Card } from "./pending";
 import { defineTool } from "./tools";
@@ -236,5 +238,64 @@ defineApprovalAction({
   apply: async ({ milestoneId, paidAmountSen, paidDate, method, bankRef }) => {
     await procurement.recordPayment(new Types.ObjectId(milestoneId), vendorPaymentInput.parse({ paidAmount: paidAmountSen, paidDate, method: method ?? undefined, bankRef, paidFrom: null }));
     return { paid: paidAmountSen };
+  },
+});
+
+// ---- Action catalogue: procurement entries, found through tool search ----
+
+defineApprovalAction({
+  name: "set_po_terms",
+  description: "Change a purchase order's vendor payment terms (poId from get_project). Give the full new list, totalling 100%.",
+  input: z.strictObject({ poId: id, terms }),
+  permission: "procurement:write",
+  validate: async ({ poId, terms }) => {
+    const po = await PurchaseOrderModel.findById(poId).lean();
+    if (!po) throw notFound("Purchase order");
+    assertTermsEditable(po);
+    const checked = poTermsInput.safeParse({ terms });
+    if (!checked.success) throw rule(checked.error.issues[0].message);
+    return {
+      title: `Change ${po.code}'s payment terms`,
+      lines: [{ label: "PO", value: `${po.code} · ${po.description} · ${await vendorName(po.vendorId)} · ${formatMoney2(po.amount)}` }],
+      changes: [{ label: "Payment terms", before: po.milestones.map((m) => `${m.label} ${m.pct}% (${formatMoney2(m.amount)})`).join(", ") || "None", after: termsText(po.amount, terms) }],
+      missing: [],
+      link: `/projects/${po.projectId}?tab=vendors`,
+    };
+  },
+  apply: async ({ poId, terms }) => {
+    await procurement.setPoTerms(new Types.ObjectId(poId), poTermsInput.parse({ terms }));
+    return { terms: terms.length };
+  },
+});
+
+defineApprovalAction({
+  name: "request_quotes",
+  description: "Ask vendors to quote a procurement package (bomItemId from get_project, vendor ids from search_records).",
+  input: z.strictObject({ bomItemId: id, vendorIds: z.array(id).min(1).max(20), respondBy: z.iso.date().nullable(), note: z.string().trim().max(1000).nullable() }),
+  permission: "procurement:write",
+  validate: async ({ bomItemId, vendorIds, respondBy, note }) => {
+    const project = await loadProjectBy({ "bomItems._id": new Types.ObjectId(bomItemId) }, "Package");
+    const pkg = project.bomItems.find((b) => b._id.equals(bomItemId))!;
+    const rfq = await RfqModel.findOne({ bomItemId }).lean();
+    const ids = [...(rfq?.quotes.map((q) => q.vendorId) ?? []), ...vendorIds.map((v) => new Types.ObjectId(v))];
+    const vendors = await VendorModel.find({ _id: { $in: ids } }).select("name active").lean();
+    if (vendorIds.some((v) => !vendors.some((x) => x._id.equals(v) && x.active))) throw rule("Pick active vendors from your list");
+    const names = (list: Types.ObjectId[]) => [...new Set(list.map((v) => vendors.find((x) => x._id.equals(v))?.name ?? "Unknown vendor"))].join(", ") || "Nobody";
+    const invited = rfq?.quotes.map((q) => q.vendorId) ?? [];
+    return {
+      title: `Ask for quotes on ${pkg.workPackage}`,
+      lines: [
+        { label: "Package", value: `${pkg.workPackage} (${project.name})` },
+        ...(respondBy ? [{ label: "Respond by", value: formatDate(respondBy) }] : []),
+        ...(note ? [{ label: "Note", value: note }] : []),
+      ],
+      changes: [{ label: "Invited", before: names(invited), after: names([...invited, ...vendorIds.map((v) => new Types.ObjectId(v))]) }],
+      missing: [],
+      link: `/projects/${project._id}?tab=vendors`,
+    };
+  },
+  apply: async ({ bomItemId, vendorIds, respondBy, note }) => {
+    await procurement.requestQuotes(new Types.ObjectId(bomItemId), requestQuotesInput.parse({ vendorIds, respondBy, note }));
+    return { invited: vendorIds.length };
   },
 });
