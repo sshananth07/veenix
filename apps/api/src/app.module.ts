@@ -37,11 +37,15 @@ import { DashboardController } from "./dashboard/dashboard.controller";
 import { DashboardService } from "./dashboard/dashboard.service";
 import { DocumentsController } from "./documents/documents.controller";
 import { DocumentsService } from "./documents/documents.service";
+import { UpdatesController } from "./updates/updates.controller";
+import { UpdatesService } from "./updates/updates.service";
+import { TasksController } from "./tasks/tasks.controller";
+import { TasksService } from "./tasks/tasks.service";
 
 // One module for the whole API. Later tasks append to `controllers` and `providers`.
 @Module({
   imports: [ClsModule.forRoot({ global: true, middleware: { mount: true } })],
-  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController, QuotationsController, ProcurementController, VariationsController, BillingController, FilesController, SettingsController, DashboardController, DocumentsController],
-  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService, BomService, QuotationsService, ProcurementService, VariationsService, BillingService, FilesService, SettingsService, DashboardService, DocumentsService],
+  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController, QuotationsController, ProcurementController, VariationsController, BillingController, FilesController, SettingsController, DashboardController, DocumentsController, UpdatesController, TasksController],
+  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService, BomService, QuotationsService, ProcurementService, VariationsService, BillingService, FilesService, SettingsService, DashboardService, DocumentsService, UpdatesService, TasksService],
 })
 export class AppModule {}

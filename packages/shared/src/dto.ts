@@ -175,3 +175,13 @@ export interface ReportsDto {
   vendorSpend: { id: Id; name: string; jobs: number; committed: Sen; paid: Sen }[];
 }
 export interface SearchResultDto { kind: "lead" | "project" | "vendor" | "quotation" | "po" | "invoice"; refId: Id; projectId: Id | null; title: string; subtitle: string }
+
+// ---- Site updates and tasks --------------------------------------------------
+export interface SiteUpdateDto {
+  id: Id; projectId: Id; kind: "progress" | "issue" | "material_request" | "delivery"; text: string;
+  photos: { path: string; name: string }[]; authorName: string; fromAssistant: boolean; createdAt: Date;
+}
+export interface TaskDto {
+  id: Id; title: string; status: "open" | "done"; dueAt: Date | null; assigneeId: Id | null; assigneeName: string | null;
+  projectId: Id | null; projectName: string | null; leadId: Id | null; createdAt: Date;
+}

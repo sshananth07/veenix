@@ -8,3 +8,4 @@ export * from "./variations";
 export * from "./billing";
 export * from "./files";
 export * from "./org";
+export * from "./assistant";

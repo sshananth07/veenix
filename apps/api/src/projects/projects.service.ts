@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Types } from "mongoose";
-import { bomCosts, composeAddress, getAttention, quotationReadiness, type ProjectDetailDto, type ProjectListItemDto, type ProjectUpdateInput } from "@veenix/shared";
+import { bomCosts, composeAddress, getAttention, quotationReadiness, type ProjectDetailDto, type ProjectListItemDto, type ProjectStage, type ProjectUpdateInput } from "@veenix/shared";
+import { audit } from "../audit/audit";
 import { notFound, rule } from "../common/errors";
 import { plain } from "../common/plain";
 import { afterCommit, tx } from "../common/tx";
@@ -55,6 +56,21 @@ export class ProjectsService {
       await project.save();
       if (oldPhoto && oldPhoto !== project.photoPath) afterCommit(() => removeObject(oldPhoto));
       indexProject(project);
+    });
+  }
+
+  /** Moves a project to another stage without the whole project form. Returns what it was, for undo. */
+  async setStage(id: Types.ObjectId, stage: ProjectStage, cancelReason: string | null) {
+    return tx(async () => {
+      const project = await loadProject(id);
+      const previous = { stage: project.stage as ProjectStage, cancelReason: project.cancelReason ?? null, stageEnteredAt: project.stageEnteredAt };
+      if (stage === "CANCELLED" && !cancelReason) throw rule("Give a reason for cancelling");
+      if (stage !== project.stage) project.stageEnteredAt = new Date();
+      project.set({ stage, cancelReason: stage === "CANCELLED" ? cancelReason : null });
+      await project.save();
+      await audit("project.stage", "project", project._id, { from: previous.stage, to: stage }, project._id);
+      indexProject(project);
+      return { previous };
     });
   }
 

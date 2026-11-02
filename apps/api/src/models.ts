@@ -17,3 +17,5 @@ import "./variations/variation-order.model";
 import "./billing/invoice.model";
 import "./files/file.model";
 import "./documents/document.model";
+import "./updates/site-update.model";
+import "./tasks/task.model";
