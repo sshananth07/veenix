@@ -74,6 +74,18 @@ export class ProjectsService {
     });
   }
 
+  /** Puts back the stage setStage replaced, only if nobody has moved the project on since. */
+  async restoreStage(id: Types.ObjectId, expected: ProjectStage, previous: { stage: ProjectStage; cancelReason: string | null; stageEnteredAt: Date }) {
+    await tx(async () => {
+      const project = await loadProject(id);
+      if (project.stage !== expected) throw rule("This has changed since. Open it in Veenix.");
+      project.set({ stage: previous.stage, cancelReason: previous.cancelReason, stageEnteredAt: new Date(previous.stageEnteredAt) });
+      await project.save();
+      await audit("project.stage", "project", project._id, { from: expected, to: previous.stage, undo: true }, project._id);
+      indexProject(project);
+    });
+  }
+
   /** Who the project is assigned to. Each person must be an active member holding that same role. */
   async setAssignees(id: Types.ObjectId, input: { assignees: { userId: string; role: "project_manager" | "site_staff" }[] }) {
     const members = await MembershipModel.find({ orgId: ctx().orgId, status: "active", userId: { $in: input.assignees.map((a) => new Types.ObjectId(a.userId)) } }).lean();

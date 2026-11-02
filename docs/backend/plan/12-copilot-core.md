@@ -59,7 +59,7 @@ The database enforces one running job per lane, in the repo's usual style:
 jobSchema.index({ lane: 1 }, { unique: true, partialFilterExpression: { status: "running", lane: { $type: "string" } } });
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("runs jobs in one lane in order, oldest first", async () => {
@@ -78,12 +78,12 @@ it("a failed job holds back newer jobs in its lane", async () => {
 it("uses the type's retry delay and calls onGiveUp at the last attempt", async () => { /* ... */ });
 ```
 
-- [ ] **Step 2: Run them to confirm they fail**
+- [x] **Step 2: Run them to confirm they fail**
 
 Run: `pnpm --filter api test jobs`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `claimNext(skipLanes: Set<string>)`:
 1. Find the oldest due job (`sort: { runAt: 1, _id: 1 }`) with `lane` not in `skipLanes`.
@@ -93,12 +93,12 @@ Expected: FAIL.
 
 `runBatch` keeps one `skipLanes` set per batch. Existing types keep `2^attempts` minutes, 8 attempts and 120 s. Mark the serial runner with `// ponytail: one runner per instance, so a slow assistant turn delays mail on that instance; run assistant jobs on their own kick if this shows up.`
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `pnpm --filter api test jobs`
 Expected: PASS, including the two existing tests.
 
-- [ ] **Step 5: Commit**: `feat(api): job lanes and per-type retries`
+- [x] **Step 5: Commit**: `feat(api): job lanes and per-type retries`
 
 ### Task 12.3: Running as a member, permissions, personal live events
 
@@ -122,7 +122,7 @@ Add to roles:
 - `task:write`: sales, project_manager, site_staff, procurement, finance.
 - `concept:generate`: sales, project_manager.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("a removed member gets null", async () => { expect(await memberCtx(org, removedUser)).toBeNull(); });
@@ -136,14 +136,14 @@ it("an event with a userId only reaches that user", () => {
 });
 ```
 
-- [ ] **Step 2: Implement.** Move the membership and scope lookup out of `AccessGuard` without changing its behaviour. `readTicket` also returns `userId` from the token's `sub`, and `liveStream` takes it.
+- [x] **Step 2: Implement.** Move the membership and scope lookup out of `AccessGuard` without changing its behaviour. `readTicket` also returns `userId` from the token's `sub`, and `liveStream` takes it.
 
-- [ ] **Step 3: Run the tests**
+- [x] **Step 3: Run the tests**
 
 Run: `pnpm --filter @veenix/shared build; pnpm --filter api test member-ctx live access`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**: `feat(api): run work as a member; personal live events`
+- [x] **Step 4: Commit**: `feat(api): run work as a member; personal live events`
 
 ### Task 12.4: Site updates and tasks
 
@@ -169,7 +169,7 @@ Projects have no activity log today. `projectUpdateInput` already means "edit pr
 
 `site_updates` uses `tenantPlugin` with `projectField: "projectId"`. `tasks` uses `tenantPlugin` with **no** `projectField`, because the plugin's scope filter would hide a project-scoped user's own general tasks. `TasksService` applies the scope itself: scoped roles see tasks assigned to or created by them, plus tasks on projects in scope.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("site staff can add an update only on an assigned project", async () => {
@@ -181,14 +181,14 @@ it("assignee must be an active member of the organization", async () => { /* ...
 it("setStage records the time, the audit event, and returns the previous stage", async () => { /* ... */ });
 ```
 
-- [ ] **Step 2: Implement.** Photos go through `claim(ref, "photos")`. `add` publishes `changed({ kind: "project", projectId })`.
+- [x] **Step 2: Implement.** Photos go through `claim(ref, "photos")`. `add` publishes `changed({ kind: "project", projectId })`.
 
-- [ ] **Step 3: Run the tests**
+- [x] **Step 3: Run the tests**
 
 Run: `pnpm --filter api test updates tasks`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**: `feat(api): site updates and tasks`
+- [x] **Step 4: Commit**: `feat(api): site updates and tasks`
 
 ### Task 12.5: Tool registry
 
@@ -236,7 +236,7 @@ Tool search is the server tool `{ type: "tool_search_tool_bm25_20251119", name: 
 
 ⚠ Verify: `z.toJSONSchema(input, { io: "input" })` output against what `strict: true` accepts. Claude's strict mode supports a subset of JSON Schema, so LLM-facing tool inputs may need simple schemas of their own. Keep them in `packages/shared/src/schemas/assistant.ts` and let the existing service validate again.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("offers each role only its tools, in a stable order", () => {
@@ -269,14 +269,14 @@ it("no registered tool uses a forbidden permission or deletes anything", () => {
 it("report_unsupported_request records an audit event and changes nothing else", async () => { /* ... */ });
 ```
 
-- [ ] **Step 2: Implement.**
+- [x] **Step 2: Implement.**
 
-- [ ] **Step 3: Run the tests**
+- [x] **Step 3: Run the tests**
 
 Run: `pnpm --filter api test tools`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**: `feat(api): assistant tool registry and project tools`
+- [x] **Step 4: Commit**: `feat(api): assistant tool registry and project tools`
 
 ### Task 12.5b: `query_records`
 

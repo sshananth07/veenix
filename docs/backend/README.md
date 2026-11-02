@@ -122,12 +122,12 @@ Concretely:
 - [ ] 11.1 Provision the services
 - [ ] 11.2 Vercel projects and environment variables
 
-### 12 Copilot core and in-app chat (planned, not started)
+### 12 Copilot core and in-app chat
 - [ ] 12.1 Before building: Meta's terms and the speech spike (owner)
-- [ ] 12.2 Job lanes and per-type retries (with tests)
-- [ ] 12.3 Running as a member, permissions, personal live events (with tests)
-- [ ] 12.4 Site updates and tasks (with tests)
-- [ ] 12.5 Tool registry (with tests)
+- [x] 12.2 Job lanes and per-type retries (with tests)
+- [x] 12.3 Running as a member, permissions, personal live events (with tests)
+- [x] 12.4 Site updates and tasks (with tests)
+- [x] 12.5 Tool registry (with tests)
 - [ ] 12.5b `query_records` (with tests)
 - [ ] 12.6 Turn loop (with tests)
 - [ ] 12.7 Approval and undo (with tests)
