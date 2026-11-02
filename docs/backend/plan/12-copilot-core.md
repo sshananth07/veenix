@@ -15,7 +15,7 @@
 
 ## Global constraints
 - **Don't run:** nothing here provisions Vercel, Meta or vendor accounts. Paid API calls need the owner's approval.
-- **Model:** `claude-opus-5-5` at `medium` effort, `tool_choice: auto`, `strict: true` on tools, `fallbacks: "default"` with beta `server-side-fallback-2026-07-01`. Forced `tool_choice` returns a 400. ⚠ Verify against the installed SDK.
+- **Model (as built):** OpenAI Responses API, `OPENAI_MODEL` (default `gpt-6.1-sol`) at `low` reasoning effort, `tool_choice: auto`, `strict: true` function tools, `store: false` with `reasoning.encrypted_content` replayed, hosted `tool_search` for deferred tools. The owner switched from Claude to OpenAI.
 - **Limits (constants in `assistant/limits.ts`):** 8 loop turns per message, 10 tool calls per message, 20 inbound messages per sender per minute, a daily LLM spend cap per organisation.
 - **Tools never accept** an organisation, user, file URL or raw field map. Every ID is loaded through the tenant plugin.
 - **Writes run one at a time** because `projects` uses `optimisticConcurrency`. Reads may run in parallel. All results for one model response go back in one user message, with `is_error: true` on failures.
@@ -380,7 +380,7 @@ Expected: PASS.
 
 **Each request:** `system` is the cached `SYSTEM_PROMPT`; `tools` is `toolsFor(role)`; `messages` is about the last 15 stored messages, then the user's message, then a `{ role: "system" }` context message with today's date, role, current project and any notes. ⚠ Verify the mid-conversation system message rules for this model. Store the context message so later requests replay the same prefix.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("loops until end_turn and saves every response before running its tools", async () => { /* ... */ });
@@ -395,18 +395,18 @@ it("resumes after a crash without repeating tools", async () => {
 });
 ```
 
-- [ ] **Step 2: Implement.** Register `assistant.turn` with retry delays of 5 s, 20 s and 60 s, `maxAttempts: 4`, and `onGiveUp` sending "Sorry, that didn't go through. Please try again." through the reply sink. The handler wraps everything in `runAsMember`. Spend is tracked per organisation per day in Redis from `response.usage`.
+- [x] **Step 2: Implement.** Register `assistant.turn` with retry delays of 5 s, 20 s and 60 s, `maxAttempts: 4`, and `onGiveUp` sending "Sorry, that didn't go through. Please try again." through the reply sink. The handler wraps everything in `runAsMember`. Spend is tracked per organisation per day in Redis from `response.usage`.
 
-- [ ] **Step 3: Run the tests**
+- [x] **Step 3: Run the tests**
 
 Run: `pnpm --filter api test turn`
 Expected: PASS.
 
-- [ ] **Step 4: Live check (owner approves the small spend).** With a real key and the local stack: send "add a progress update to <project>: tiling done" through a scratch script. Expected: one site update, one audit event, a sensible reply. Also confirm `usage.cache_read_input_tokens` is above zero on the second message.
+- [ ] **Step 4: Live check (owner approves the small spend).** *(Pending: needs `OPENAI_API_KEY`. Built on OpenAI's Responses API, not Claude: see the ledger notes in the 12.6 commit.)* With a real key and the local stack: send "add a progress update to <project>: tiling done" through a scratch script. Expected: one site update, one audit event, a sensible reply. Also confirm `usage.cache_read_input_tokens` is above zero on the second message.
 
 Then send a request that needs a deferred tool, to confirm tool search works with `strict: true` on this model and that the cache still hits afterwards. If they don't combine, turn `strict` off on deferred tools only, because `executeTool` already validates with Zod. Record the outcome in spec §5.7.
 
-- [ ] **Step 5: Commit**: `feat(api): assistant turn loop`
+- [x] **Step 5: Commit**: `feat(api): assistant turn loop`
 
 ### Task 12.7: Approval and undo
 

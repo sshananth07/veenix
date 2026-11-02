@@ -36,6 +36,7 @@ const messageSchema = new Schema(
     attachments: { type: [attachmentSchema], default: [] },
     sourceEventId: { type: String, default: null },
     turnOf: { type: ObjectId, default: null }, // the user message this belongs to
+    stop: { type: String, default: null }, // for "assistant": why the response ended ("completed", "incomplete:max_output_tokens", "refusal")
   },
   { collection: "assistant_messages", timestamps: { createdAt: true, updatedAt: false } },
 );

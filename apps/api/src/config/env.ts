@@ -25,6 +25,9 @@ const schema = z.object({
   S3_FORCE_PATH_STYLE: z.stringbool().default(false),
   SMTP_URL: z.string().min(1),
   MAIL_FROM: z.string().min(3),
+  // The assistant. Optional so the API boots without it; the assistant then replies that it is off.
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().default("gpt-6.1-sol"),
 });
 
 export const env = schema.parse(process.env);
