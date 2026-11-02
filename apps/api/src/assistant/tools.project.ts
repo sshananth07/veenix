@@ -31,7 +31,7 @@ defineTool({
 
 defineTool({
   name: "get_project",
-  description: "A project's name, code, stage, client, work items, procurement packages and assigned staff.",
+  description: "A project's name, code, stage, client, work items, assigned staff, and procurement packages with their vendor quote ids, PO and payment milestone ids. Money is in sen.",
   input: z.strictObject({ projectId: id }),
   permission: "project:read",
   level: "read",
@@ -41,7 +41,14 @@ defineTool({
       content: json({
         id: p.id, name: p.name, code: p.code, stage: p.stage, clientName: p.clientName, siteAddress: p.siteAddress,
         workItems: p.workItems.map((w) => w.name),
-        packages: getPackages(p).map((k) => ({ item: k.bom.workPackage, description: k.bom.description, stage: k.stage })),
+        packages: getPackages(p).map((k) => ({
+          bomItemId: k.bom.id, item: k.bom.workPackage, description: k.bom.description, stage: k.stage,
+          quotes: (k.rfq?.quotes ?? []).map((q) => ({ quoteId: q.id, vendor: q.vendor.name, received: !!q.receivedAt, quotedPriceSen: q.receivedAt ? q.quotedPrice : null })),
+          po: !k.po ? null : {
+            poId: k.po.id, code: k.po.code, vendor: k.po.vendor.name, amountSen: k.po.amount,
+            milestones: k.po.milestones.map((m) => ({ milestoneId: m.id, label: m.label, pct: m.pct, amountSen: m.amount, status: m.status })),
+          },
+        })),
         assignees: p.assignees.map((a) => ({ userId: a.userId, name: a.name, role: a.role })),
       }),
     };

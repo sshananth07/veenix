@@ -93,6 +93,16 @@ export class ProcurementService {
     touched(rfq.projectId);
   }
 
+  /** Undoes a recorded first quote: back to invited. Refused once anything has moved on since. */
+  async clearReceivedQuote(quoteId: Id, expected: { receivedAt: Date }) {
+    const { rfq, quote } = await rfqWithQuote(quoteId);
+    await assertNotAwarded(rfq._id);
+    if (quote.revisions.length || quote.receivedAt?.getTime() !== expected.receivedAt.getTime()) throw rule("This has changed since. Open it in Veenix.");
+    quote.set({ quotedPrice: 0, leadTimeDays: 0, warrantyMonths: 0, notes: null, receivedAt: null, attachmentPath: null, attachmentName: null });
+    await rfq.save();
+    touched(rfq.projectId);
+  }
+
   /** A revised quote after negotiation. The previous offer goes into the history; the latest stays on the quote. */
   async reviseQuote(quoteId: Id, input: QuoteBody) {
     const { rfq, quote } = await rfqWithQuote(quoteId);

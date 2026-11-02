@@ -135,7 +135,7 @@ Concretely:
 - [x] 12.9 Updates tab and tasks screen
 
 ### 13 Copilot procurement and budget
-- [ ] 13.1 Record a vendor quote (with tests)
+- [x] 13.1 Record a vendor quote (with tests)
 - [ ] 13.2 Propose budget lines (with tests)
 - [ ] 13.3 Propose quote acceptance and vendor payment (with tests)
 - [ ] 13.3b Financial questions and procurement catalogue (with tests)

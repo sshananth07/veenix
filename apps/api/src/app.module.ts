@@ -3,6 +3,7 @@ import "./documents/stored"; // registers the document.snapshot job handler
 import "./einvoice/einvoice.jobs"; // registers the einvoice.submit and einvoice.poll job handlers
 import "./assistant/tools.project"; // registers the assistant's project tools
 import "./assistant/tools.query"; // registers query_records and its entities
+import "./assistant/tools.procurement"; // registers the procurement and budget tools
 import "./assistant/turn"; // registers the assistant.turn job handler
 import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";

@@ -42,7 +42,7 @@
   - `ProcurementService.clearReceivedQuote(quoteId, expected: { receivedAt: Date }): Promise<void>`: resets a received quote to the invited state. It refuses when the package is awarded, when revisions exist, or when `receivedAt` differs from `expected`.
   - Undo: `clearReceivedQuote`. A revision has no undo, so the reply links to the record instead.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("records the quote on the invited row", ...);
@@ -53,12 +53,12 @@ it("undo restores the invited state and refuses if the quote changed since", ...
 it("a quoteId from another organization is not found", ...);
 ```
 
-- [ ] **Step 2: Implement, then run the tests**
+- [x] **Step 2: Implement, then run the tests**
 
 Run: `pnpm --filter api test tools.procurement`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**: `feat(api): record vendor quotes through the assistant`
+- [x] **Step 3: Commit**: `feat(api): record vendor quotes through the assistant`
 
 ### Task 13.2: Propose budget lines
 
