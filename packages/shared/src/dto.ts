@@ -185,3 +185,20 @@ export interface TaskDto {
   id: Id; title: string; status: "open" | "done"; dueAt: Date | null; assigneeId: Id | null; assigneeName: string | null;
   projectId: Id | null; projectName: string | null; leadId: Id | null; createdAt: Date;
 }
+
+// ---- Assistant ---------------------------------------------------------------
+export interface AssistantCardDto {
+  id: Id; status: "pending" | "applied" | "rejected"; expired: boolean; title: string;
+  lines: { label: string; value: string }[]; changes: { label: string; before: string; after: string }[]; missing: string[]; link: string | null;
+}
+export interface AssistantMessageDto {
+  id: Id; role: "user" | "assistant"; text: string; createdAt: Date;
+  photos: { name: string; url: string }[];
+  /** Assistant only: approval cards, query tables, applied changes (undoable), and the tools it used. */
+  cards: AssistantCardDto[];
+  tables: { columns: string[]; rows: string[][] }[];
+  changes: { toolCallId: Id; text: string; undone: boolean; undoable: boolean }[];
+  steps: { name: string; isError: boolean }[];
+  seconds: number | null;
+}
+export interface AssistantConversationDto { id: Id | null; messages: AssistantMessageDto[]; busy: boolean }

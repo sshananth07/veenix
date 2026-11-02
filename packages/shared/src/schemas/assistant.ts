@@ -20,3 +20,10 @@ export const taskInput = z.strictObject({
   leadId: objectId.nullable().default(null),
 });
 export type TaskInput = z.infer<typeof taskInput>;
+
+export const assistantMessageInput = z.strictObject({
+  projectId: objectId.nullable().default(null),
+  text: z.string().trim().min(1, "Type a message").max(4000),
+  photos: z.array(uploadRef).max(5, "Send up to 5 photos at a time").default([]),
+});
+export type AssistantMessageInput = z.infer<typeof assistantMessageInput>;
