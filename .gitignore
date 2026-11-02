@@ -16,3 +16,4 @@ dist
 apps/web/uploads
 apps/web/prisma/dev.db
 apps/web/prisma/dev.db-journal
+.superpowers

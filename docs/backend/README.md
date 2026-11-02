@@ -16,6 +16,12 @@ This folder holds the design and the step-by-step build guide for moving Veenix 
 | [plan/09-data-migration.md](plan/09-data-migration.md) | Copying everything in `dev.db` and `uploads/` into Mongo and storage |
 | [plan/10-lhdn-myinvois.md](plan/10-lhdn-myinvois.md) | Real e-invoice submission to LHDN (pre-production first) |
 | [plan/11-deployment.md](plan/11-deployment.md) | **Later.** Vercel, Atlas, Upstash, R2 and email provider setup. Don't run it yet |
+| [copilot-spec.md](copilot-spec.md) | **What** the AI Copilot is and why: WhatsApp and in-app assistant, tools, approvals, 3D room concepts |
+| [plan/12-copilot-core.md](plan/12-copilot-core.md) | Job lanes, running as a member, site updates and tasks, tool registry, `query_records`, turn loop, approvals, undo and the action catalogue, in-app chat |
+| [plan/13-copilot-procurement-and-budget.md](plan/13-copilot-procurement-and-budget.md) | Vendor quotes, budget lines, quote acceptance and vendor payment tools; financial questions and procurement catalogue; the assistant evaluation |
+| [plan/14-copilot-whatsapp.md](plan/14-copilot-whatsapp.md) | Phone linking, webhook, sending, voice notes and buttons |
+| [plan/15-copilot-proactive.md](plan/15-copilot-proactive.md) | Morning summary, task reminders, audio retention |
+| [plan/16-copilot-room-concepts.md](plan/16-copilot-room-concepts.md) | 3D spike, concept generation, WhatsApp delivery, the viewer in chat |
 
 ## How to use the plan
 
@@ -115,3 +121,38 @@ Concretely:
 ### 11 Deployment (later, don't start yet)
 - [ ] 11.1 Provision the services
 - [ ] 11.2 Vercel projects and environment variables
+
+### 12 Copilot core and in-app chat (planned, not started)
+- [ ] 12.1 Before building: Meta's terms and the speech spike (owner)
+- [ ] 12.2 Job lanes and per-type retries (with tests)
+- [ ] 12.3 Running as a member, permissions, personal live events (with tests)
+- [ ] 12.4 Site updates and tasks (with tests)
+- [ ] 12.5 Tool registry (with tests)
+- [ ] 12.5b `query_records` (with tests)
+- [ ] 12.6 Turn loop (with tests)
+- [ ] 12.7 Approval and undo (with tests)
+- [ ] 12.8 In-app chat
+- [ ] 12.9 Updates tab and tasks screen
+
+### 13 Copilot procurement and budget
+- [ ] 13.1 Record a vendor quote (with tests)
+- [ ] 13.2 Propose budget lines (with tests)
+- [ ] 13.3 Propose quote acceptance and vendor payment (with tests)
+- [ ] 13.3b Financial questions and procurement catalogue (with tests)
+- [ ] 13.4 Assistant evaluation
+
+### 14 Copilot on WhatsApp
+- [ ] 14.1 Phone linking (with tests)
+- [ ] 14.2 Webhook (with tests)
+- [ ] 14.3 Sending (with tests)
+- [ ] 14.4 Inbound job, voice and buttons (with tests)
+
+### 15 Copilot proactive messages
+- [ ] 15.1 Morning summary (with tests)
+- [ ] 15.2 Task reminders (with tests)
+
+### 16 Copilot 3D room concepts
+- [ ] 16.1 Spike (owner judges)
+- [ ] 16.2 Concepts and generation jobs (with tests)
+- [ ] 16.3 WhatsApp delivery (with tests)
+- [ ] 16.4 Viewer in the chat and on its own page
