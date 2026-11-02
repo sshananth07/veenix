@@ -12,9 +12,11 @@ const jobSchema = new Schema(
     lockedUntil: { type: Date, default: null },
     lastError: { type: String, default: null },
     doneAt: { type: Date, default: null },
+    lane: { type: String, default: null }, // jobs sharing a lane run one at a time, oldest first
   },
   { collection: "jobs", timestamps: true },
 );
 jobSchema.index({ status: 1, runAt: 1 });
+jobSchema.index({ lane: 1 }, { unique: true, partialFilterExpression: { status: "running", lane: { $type: "string" } } });
 jobSchema.index({ doneAt: 1 }, { expireAfterSeconds: 30 * 86_400 });
 export const JobModel = model("Job", jobSchema);
