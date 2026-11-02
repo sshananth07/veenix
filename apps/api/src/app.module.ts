@@ -1,6 +1,8 @@
 import "./mail/mail"; // registers the mail.send job handler
 import "./documents/stored"; // registers the document.snapshot job handler
 import "./einvoice/einvoice.jobs"; // registers the einvoice.submit and einvoice.poll job handlers
+import "./assistant/tools.project"; // registers the assistant's project tools
+import "./assistant/tools.query"; // registers query_records and its entities
 import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { ClsModule } from "nestjs-cls";

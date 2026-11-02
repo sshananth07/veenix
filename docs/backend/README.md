@@ -128,7 +128,7 @@ Concretely:
 - [x] 12.3 Running as a member, permissions, personal live events (with tests)
 - [x] 12.4 Site updates and tasks (with tests)
 - [x] 12.5 Tool registry (with tests)
-- [ ] 12.5b `query_records` (with tests)
+- [x] 12.5b `query_records` (with tests)
 - [ ] 12.6 Turn loop (with tests)
 - [ ] 12.7 Approval and undo (with tests)
 - [ ] 12.8 In-app chat

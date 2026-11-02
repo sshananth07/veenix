@@ -332,7 +332,7 @@ The result's `content` holds the rows plus `truncated: true` when the limit cut 
 
 Mark it with `// ponytail: no joins, so a cross-entity question takes several calls; add a fixed join to the map when the log shows one is common.`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("counts site updates per project", async () => { /* groupBy projectId, metric count */ });
@@ -350,14 +350,14 @@ it("the pipeline contains only allowed stages", () => {
 });
 ```
 
-- [ ] **Step 2: Implement.**
+- [x] **Step 2: Implement.**
 
-- [ ] **Step 3: Run the tests**
+- [x] **Step 3: Run the tests**
 
 Run: `pnpm --filter api test tools.query`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**: `feat(api): query_records for open questions`
+- [x] **Step 4: Commit**: `feat(api): query_records for open questions`
 
 ### Task 12.6: Turn loop
 
