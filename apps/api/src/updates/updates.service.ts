@@ -7,7 +7,7 @@ import { notFound } from "../common/errors";
 import { afterCommit, tx } from "../common/tx";
 import { changed } from "../live/live";
 import { loadProject } from "../projects/project.model";
-import { claim, removeObject } from "../storage/storage";
+import { claim, downloadUrl, removeObject } from "../storage/storage";
 import { UserModel } from "../users/user.model";
 import { SiteUpdateModel } from "./site-update.model";
 
@@ -43,9 +43,10 @@ export class UpdatesService {
     await loadProject(projectId);
     const rows = await SiteUpdateModel.find({ projectId }).sort({ createdAt: -1 }).limit(200).lean();
     const users = await UserModel.find({ _id: { $in: rows.map((r) => r.authorId) } }).select("name").lean();
-    return rows.map((r) => ({
-      id: String(r._id), projectId: String(r.projectId), kind: r.kind, text: r.text, photos: r.photos.map((p) => ({ path: p.path, name: p.name })),
+    return Promise.all(rows.map(async (r) => ({
+      id: String(r._id), projectId: String(r.projectId), kind: r.kind, text: r.text,
+      photos: await Promise.all(r.photos.map(async (p) => ({ name: p.name, url: await downloadUrl(p.path, p.name) }))),
       authorName: users.find((u) => r.authorId?.equals(u._id))?.name ?? "", fromAssistant: !!r.messageId, createdAt: r.createdAt,
-    }));
+    })));
   }
 }

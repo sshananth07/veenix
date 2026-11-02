@@ -92,6 +92,6 @@ async function toDtos(rows: Lean[]): Promise<TaskDto[]> {
   return rows.map((r) => ({
     id: String(r._id), title: r.title, status: r.status, dueAt: r.dueAt, assigneeId: r.assigneeId ? String(r.assigneeId) : null,
     assigneeName: name(users, r.assigneeId), projectId: r.projectId ? String(r.projectId) : null, projectName: name(projects, r.projectId),
-    leadId: r.leadId ? String(r.leadId) : null, createdAt: r.createdAt,
+    leadId: r.leadId ? String(r.leadId) : null, fromAssistant: !!r.messageId, createdAt: r.createdAt,
   }));
 }

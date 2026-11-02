@@ -17,6 +17,7 @@ const PRIORITY_STYLE: Record<Priority, { label: string; pill: string; icon: stri
 
 const TAB_LABEL: Record<ProjectTabKey, string> = {
   overview: "Overview",
+  updates: "Updates",
   bom: "Work & BOM",
   vendors: "Vendors",
   quotation: "Quotation",

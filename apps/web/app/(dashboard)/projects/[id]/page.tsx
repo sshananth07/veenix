@@ -1,4 +1,4 @@
-import { can, type MemberDto, type ProjectDetailDto } from "@veenix/shared";
+import { can, type MemberDto, type ProjectDetailDto, type SiteUpdateDto, type TaskDto } from "@veenix/shared";
 import { api } from "@/lib/api";
 import { requireOrg } from "@/lib/session";
 import { LiveRefresh } from "@/components/LiveRefresh";
@@ -14,6 +14,7 @@ import { QuotationTab } from "@/components/projects/QuotationTab";
 import { VariationOrdersTab } from "@/components/projects/VariationOrdersTab";
 import { PaymentsTab } from "@/components/projects/PaymentsTab";
 import { FilesTab } from "@/components/projects/FilesTab";
+import { UpdatesTab } from "@/components/projects/UpdatesTab";
 
 export default async function ProjectDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; v?: string; view?: string; invoice?: string }> }) {
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
@@ -24,6 +25,9 @@ export default async function ProjectDetailPage(props: { params: Promise<{ id: s
   ]);
 
   const tab: ProjectTabKey = PROJECT_TABS.find((t) => t.key === searchParams.tab)?.key ?? "overview";
+  const [updates, tasks] = tab === "updates"
+    ? await Promise.all([api<SiteUpdateDto[]>(`/projects/${project.id}/updates`), api<TaskDto[]>(`/tasks?projectId=${project.id}`)])
+    : [[], []];
   const { costs, readiness, pricing: settings } = project;
 
   const packages = getPackages(project);
@@ -48,6 +52,7 @@ export default async function ProjectDetailPage(props: { params: Promise<{ id: s
 
       <div className="pt-1">
         {tab === "overview" && <OverviewTab project={project} costs={costs} readiness={readiness} />}
+        {tab === "updates" && <UpdatesTab projectId={project.id} updates={updates} tasks={tasks} canWrite={can(role, "update:write")} canDeleteTasks={can(role, "task:write")} />}
         {tab === "bom" && <BomTab project={project} costs={costs} />}
         {tab === "vendors" && <VendorsTab project={project} />}
         {tab === "quotation" && (

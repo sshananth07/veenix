@@ -2,6 +2,7 @@ export type { ProjectDetailDto as ProjectDetail } from "@veenix/shared";
 
 export const PROJECT_TABS = [
   { key: "overview", label: "Overview" },
+  { key: "updates", label: "Updates" },
   { key: "bom", label: "Work & BOM" },
   { key: "vendors", label: "Vendors" },
   { key: "quotation", label: "Quotation" },
