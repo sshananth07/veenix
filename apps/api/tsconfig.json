@@ -7,7 +7,9 @@
     "emitDecoratorMetadata": true,
     "jsx": "react-jsx",
     "declaration": false,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    // pnpm doesn't hoist @types/react, so @react-pdf's typings would see untyped React.
+    "paths": { "react": ["./node_modules/@types/react/index.d.ts"] }
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"]
