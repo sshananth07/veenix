@@ -22,6 +22,8 @@ export const taskInput = z.strictObject({
 export type TaskInput = z.infer<typeof taskInput>;
 
 export const assistantMessageInput = z.strictObject({
+  /** null starts a new chat, linked to projectId when sent from a project. */
+  conversationId: objectId.nullable().default(null),
   projectId: objectId.nullable().default(null),
   text: z.string().trim().min(1, "Type a message").max(4000),
   photos: z.array(uploadRef).max(5, "Send up to 5 photos at a time").default([]),

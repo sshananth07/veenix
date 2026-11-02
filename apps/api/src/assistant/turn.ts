@@ -45,6 +45,7 @@ export async function startTurn(input: { conversationId: Types.ObjectId; text: s
       transcript: input.transcript ?? null, sourceEventId: input.sourceEventId ?? null,
     }]);
     await AssistantMessageModel.updateOne({ _id: m._id }, { $set: { turnOf: m._id } });
+    await AssistantConversationModel.updateOne({ _id: input.conversationId }, { $set: { lastMessageAt: new Date() } });
     const payload = { conversationId: String(input.conversationId), messageId: String(m._id), userId: String(ctx().userId) };
     await enqueue("assistant.turn", payload, new Date(), input.lane ?? `conv:${input.conversationId}`);
     return { messageId: m._id };

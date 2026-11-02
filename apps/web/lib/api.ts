@@ -52,12 +52,17 @@ export async function api<T>(path: string, init?: Init): Promise<T> {
 
 /** For server actions: the API's message becomes the dialog's error. */
 export async function apiAction(path: string, init: Init): Promise<ActionResult> {
+  const r = await apiActionData(path, init);
+  return r.ok ? ok() : r;
+}
+
+/** Like apiAction, with the response. Client components use it where a refusal must show in place, not redirect. */
+export async function apiActionData<T>(path: string, init: Init = {}): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   try {
-    await call(path, init);
-    return ok();
+    return { ok: true, data: (await call(path, init)) as T };
   } catch (e) {
     onAuthError(e);
-    if (e instanceof ApiError && e.status < 500) return fail(e.message);
+    if (e instanceof ApiError && e.status < 500) return { ok: false, error: e.message };
     throw e;
   }
 }

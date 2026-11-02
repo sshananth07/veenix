@@ -10,11 +10,15 @@ const conversationSchema = new Schema(
     userId: { type: ObjectId, required: true },
     channel: { type: String, enum: ["app", "whatsapp"], required: true },
     projectId: { type: ObjectId, default: null },
+    title: { type: String, default: "New chat" }, // the first message, shortened
+    lastMessageAt: { type: Date, default: () => new Date() },
     notes: { type: [String], default: [] }, // server-written facts for the next turn's context (approvals and undos)
   },
   { collection: "assistant_conversations", timestamps: true },
 );
-conversationSchema.index({ orgId: 1, userId: 1, channel: 1, projectId: 1 }, { unique: true });
+// In the app a user keeps many chats (history, search, delete); WhatsApp is one thread per user.
+conversationSchema.index({ orgId: 1, userId: 1, lastMessageAt: -1 });
+conversationSchema.index({ orgId: 1, userId: 1 }, { unique: true, partialFilterExpression: { channel: "whatsapp" } });
 conversationSchema.plugin(tenantPlugin);
 export const AssistantConversationModel = model("AssistantConversation", conversationSchema);
 

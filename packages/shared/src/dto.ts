@@ -179,11 +179,11 @@ export interface SearchResultDto { kind: "lead" | "project" | "vendor" | "quotat
 // ---- Site updates and tasks --------------------------------------------------
 export interface SiteUpdateDto {
   id: Id; projectId: Id; kind: "progress" | "issue" | "material_request" | "delivery"; text: string;
-  photos: { path: string; name: string }[]; authorName: string; fromAssistant: boolean; createdAt: Date;
+  photos: { name: string; url: string }[]; authorName: string; fromAssistant: boolean; createdAt: Date;
 }
 export interface TaskDto {
   id: Id; title: string; status: "open" | "done"; dueAt: Date | null; assigneeId: Id | null; assigneeName: string | null;
-  projectId: Id | null; projectName: string | null; leadId: Id | null; createdAt: Date;
+  projectId: Id | null; projectName: string | null; leadId: Id | null; fromAssistant: boolean; createdAt: Date;
 }
 
 // ---- Assistant ---------------------------------------------------------------
@@ -201,4 +201,5 @@ export interface AssistantMessageDto {
   steps: { name: string; isError: boolean }[];
   seconds: number | null;
 }
-export interface AssistantConversationDto { id: Id | null; messages: AssistantMessageDto[]; busy: boolean }
+export interface AssistantConversationDto { id: Id; title: string; projectId: Id | null; projectName: string | null; messages: AssistantMessageDto[]; busy: boolean }
+export interface AssistantConversationListItemDto { id: Id; title: string; projectId: Id | null; projectName: string | null; lastMessageAt: Date }
