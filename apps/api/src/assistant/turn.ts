@@ -20,15 +20,21 @@ import { executeTool, getTool, toolsFor, type ToolContext } from "./tools";
 
 type Attachment = ToolContext["attachments"][number];
 type Conversation = { _id: Types.ObjectId; userId: Types.ObjectId; channel: string };
-type Reply = { text: string; cards: object[] };
-type Msg = { _id: Types.ObjectId; role: string; text: string; items: unknown[]; attachments: Attachment[]; transcript?: string | null; stop?: string | null };
+type Reply = { text: string; messageId: Types.ObjectId };
+type Msg = { _id: Types.ObjectId; role: string; text: string; items: unknown[]; attachments: Attachment[]; transcript?: string | null; sourceEventId?: string | null; stop?: string | null };
 
 const log = new Logger("Assistant");
 const sinks = new Map<string, (conversation: Conversation, reply: Reply) => Promise<void>>();
+const workingSignals = new Map<string, (conversation: Conversation, userMessage: Msg) => Promise<void>>();
 
-/** Where finished replies go: the app refetches; WhatsApp (plan 14) sends a message. */
+/** Where finished replies go: the app refetches; WhatsApp sends a message. The sink reads the turn's cards and changes by messageId. */
 export function registerReplySink(channel: string, sink: (conversation: Conversation, reply: Reply) => Promise<void>) {
   sinks.set(channel, sink);
+}
+
+/** Called before each model request of a turn, e.g. to keep WhatsApp's typing indicator on. Failures are ignored. */
+export function registerWorkingSignal(channel: string, signal: (conversation: Conversation, userMessage: Msg) => Promise<void>) {
+  workingSignals.set(channel, signal);
 }
 registerReplySink("app", async (conversation) => changed({ kind: "assistant", userId: String(conversation.userId) }));
 
@@ -73,7 +79,7 @@ registerJob<TurnJob>(
 /** Stores a reply the server wrote (a limit, a failure) as plain assistant text, and hands it to the channel. */
 async function finish(conversation: Conversation, turnOf: Types.ObjectId, text: string, stored = false) {
   if (!stored) await AssistantMessageModel.create([{ conversationId: conversation._id, role: "assistant", text, turnOf, stop: "server" }]);
-  await sinks.get(conversation.channel)?.(conversation, { text, cards: [] });
+  await sinks.get(conversation.channel)?.(conversation, { text, messageId: turnOf });
 }
 
 const functionCalls = (items: unknown[]) => items.filter((i): i is OpenAI.Responses.ResponseFunctionToolCall => (i as { type?: string }).type === "function_call");
@@ -178,6 +184,7 @@ export async function runTurn(conversationId: Types.ObjectId, messageId: Types.O
       return finish(conversation, messageId, "The assistant has reached today's limit for your organisation. Try again tomorrow, or do this in Veenix.");
     }
 
+    await workingSignals.get(conversation.channel)?.(conversation, turn[0]).catch((e) => log.warn(`Working signal failed: ${e instanceof Error ? e.message : e}`));
     const response = await createMessage({
       model: env.OPENAI_MODEL,
       instructions: SYSTEM_PROMPT,

@@ -5,6 +5,7 @@ import "./assistant/tools.project"; // registers the assistant's project tools
 import "./assistant/tools.query"; // registers query_records and its entities
 import "./assistant/tools.procurement"; // registers the procurement and budget tools
 import "./assistant/turn"; // registers the assistant.turn job handler
+import "./whatsapp/inbound"; // registers the whatsapp.inbound job handler and reply sink
 import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { ClsModule } from "nestjs-cls";

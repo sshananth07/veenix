@@ -18,7 +18,7 @@ const s3 = new S3Client({
 });
 const Bucket = env.S3_BUCKET;
 
-export function newKey(purpose: UploadPurpose | "documents", ext: string) {
+export function newKey(purpose: UploadPurpose | "documents" | "assistant", ext: string) {
   return `orgs/${ctx().orgId}/${purpose}/${randomUUID()}${ext}`;
 }
 

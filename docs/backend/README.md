@@ -145,7 +145,7 @@ Concretely:
 - [x] 14.1 Phone linking (with tests)
 - [x] 14.2 Webhook (with tests)
 - [x] 14.3 Sending (with tests)
-- [ ] 14.4 Inbound job, voice and buttons (with tests)
+- [x] 14.4 Inbound job, voice and buttons (with tests); live check waits for the owner's test number
 
 ### 15 Copilot proactive messages
 - [ ] 15.1 Morning summary (with tests)

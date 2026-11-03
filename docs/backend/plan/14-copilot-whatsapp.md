@@ -161,7 +161,7 @@ Expected: PASS.
 
 Cards with `card.missing`, or with a `link`, show a "Open in Veenix" button in place of Approve.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("a voice note is transcribed and acts as the linked member, with their scope", ...);
@@ -177,11 +177,11 @@ it("a person in two organizations is asked which, and nothing runs until they ch
 it("a retried job doesn't send the message to the LLM twice", ...);
 ```
 
-- [ ] **Step 2: Implement, then run the tests**
+- [x] **Step 2: Implement, then run the tests**
 
 Run: `pnpm --filter api test inbound`
 Expected: PASS.
 
-- [ ] **Step 3: Live check (owner's test number and tunnel, small spend).** Send a Manglish voice note about a real test project. Expected: a correct update, "Heard: …" in the reply, Undo works, and a duplicate webhook replay from Meta's dashboard does nothing.
+- [ ] **Step 3: Live check (owner's test number and tunnel, small spend).** Send a Manglish voice note about a real test project. Expected: a correct update, "Heard: …" in the reply, Undo works, and a duplicate webhook replay from Meta's dashboard does nothing. *(Pending: needs the owner's test number, tunnel and `OPENAI_API_KEY`.)*
 
-- [ ] **Step 4: Commit**: `feat(api): WhatsApp voice notes and buttons`
+- [x] **Step 4: Commit**: `feat(api): WhatsApp voice notes and buttons`

@@ -9,6 +9,9 @@ const eventSchema = new Schema(
     phone: { type: String, required: true },
     payload: { type: Schema.Types.Mixed, required: true }, // the InboundMessage
     status: { type: String, enum: ["queued", "done"], default: "queued" },
+    mediaKey: { type: String, default: null }, // the stored audio or photo, so a retried job doesn't download again
+    transcript: { type: String, default: null }, // so a retried job doesn't pay for transcription again
+    usedBy: { type: String, default: null }, // a captionless photo: the message whose turn took it
   },
   { collection: "whatsapp_events", timestamps: { createdAt: true, updatedAt: false } },
 );
