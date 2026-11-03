@@ -1,6 +1,7 @@
 import { randomInt } from "node:crypto";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import mongoose, { Types } from "mongoose";
+import { redis } from "../common/redis";
 import { env } from "../config/env";
 import { runDue } from "../jobs/jobs";
 import { JobModel } from "../jobs/job.model";
@@ -32,8 +33,12 @@ const asAlice = <T>(fn: () => Promise<T>) => asOrg(org, fn, { userId: alice, rol
 const asBob = <T>(fn: () => Promise<T>, o = org) => asOrg(o, fn, { userId: bob });
 /** Backdates a document's createdAt past what Mongoose's timestamps allow. */
 const backdate = (collection: string, _id: Types.ObjectId, createdAt: Date) => mongoose.connection.collection(collection).updateOne({ _id }, { $set: { createdAt } });
-/** A day well clear of the real one, so its Redis key is never set by another run. */
-const someDay = (hourUtc: number) => new Date(Date.UTC(2020, 0, randomInt(1, 28), hourUtc));
+/** 8am in Kuala Lumpur on a past day of its own, with that day's once-a-day key cleared (Redis outlasts the test database). */
+async function someDay(day: number) {
+  const d = new Date(Date.UTC(2020, 0, day));
+  await redis.del(`morning:${d.toISOString().slice(0, 10)}`);
+  return d;
+}
 const sentTo = (p: string) => [...vi.mocked(sendText).mock.calls, ...vi.mocked(sendTemplate).mock.calls].filter((c) => c[0] === p);
 
 beforeAll(async () => {
@@ -80,7 +85,7 @@ beforeEach(() => {
 
 describe("morning summary", () => {
   it("runs once a day however often cron fires", async () => {
-    const day = someDay(0);
+    const day = await someDay(1);
     const n = await scheduleDaily(day);
     expect(n).toBe(4); // everyone with notify on and an organisation chosen; Carol opted out
     expect(await scheduleDaily(new Date(day.getTime() + 3_600_000))).toBe(0);
@@ -137,7 +142,7 @@ describe("morning summary", () => {
   });
 
   it("sends a template outside the 24-hour window and text inside it, covering only the active organisation", async () => {
-    await scheduleDaily(someDay(1));
+    await scheduleDaily(await someDay(2));
     await runDue(50);
     const [, name, , components] = sentTo(ALICE)[0] as unknown as Parameters<typeof sendTemplate>;
     expect(name).toBe("morning_summary");
@@ -147,14 +152,14 @@ describe("morning summary", () => {
   });
 
   it("skips notify: false and removed members", async () => {
-    await scheduleDaily(someDay(2));
+    await scheduleDaily(await someDay(3));
     await runDue(50);
     expect(sentTo(CAROL)).toHaveLength(0); // opted out
     expect(sentTo(DAVE)).toHaveLength(0); // removed from the organisation
   });
 
   it("does nothing when the person unlinked or opted out after it was queued", async () => {
-    await scheduleDaily(someDay(3));
+    await scheduleDaily(await someDay(4));
     await WhatsAppLinkModel.updateOne({ userId: alice }, { $set: { notify: false } });
     await runDue(50);
     expect(sentTo(ALICE)).toHaveLength(0);
