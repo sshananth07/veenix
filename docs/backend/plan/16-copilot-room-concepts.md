@@ -202,9 +202,9 @@ In the running app, with a ready concept inserted by hand (OpenAI isn't needed f
     - Every change goes through `fitRoom`.
     - **Save changes** sends `PATCH { room }`; **Reset** returns to the stored room.
 
-- [ ] **Step 1: Build.**
+- [x] **Step 1: Build.**
 
-- [ ] **Step 2: Check it.**
+- [x] **Step 2: Check it.**
 
 Run: `pnpm --filter web build`
 Expected: succeeds, and the build output shows `three` only in the chunk the concept page loads.
@@ -216,7 +216,7 @@ In the running app, with the hand-inserted concept:
 - With WebGL disabled in Chrome, the photo shows, not a blank box.
 - On a phone (or Chrome's device mode), touch rotation works.
 
-- [ ] **Step 3: Commit**: `feat(web): 3D room viewer and editor`
+- [x] **Step 3: Commit**: `feat(web): 3D room viewer and editor`
 
 ### Task 16.5: Owner check on real photos (needs `OPENAI_API_KEY`)
 

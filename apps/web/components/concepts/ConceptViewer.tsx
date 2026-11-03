@@ -1,22 +1,57 @@
 "use client";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { Component, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bookmark, BookmarkCheck, Box, Image as ImageIcon, Loader2, Maximize, Minimize } from "lucide-react";
-import type { ConceptDto } from "@veenix/shared";
+import { ArrowLeft, Bookmark, BookmarkCheck, Box, Footprints, Image as ImageIcon, Loader2, Maximize, Minimize, Moon, SlidersHorizontal, Sun } from "lucide-react";
+import type { ConceptDto, Room } from "@veenix/shared";
 import { updateConcept } from "@/actions/concepts";
 import { cn } from "@/lib/utils";
 import { BeforeAfter } from "./BeforeAfter";
 import { NOT_TO_SCALE } from "./ConceptCard";
+import { RoomEditor } from "./RoomEditor";
+import type { Light, RoomCanvasProps } from "./RoomCanvas";
+
+// Three.js loads only here, in its own chunk, and never on the server.
+const RoomCanvas = dynamic<RoomCanvasProps>(() => import("./RoomCanvas"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center gap-2 text-white/60" role="status">
+      <Loader2 className="size-5 animate-spin" aria-hidden /> Building the room…
+    </div>
+  ),
+});
+
+/** Any render error inside the 3D view falls back to the photo instead of a blank screen. */
+class Fallback extends Component<{ onError: () => void; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch() {
+    this.props.onError();
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 /** The concept full screen, for presenting to the client: the photo with a before/after slider, and the 3D room. */
 export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEdit: boolean }) {
   const router = useRouter();
   const frame = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<"photo" | "3d">("photo");
+  const [mode, setMode] = useState<"photo" | "3d">(concept.room ? "3d" : "photo");
+  const [no3d, setNo3d] = useState(false);
   const [full, setFull] = useState(false);
+  const [room, setRoom] = useState<Room | null>(concept.room);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [light, setLight] = useState<Light>("day");
+  const [walk, setWalk] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
+  useEffect(() => setRoom(concept.room), [concept.room]);
   // ponytail: polls while generating; the chat's live event doesn't reach this page.
   useEffect(() => {
     if (concept.status !== "generating") return;
@@ -29,8 +64,16 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
+  const show3d = !!room && !no3d;
+  const moveItem = (i: number, x: number, z: number) => room && setRoom({ ...room, items: room.items.map((it, k) => (k === i ? { ...it, x, z } : it)) });
+  const dirty = JSON.stringify(room) !== JSON.stringify(concept.room);
+  const fail3d = () => {
+    setNo3d(true);
+    setMode("photo");
+  };
   const back = concept.projectId ? `/projects/${concept.projectId}` : concept.leadId ? `/leads/${concept.leadId}` : "/";
   const bar = "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium hover:bg-white/10 disabled:opacity-50";
+  const chip = (on: boolean) => cn("flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium backdrop-blur", on ? "bg-white text-neutral-900" : "bg-black/50 hover:bg-black/70");
   return (
     <div ref={frame} className="fixed inset-0 z-50 flex flex-col bg-neutral-950 text-white">
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3">
@@ -38,7 +81,7 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
           <ArrowLeft className="size-4" aria-hidden />
         </Link>
         <h1 className="min-w-0 flex-1 truncate text-sm font-semibold">{concept.name}</h1>
-        {concept.room && (
+        {show3d && (
           <div className="flex rounded-lg bg-white/10 p-0.5" role="group" aria-label="View">
             {(["photo", "3d"] as const).map((m) => (
               <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)} className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm", mode === m && "bg-white text-neutral-900")}>
@@ -76,7 +119,55 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
         {concept.status === "ready" && concept.imageUrl && mode === "photo" && (
           <BeforeAfter before={concept.photoUrl} after={concept.imageUrl} fit="contain" className="h-full w-full" />
         )}
-        {concept.status === "ready" && mode === "3d" && <div className="flex h-full items-center justify-center text-white/60">3D view</div>}
+        {concept.status === "ready" && room && show3d && mode === "3d" && (
+          <>
+            <Fallback onError={fail3d}>
+              <RoomCanvas room={room} light={light} walk={walk} selected={selected} onSelect={setSelected} onError={fail3d} onMove={moveItem} />
+            </Fallback>
+            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+              <button type="button" aria-pressed={walk} onClick={() => setWalk(!walk)} className={chip(walk)}>
+                <Footprints className="size-3.5" aria-hidden /> {walk ? "Overview" : "Walk in"}
+              </button>
+              <button type="button" onClick={() => setLight(light === "day" ? "evening" : "day")} className={chip(false)}>
+                {light === "day" ? <Moon className="size-3.5" aria-hidden /> : <Sun className="size-3.5" aria-hidden />}
+                {light === "day" ? "Evening" : "Day"}
+              </button>
+              {canEdit && (
+                <button type="button" aria-pressed={editing} onClick={() => setEditing(!editing)} className={chip(editing)}>
+                  <SlidersHorizontal className="size-3.5" aria-hidden /> Edit
+                </button>
+              )}
+            </div>
+            {editing && (
+              <aside aria-label="Edit the room" className="absolute top-14 right-3 bottom-12 flex w-72 max-w-[calc(100%-1.5rem)] flex-col rounded-xl bg-neutral-900/90 p-4 backdrop-blur">
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <RoomEditor room={room} selected={selected} onChange={setRoom} onSelect={setSelected} />
+                </div>
+                {dirty && (
+                  <div className="mt-3 flex gap-2 border-t border-white/10 pt-3">
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => start(async () => {
+                        const r = await updateConcept(concept.id, { room });
+                        setError(r.ok ? null : r.error);
+                        if (r.ok) router.refresh();
+                      })}
+                      className="flex-1 rounded-md bg-white px-3 py-1.5 text-sm font-medium text-neutral-900 disabled:opacity-50"
+                    >
+                      {pending ? "Saving…" : "Save changes"}
+                    </button>
+                    <button type="button" onClick={() => { setRoom(concept.room); setSelected(null); }} className="rounded-md px-3 py-1.5 text-sm hover:bg-white/10">
+                      Reset
+                    </button>
+                  </div>
+                )}
+                {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
+              </aside>
+            )}
+          </>
+        )}
+        {no3d && <p className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md bg-black/60 px-2 py-1 text-xs">3D isn&apos;t available on this device, so here&apos;s the photo.</p>}
         <span className="pointer-events-none absolute bottom-3 left-3 rounded-md bg-black/60 px-2 py-1 text-xs font-medium">{NOT_TO_SCALE}</span>
       </div>
     </div>
