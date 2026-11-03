@@ -11,3 +11,14 @@ export const authClient = createAuthClient({
     }),
   ],
 });
+
+/**
+ * Where to go after signing in: the page the user was sent away from (proxy.ts adds ?next=), if it's one of ours.
+ * Kept in sessionStorage across the MFA step, which loses the query string.
+ */
+export function returnPath(): string {
+  const fromUrl = new URLSearchParams(window.location.search).get("next");
+  if (fromUrl) sessionStorage.setItem("next", fromUrl);
+  const next = fromUrl ?? sessionStorage.getItem("next") ?? "/";
+  return next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/"; // not //evil.com
+}

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
+import { authClient, returnPath } from "@/lib/auth-client";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,8 @@ export default function VerifyMfaPage() {
           ? await authClient.twoFactor.verifyBackupCode({ code })
           : await authClient.twoFactor.verifyTotp({ code, trustDevice: false });
         if (error) return "That code didn't work. Try again.";
-        router.push("/");
+        router.push(returnPath());
+        sessionStorage.removeItem("next");
         return null;
       }}
     >

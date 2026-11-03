@@ -4,6 +4,7 @@ import { ChevronDown, CircleCheck, Clock, Undo2 } from "lucide-react";
 import type { AssistantMessageDto } from "@veenix/shared";
 import { undoAssistantChange } from "@/actions/assistant";
 import { cn } from "@/lib/utils";
+import { ConceptCard } from "@/components/concepts/ConceptCard";
 import { ActionCard } from "./ActionCard";
 
 const STEP_LABELS: Record<string, string> = {
@@ -15,10 +16,13 @@ const STEP_LABELS: Record<string, string> = {
   create_task: "Created a task",
   set_project_stage: "Changed the stage",
   report_unsupported_request: "Noted a request it can't do yet",
+  generate_room_concept: "Started a room concept",
 };
 const stepLabel = (name: string) => STEP_LABELS[name] ?? (name.startsWith("propose_") ? "Prepared an approval" : name.replaceAll("_", " "));
 
-export function ChatMessage({ message, onChange }: { message: AssistantMessageDto; onChange: () => void }) {
+type Props = { message: AssistantMessageDto; onChange: () => void; onDraft: (text: string) => void };
+
+export function ChatMessage({ message, onChange, onDraft }: Props) {
   if (message.role === "user") {
     return (
       <div className="ml-auto flex max-w-[85%] flex-col items-end gap-2">
@@ -36,10 +40,10 @@ export function ChatMessage({ message, onChange }: { message: AssistantMessageDt
       </div>
     );
   }
-  return <AssistantReply message={message} onChange={onChange} />;
+  return <AssistantReply message={message} onChange={onChange} onDraft={onDraft} />;
 }
 
-function AssistantReply({ message, onChange }: { message: AssistantMessageDto; onChange: () => void }) {
+function AssistantReply({ message, onChange, onDraft }: Props) {
   const [open, setOpen] = useState(false);
   const hasSteps = message.steps.length > 0;
   return (
@@ -98,6 +102,7 @@ function AssistantReply({ message, onChange }: { message: AssistantMessageDto; o
         </ul>
       )}
       {message.cards.map((card) => <ActionCard key={card.id} card={card} onDone={onChange} />)}
+      {message.concepts.map((c) => <ConceptCard key={c.id} concept={c} onTryAnother={onDraft} onChange={onChange} />)}
     </div>
   );
 }

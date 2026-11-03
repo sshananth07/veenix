@@ -1,4 +1,4 @@
-import { can, type MemberDto, type ProjectDetailDto, type SiteUpdateDto, type TaskDto } from "@veenix/shared";
+import { can, type ConceptDto, type MemberDto, type ProjectDetailDto, type SiteUpdateDto, type TaskDto } from "@veenix/shared";
 import { api } from "@/lib/api";
 import { requireOrg } from "@/lib/session";
 import { LiveRefresh } from "@/components/LiveRefresh";
@@ -15,6 +15,7 @@ import { VariationOrdersTab } from "@/components/projects/VariationOrdersTab";
 import { PaymentsTab } from "@/components/projects/PaymentsTab";
 import { FilesTab } from "@/components/projects/FilesTab";
 import { UpdatesTab } from "@/components/projects/UpdatesTab";
+import { ConceptList } from "@/components/concepts/ConceptList";
 
 export default async function ProjectDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; v?: string; view?: string; invoice?: string }> }) {
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
@@ -28,6 +29,7 @@ export default async function ProjectDetailPage(props: { params: Promise<{ id: s
   const [updates, tasks] = tab === "updates"
     ? await Promise.all([api<SiteUpdateDto[]>(`/projects/${project.id}/updates`), api<TaskDto[]>(`/tasks?projectId=${project.id}`)])
     : [[], []];
+  const concepts = tab === "overview" ? await api<ConceptDto[]>(`/projects/${project.id}/concepts`) : [];
   const { costs, readiness, pricing: settings } = project;
 
   const packages = getPackages(project);
@@ -51,7 +53,12 @@ export default async function ProjectDetailPage(props: { params: Promise<{ id: s
       <ProjectTabs projectId={project.id} active={tab} badges={badges} />
 
       <div className="pt-1">
-        {tab === "overview" && <OverviewTab project={project} costs={costs} readiness={readiness} />}
+        {tab === "overview" && (
+          <div className="space-y-5">
+            <OverviewTab project={project} costs={costs} readiness={readiness} />
+            <ConceptList concepts={concepts} />
+          </div>
+        )}
         {tab === "updates" && <UpdatesTab projectId={project.id} updates={updates} tasks={tasks} canWrite={can(role, "update:write")} canDeleteTasks={can(role, "task:write")} />}
         {tab === "bom" && <BomTab project={project} costs={costs} />}
         {tab === "vendors" && <VendorsTab project={project} />}

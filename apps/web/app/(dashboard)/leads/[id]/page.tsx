@@ -16,7 +16,7 @@ import {
   UserRound,
   Wallet,
 } from "lucide-react";
-import type { LeadDetailDto } from "@veenix/shared";
+import type { ConceptDto, LeadDetailDto } from "@veenix/shared";
 import { api } from "@/lib/api";
 import { addressLines } from "@/lib/address";
 import { formatCurrency, formatDateTime, toDateInput } from "@/lib/utils";
@@ -27,10 +27,11 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { ConvertLeadDialog } from "@/components/leads/ConvertLeadDialog";
 import { LeadFormDialog } from "@/components/leads/LeadFormDialog";
 import { LogActivityForm } from "@/components/leads/LogActivityForm";
+import { ConceptList } from "@/components/concepts/ConceptList";
 
 export default async function LeadDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ edit?: string }> }) {
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
-  const lead = await api<LeadDetailDto>(`/leads/${params.id}`);
+  const [lead, concepts] = await Promise.all([api<LeadDetailDto>(`/leads/${params.id}`), api<ConceptDto[]>(`/leads/${params.id}/concepts`)]);
 
   const budget = lead.budgetMin != null && lead.budgetMax != null ? `${formatCurrency(lead.budgetMin)} – ${formatCurrency(lead.budgetMax)}` : null;
   const lines = addressLines(lead);
@@ -165,6 +166,7 @@ export default async function LeadDetailPage(props: { params: Promise<{ id: stri
           </ol>
         </section>
       </div>
+      <ConceptList concepts={concepts} />
     </div>
   );
 }

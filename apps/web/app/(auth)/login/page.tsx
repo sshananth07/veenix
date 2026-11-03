@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
+import { authClient, returnPath } from "@/lib/auth-client";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,10 +14,11 @@ export default function LoginPage() {
       submitLabel="Sign in"
       footer={<><Link className="underline" href="/forgot-password">Forgot password?</Link> · <Link className="underline" href="/signup">Create an account</Link></>}
       onSubmit={async (f) => {
+        const next = returnPath(); // remembered before the MFA redirect
         const { data, error } = await authClient.signIn.email({ email: String(f.get("email")), password: String(f.get("password")) });
         if (error) return error.status === 403 ? "Verify your email first. We've sent you a new link." : "Email or password is incorrect";
         // Enrolled users are sent to /verify-mfa by the twoFactorClient redirect.
-        if (!(data && "twoFactorRedirect" in data && data.twoFactorRedirect)) router.push("/");
+        if (!(data && "twoFactorRedirect" in data && data.twoFactorRedirect)) router.push(next);
         return null;
       }}
     >

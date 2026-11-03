@@ -165,9 +165,9 @@ Expected: PASS.
     - While `generating`, it refreshes every 5 seconds.
   - The page renders `notFound()` when the API says not found.
 
-- [ ] **Step 1: Build.**
+- [x] **Step 1: Build.**
 
-- [ ] **Step 2: Check it.**
+- [x] **Step 2: Check it.**
 
 Run: `pnpm --filter web typecheck; pnpm --filter web build`
 Expected: both succeed.
@@ -178,7 +178,7 @@ In the running app, with a ready concept inserted by hand (OpenAI isn't needed f
 - Signed out, opening `/concepts/:id` goes through login and MFA and comes back to the concept.
 - Signed in as site staff, a lead's concept shows not found.
 
-- [ ] **Step 3: Commit**: `feat(web): room concept card and page`
+- [x] **Step 3: Commit**: `feat(web): room concept card and page`
 
 ### Task 16.4: The 3D room
 

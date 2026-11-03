@@ -65,6 +65,7 @@ function PanelBody() {
   const [picking, setPicking] = useState(false);
   const [view, setView] = useState<"chat" | "history">("chat");
   const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ text: string } | null>(null); // text put in the composer by a card ("Try another style")
 
   // On opening, and on moving to another project, pick up the latest chat for where the user is.
   useEffect(() => {
@@ -157,11 +158,12 @@ function PanelBody() {
         />
       ) : (
         <>
-          <Messages conv={picking || (chatId && !conv) ? null : conv} empty={!chatId && !picking} onChange={load} />
+          <Messages conv={picking || (chatId && !conv) ? null : conv} empty={!chatId && !picking} onChange={load} onDraft={(text) => setDraft({ text })} />
           <Composer
             key={chatId ?? `new:${pageProject}`}
             suggestions={pageProject ? SUGGESTIONS.project : SUGGESTIONS.general}
             busy={busy}
+            draft={draft}
             error={error}
             onSend={async (text, photos) => {
               setError(null);
@@ -269,7 +271,7 @@ function HistoryList({ current, onPick, onDeleted }: { current: string | null; o
   );
 }
 
-function Messages({ conv, empty, onChange }: { conv: AssistantConversationDto | null; empty: boolean; onChange: () => void }) {
+function Messages({ conv, empty, onChange, onDraft }: { conv: AssistantConversationDto | null; empty: boolean; onChange: () => void; onDraft: (text: string) => void }) {
   const scroller = useRef<HTMLDivElement>(null);
   const [away, setAway] = useState(false);
   const count = (conv?.messages.length ?? 0) + (conv?.busy ? 1 : 0);
@@ -318,7 +320,7 @@ function Messages({ conv, empty, onChange }: { conv: AssistantConversationDto | 
                   <span className="h-px flex-1 bg-border" />
                 </div>
               )}
-              <ChatMessage message={m} onChange={onChange} />
+              <ChatMessage message={m} onChange={onChange} onDraft={onDraft} />
             </Fragment>
           );
         })}
@@ -345,10 +347,11 @@ function Messages({ conv, empty, onChange }: { conv: AssistantConversationDto | 
 type Photo = { file: File; url: string };
 
 function Composer({
-  suggestions, busy, error, onSend, onError,
+  suggestions, busy, draft, error, onSend, onError,
 }: {
   suggestions: string[];
   busy: boolean;
+  draft: { text: string } | null;
   error: string | null;
   onSend: (text: string, photos: { key: string; name: string }[]) => Promise<boolean>;
   onError: (e: string) => void;
@@ -361,6 +364,12 @@ function Composer({
   const [active, setActive] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const showSuggestions = focused && !hidden && text === "" && !sending;
+  const textarea = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (!draft) return;
+    setText(draft.text);
+    textarea.current?.focus();
+  }, [draft]);
 
   const send = async (value = text) => {
     const message = value.trim();
@@ -447,6 +456,7 @@ function Composer({
           </div>
         )}
         <textarea
+          ref={textarea}
           rows={1}
           value={text}
           onChange={(e) => setText(e.target.value)}
