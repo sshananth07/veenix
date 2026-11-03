@@ -5,6 +5,7 @@ import { audit } from "../audit/audit";
 import { ctx } from "../common/context";
 import { forbidden, notFound, rule } from "../common/errors";
 import { tx } from "../common/tx";
+import { enqueue } from "../jobs/jobs";
 import { changed } from "../live/live";
 import { LeadModel } from "../leads/lead.model";
 import { MembershipModel } from "../orgs/membership.model";
@@ -42,6 +43,8 @@ export class TasksService {
         if (!(await LeadModel.exists({ _id: input.leadId }))) throw notFound("Lead");
       }
       const [t] = await TaskModel.create([{ ...input, createdBy: c.userId, messageId: source?.messageId ?? null }]);
+      // An hour before; the handler checks the task is still open at this time, so a later reschedule just queues its own.
+      if (t.dueAt && t.dueAt > new Date()) await enqueue("assistant.reminder", { taskId: String(t._id), dueAt: t.dueAt.toISOString() }, new Date(t.dueAt.getTime() - 3_600_000));
       await audit("task.create", "task", t._id, { messageId: source?.messageId }, t.projectId ?? undefined);
       if (t.projectId) changed({ kind: "project", projectId: String(t.projectId) });
       return { id: String(t._id) };

@@ -3,12 +3,13 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import mongoose, { Types } from "mongoose";
 import { redis } from "../common/redis";
 import { env } from "../config/env";
-import { runDue } from "../jobs/jobs";
+import { enqueue, runDue } from "../jobs/jobs";
 import { JobModel } from "../jobs/job.model";
 import { MembershipModel } from "../orgs/membership.model";
 import { ProjectModel } from "../projects/project.model";
 import { ensureBucket, getObject, putObject } from "../storage/storage";
 import { TaskModel } from "../tasks/task.model";
+import { TasksService } from "../tasks/tasks.service";
 import { SiteUpdateModel } from "../updates/site-update.model";
 import { WhatsAppLinkModel } from "../whatsapp/link.model";
 import { sendTemplate, sendText } from "../whatsapp/client";
@@ -192,3 +193,68 @@ describe("audio retention", () => {
   });
 });
 
+
+describe("task reminders", () => {
+  const tasks = new TasksService();
+  const asCreator = <T>(fn: () => Promise<T>) => asOrg(org, fn, { userId: bob });
+  const reminderOf = (taskId: string) => JobModel.find({ type: "assistant.reminder", "payload.taskId": taskId }).sort({ _id: 1 }).lean();
+  /** As if the clock reached the reminder's time. */
+  const reachReminders = async (taskId: string) => {
+    await JobModel.updateMany({ type: "assistant.reminder", "payload.taskId": taskId }, { $set: { runAt: new Date() } });
+    await runDue(50);
+  };
+  const inHours = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
+
+  it("reminds the assignee an hour before", async () => {
+    const dueAt = inHours(3);
+    const { id } = await asCreator(() => tasks.create({ title: "Meet Puan Siti at site", assigneeId: String(alice), dueAt }));
+    const [job] = await reminderOf(id);
+    expect(job.runAt.getTime()).toBe(Date.parse(dueAt) - 3_600_000);
+    await runDue(50);
+    expect(sentTo(ALICE)).toHaveLength(0); // not yet
+    await reachReminders(id);
+    expect(sentTo(ALICE)).toHaveLength(1);
+  });
+
+  it("a completed task sends nothing", async () => {
+    const { id } = await asCreator(() => tasks.create({ title: "Call supplier", assigneeId: String(alice), dueAt: inHours(3) }));
+    await asCreator(() => tasks.complete(new Types.ObjectId(id)));
+    await reachReminders(id);
+    expect(sentTo(ALICE)).toHaveLength(0);
+    expect((await reminderOf(id))[0].status).toBe("done");
+  });
+
+  it("a rescheduled task reminds at the new time only", async () => {
+    const { id } = await asCreator(() => tasks.create({ title: "Hand over keys", assigneeId: String(alice), dueAt: inHours(3) }));
+    // Rescheduling sets the new time and queues its own reminder; the old one finds the time changed.
+    const later = inHours(5);
+    await asOwner(() => TaskModel.updateOne({ _id: id }, { $set: { dueAt: later } }));
+    await asOwner(() => enqueue("assistant.reminder", { taskId: id, dueAt: later }, new Date(Date.parse(later) - 3_600_000)));
+    await reachReminders(id);
+    expect(sentTo(ALICE)).toHaveLength(1);
+    expect(JSON.stringify(sentTo(ALICE)[0])).toContain("Hand over keys");
+  });
+
+  it("uses the template outside the window and text inside it", async () => {
+    const a = await asCreator(() => tasks.create({ title: "Check tiles", assigneeId: String(alice), dueAt: inHours(0.5) }));
+    const b = await asCreator(() => tasks.create({ title: "Sign quote", assigneeId: String(bob), dueAt: inHours(0.5) }));
+    await reachReminders(a.id);
+    await reachReminders(b.id);
+    const [[, name, , components]] = vi.mocked(sendTemplate).mock.calls.filter((c) => c[0] === ALICE);
+    expect(name).toBe("task_reminder");
+    expect(JSON.stringify(components)).toContain("Check tiles");
+    expect(vi.mocked(sendText).mock.calls.filter((c) => c[0] === BOB)).toEqual([[BOB, expect.stringContaining("Sign quote")]]);
+  });
+
+  it("no assignee or no link: nothing is sent and the job completes", async () => {
+    const frank = newId();
+    await MembershipModel.create([{ orgId: org, userId: frank, role: "site_staff" }]);
+    const none = await asCreator(() => tasks.create({ title: "Nobody's", dueAt: inHours(0.5) }));
+    const unlinked = await asCreator(() => tasks.create({ title: "Frank's", assigneeId: String(frank), dueAt: inHours(0.5) }));
+    const removed = await asCreator(() => tasks.create({ title: "Erin's", assigneeId: String(erin), dueAt: inHours(0.5) }));
+    await MembershipModel.updateOne({ orgId: org, userId: erin }, { $set: { status: "removed" } }); // removed after it was queued
+    for (const t of [none, unlinked, removed]) await reachReminders(t.id);
+    expect(vi.mocked(sendText).mock.calls.length + vi.mocked(sendTemplate).mock.calls.length).toBe(0);
+    for (const t of [none, unlinked, removed]) expect((await reminderOf(t.id))[0].status).toBe("done");
+  });
+});

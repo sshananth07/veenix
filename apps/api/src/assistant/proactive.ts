@@ -4,6 +4,7 @@ import { ctx } from "../common/context";
 import { redis } from "../common/redis";
 import { registerJob } from "../jobs/jobs";
 import { JobModel } from "../jobs/job.model";
+import { MembershipModel } from "../orgs/membership.model";
 import { ProjectModel } from "../projects/project.model";
 import { deleteObject } from "../storage/storage";
 import { TaskModel } from "../tasks/task.model";
@@ -78,6 +79,26 @@ registerJob<{ userId: string; date: string }>(
     await sendTemplate(link.phone, "morning_summary", "en", [{ type: "body", parameters: params.map((text) => ({ type: "text", text })) }]);
   },
   { maxAttempts: 3 }, // a summary hours late isn't worth sending
+);
+
+const timeInMalaysia = (d: Date) => d.toLocaleTimeString("en-MY", { timeZone: "Asia/Kuala_Lumpur", hour: "numeric", minute: "2-digit" });
+
+registerJob<{ taskId: string; dueAt: string }>(
+  "assistant.reminder",
+  async ({ taskId, dueAt }) => {
+    if (!whatsappConfigured()) return;
+    // Done, deleted or rescheduled since this was queued: nothing (a reschedule queues its own reminder).
+    const task = await TaskModel.findOne({ _id: taskId, status: "open", dueAt: new Date(dueAt) }).lean();
+    if (!task?.assigneeId) return;
+    if (!(await MembershipModel.exists({ orgId: task.orgId, userId: task.assigneeId, status: "active" }))) return;
+    const link = await WhatsAppLinkModel.findOne({ userId: task.assigneeId }).lean();
+    if (!link?.notify) return;
+    const title = task.title.replace(/\s+/g, " ").slice(0, 200), at = timeInMalaysia(task.dueAt!);
+    if (inWindow(link)) return void (await sendText(link.phone, `Reminder: "${title}" is due at ${at}.`));
+    // The owner's approved task_reminder template: {{1}} task title, {{2}} time.
+    await sendTemplate(link.phone, "task_reminder", "en", [{ type: "body", parameters: [title, at].map((text) => ({ type: "text", text })) }]);
+  },
+  { maxAttempts: 3 }, // a reminder after the task's time is no use
 );
 
 /** Deletes assistant voice notes older than 90 days (spec §10) and marks them removed. Transcripts stay with the message. Runs across organisations. */

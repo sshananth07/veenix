@@ -149,7 +149,7 @@ Concretely:
 
 ### 15 Copilot proactive messages
 - [x] 15.1 Morning summary (with tests)
-- [ ] 15.2 Task reminders (with tests)
+- [x] 15.2 Task reminders (with tests)
 
 ### 16 Copilot 3D room concepts
 - [ ] 16.1 Spike (owner judges)

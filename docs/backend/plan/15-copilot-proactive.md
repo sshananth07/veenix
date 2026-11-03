@@ -72,7 +72,7 @@ Expected: PASS and a successful build.
 
 The handler reloads the task and sends nothing unless it's still open and its `dueAt` matches the payload. Rescheduling enqueues a new job, so the old one simply does nothing.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("reminds the assignee an hour before", ...);
@@ -82,9 +82,9 @@ it("uses the template outside the window and text inside it", ...);
 it("no assignee or no link: nothing is sent and the job completes", ...);
 ```
 
-- [ ] **Step 2: Implement, then run the tests**
+- [x] **Step 2: Implement, then run the tests**
 
 Run: `pnpm --filter api test proactive`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**: `feat(api): task reminders`
+- [x] **Step 3: Commit**: `feat(api): task reminders`
