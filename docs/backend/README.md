@@ -153,7 +153,7 @@ Concretely:
 
 ### 16 Copilot room concepts
 - [x] 16.1 Concepts and generation jobs (with tests)
-- [ ] 16.2 WhatsApp delivery (with tests)
+- [x] 16.2 WhatsApp delivery (with tests)
 - [ ] 16.3 Chat card and the concept page
 - [ ] 16.4 The 3D room (viewer and editor)
 - [ ] 16.5 Owner check on real photos (needs OPENAI_API_KEY)

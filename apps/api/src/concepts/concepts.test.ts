@@ -13,12 +13,21 @@ import { LeadsService } from "../leads/leads.service";
 import { MembershipModel } from "../orgs/membership.model";
 import { ProjectModel } from "../projects/project.model";
 import { ensureBucket, getObject, newKey, putObject } from "../storage/storage";
+import { sendCtaUrl, sendTemplate, sendText } from "../whatsapp/client";
+import { WhatsAppLinkModel } from "../whatsapp/link.model";
+import { env } from "../config/env";
 import { asOrg, newId } from "../../test/ctx";
 import { describeRoom, restyle } from "./ai";
 import { DesignConceptModel } from "./concept.model";
 import { ConceptsService } from "./concepts.service";
 
 vi.mock("./ai", () => ({ restyle: vi.fn(), describeRoom: vi.fn() }));
+vi.mock("../whatsapp/client", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../whatsapp/client")>()),
+  sendCtaUrl: vi.fn().mockResolvedValue({}),
+  sendTemplate: vi.fn().mockResolvedValue({}),
+  sendText: vi.fn().mockResolvedValue({}),
+}));
 
 const org = newId(), owner = newId();
 let project: Types.ObjectId, lead: Types.ObjectId, conv: Types.ObjectId, photoKey: string;
@@ -204,5 +213,80 @@ describe("in the chat", () => {
     await runJobs();
     const reply = (await asOwner(() => getConversation(conv))).messages.find((m) => m.role === "assistant" && m.text === "On it.")!;
     expect(reply.concepts).toEqual([expect.objectContaining({ status: "ready", brief: "Japandi, light oak" })]);
+  });
+});
+
+describe("on WhatsApp", () => {
+  const PHONE = "60123456789";
+  let wa: Types.ObjectId;
+  const inWindow = (yes: boolean) => WhatsAppLinkModel.updateOne({ userId: owner }, { $set: { lastInboundAt: yes ? new Date() : new Date(Date.now() - 2 * 86_400_000) } });
+  async function finishOne() {
+    await start({}, { ...tc(), conversationId: wa });
+    await runJobs();
+    return (await latest())!;
+  }
+
+  beforeAll(async () => {
+    wa = (await asOwner(() => AssistantConversationModel.create([{ userId: owner, channel: "whatsapp" }])))[0]._id;
+    await WhatsAppLinkModel.create([{ phone: PHONE, userId: owner, activeOrgId: org, verifiedAt: new Date() }]);
+  });
+  beforeEach(() => {
+    vi.mocked(sendCtaUrl).mockClear();
+    vi.mocked(sendTemplate).mockClear();
+    vi.mocked(sendText).mockClear();
+  });
+
+  it("uses cta_url inside the window and the template outside", async () => {
+    await inWindow(true);
+    const c = await finishOne();
+    expect(sendCtaUrl).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(sendCtaUrl).mock.calls[0][1].headerImageUrl).toContain(c.imageKey!);
+    expect(sendTemplate).not.toHaveBeenCalled();
+
+    await inWindow(false);
+    const d = await finishOne();
+    expect(sendTemplate).toHaveBeenCalledWith(PHONE, "concept_ready", "en", [{ type: "body", parameters: [{ type: "text", text: d.name }] }]);
+    expect(sendCtaUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it("the button text is at most 20 characters and links only by concept id", async () => {
+    await inWindow(true);
+    const c = await finishOne();
+    const [to, m] = vi.mocked(sendCtaUrl).mock.calls[0];
+    expect(to).toBe(PHONE);
+    expect(m.buttonText).toBe("Open 3D view");
+    expect(m.buttonText.length).toBeLessThanOrEqual(20);
+    expect(m.url).toBe(`${env.WEB_ORIGIN}/concepts/${c._id}`);
+  });
+
+  it("the text says AI concept, not to scale and never claims other work was done", async () => {
+    await inWindow(true);
+    await finishOne();
+    const { body } = vi.mocked(sendCtaUrl).mock.calls[0][1];
+    expect(body).toContain("AI concept, not to scale");
+    expect(body).not.toMatch(/updated|saved|quotation|done|added/i);
+  });
+
+  it("an image-only concept gets View concept instead of Open 3D view", async () => {
+    vi.mocked(describeRoom).mockRejectedValue(new Error("bad json"));
+    await inWindow(true);
+    await finishOne();
+    expect(vi.mocked(sendCtaUrl).mock.calls[0][1].buttonText).toBe("View concept");
+  });
+
+  it("a failed concept sends an apology inside the window and nothing outside", async () => {
+    vi.mocked(restyle).mockRejectedValue(new Error("timeout"));
+    await inWindow(true);
+    await start({}, { ...tc(), conversationId: wa });
+    for (let i = 0; i < 3; i++) await runJobs();
+    expect(sendText).toHaveBeenCalledWith(PHONE, "Sorry, the room concept didn't work. Please try again.");
+
+    vi.mocked(sendText).mockClear();
+    await inWindow(false);
+    await start({}, { ...tc(), conversationId: wa });
+    for (let i = 0; i < 3; i++) await runJobs();
+    expect(sendText).not.toHaveBeenCalled();
+    expect(sendTemplate).not.toHaveBeenCalled();
+    expect(sendCtaUrl).not.toHaveBeenCalled();
   });
 });

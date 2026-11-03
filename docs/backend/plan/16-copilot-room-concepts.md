@@ -123,7 +123,7 @@ Expected: PASS.
 
 **Outside the window:** the `concept_ready` template, with the name as its one body parameter. A failed concept sends nothing.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("uses cta_url inside the window and the template outside", ...);
@@ -133,12 +133,12 @@ it("an image-only concept gets View concept instead of Open 3D view", ...);
 it("a failed concept sends an apology inside the window and nothing outside", ...);
 ```
 
-- [ ] **Step 2: Implement, then run the tests**
+- [x] **Step 2: Implement, then run the tests**
 
 Run: `pnpm --filter api test concepts`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**: `feat(api): send room concepts on WhatsApp`
+- [x] **Step 3: Commit**: `feat(api): send room concepts on WhatsApp`
 
 ### Task 16.3: Chat card and the concept page
 
