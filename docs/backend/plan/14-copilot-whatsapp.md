@@ -88,7 +88,7 @@ Expected: PASS and a successful build.
 
 Reject the request if `metadata.phone_number_id` isn't ours. Ignore status updates, except logging send failures.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("rejects a bad signature with 401 and saves nothing", ...);
@@ -101,14 +101,14 @@ it("event and job are saved together: a failed enqueue leaves no event", ...);
 it("returns 503 when WhatsApp isn't configured", ...);
 ```
 
-- [ ] **Step 2: Implement.** `client.ts` starts with `sendText(to, text)`. ⚠ Verify payload and Graph API version against Meta's current docs.
+- [x] **Step 2: Implement.** `client.ts` starts with `sendText(to, text)`. ⚠ Verify payload and Graph API version against Meta's current docs.
 
-- [ ] **Step 3: Run the tests**
+- [x] **Step 3: Run the tests**
 
 Run: `pnpm --filter api test webhook`
 Expected: PASS, and the existing suite still passes with `rawBody` on.
 
-- [ ] **Step 4: Commit**: `feat(api): WhatsApp webhook`
+- [x] **Step 4: Commit**: `feat(api): WhatsApp webhook`
 
 ### Task 14.3: Sending
 

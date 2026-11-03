@@ -47,11 +47,12 @@ import { TasksController } from "./tasks/tasks.controller";
 import { TasksService } from "./tasks/tasks.service";
 import { AssistantController } from "./assistant/assistant.controller";
 import { WhatsAppLinksController } from "./whatsapp/links.controller";
+import { WhatsAppController } from "./whatsapp/whatsapp.controller";
 
 // One module for the whole API. Later tasks append to `controllers` and `providers`.
 @Module({
   imports: [ClsModule.forRoot({ global: true, middleware: { mount: true } })],
-  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController, QuotationsController, ProcurementController, VariationsController, BillingController, FilesController, SettingsController, DashboardController, DocumentsController, UpdatesController, TasksController, AssistantController, WhatsAppLinksController],
+  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController, QuotationsController, ProcurementController, VariationsController, BillingController, FilesController, SettingsController, DashboardController, DocumentsController, UpdatesController, TasksController, AssistantController, WhatsAppLinksController, WhatsAppController],
   providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService, BomService, QuotationsService, ProcurementService, VariationsService, BillingService, FilesService, SettingsService, DashboardService, DocumentsService, UpdatesService, TasksService],
 })
 export class AppModule {}
