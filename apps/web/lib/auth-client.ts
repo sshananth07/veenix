@@ -1,6 +1,7 @@
 "use client";
 import { createAuthClient } from "better-auth/react";
 import { twoFactorClient } from "better-auth/client/plugins";
+import { safeReturnPath } from "@veenix/shared";
 
 export const authClient = createAuthClient({
   plugins: [
@@ -19,6 +20,5 @@ export const authClient = createAuthClient({
 export function returnPath(): string {
   const fromUrl = new URLSearchParams(window.location.search).get("next");
   if (fromUrl) sessionStorage.setItem("next", fromUrl);
-  const next = fromUrl ?? sessionStorage.getItem("next") ?? "/";
-  return next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/"; // not //evil.com
+  return safeReturnPath(fromUrl ?? sessionStorage.getItem("next"), window.location.origin);
 }

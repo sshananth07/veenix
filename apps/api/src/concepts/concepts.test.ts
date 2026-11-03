@@ -4,7 +4,9 @@ import { convertLeadInput, conceptPatchInput, FURNITURE, type Room } from "@veen
 import "../assistant/tools.concepts";
 import "./concepts.jobs";
 import { executeTool } from "../assistant/tools";
-import { getConversation } from "../assistant/assistant.controller";
+import { deleteConversation, getConversation } from "../assistant/assistant.controller";
+import { strictSchema } from "../assistant/tools";
+import { roomSchema } from "@veenix/shared";
 import { AssistantConversationModel, AssistantMessageModel } from "../assistant/models";
 import { JobModel } from "../jobs/job.model";
 import { runDue } from "../jobs/jobs";
@@ -288,5 +290,25 @@ describe("on WhatsApp", () => {
     expect(sendText).not.toHaveBeenCalled();
     expect(sendTemplate).not.toHaveBeenCalled();
     expect(sendCtaUrl).not.toHaveBeenCalled();
+  });
+});
+
+describe("review fixes", () => {
+  it("deleting the chat keeps the photo a concept still uses", async () => {
+    const chat = (await asOwner(() => AssistantConversationModel.create([{ userId: owner, channel: "app" }])))[0]._id;
+    const key = await asOwner(async () => {
+      const k = newKey("assistant", ".jpg");
+      await putObject(k, Buffer.from([0xff, 0xd8, 0xff, 0xe0, 7]), "image/jpeg");
+      return k;
+    });
+    await asOwner(() => AssistantMessageModel.create([{ conversationId: chat, role: "user", text: "room", attachments: [{ key, name: "r.jpg", kind: "photo" }] }]));
+    await start({}, { ...tc([{ key, name: "r.jpg", kind: "photo" }]), conversationId: chat });
+    await asOwner(() => deleteConversation(chat));
+    await new Promise((r) => setTimeout(r, 100)); // removal runs after commit
+    await expect(getObject(key)).resolves.toBeInstanceOf(Buffer);
+  });
+
+  it("the room schema is accepted by OpenAI strict mode", () => {
+    expect(() => strictSchema(roomSchema)).not.toThrow();
   });
 });

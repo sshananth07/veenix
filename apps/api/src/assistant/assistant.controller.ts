@@ -1,5 +1,5 @@
 import { Controller, Delete, Get, Post, Query } from "@nestjs/common";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { z } from "zod";
 import {
   assistantMessageInput, type AssistantConversationDto, type AssistantConversationListItemDto, type AssistantMessageDto, type AssistantMessageInput,
@@ -73,8 +73,13 @@ export async function deleteConversation(id: Types.ObjectId) {
     const conversation = await ownConversation(id);
     const messages = await AssistantMessageModel.find({ conversationId: conversation._id }).select("attachments").lean();
     const keys = messages.flatMap((m) => m.attachments.map((a) => a.key));
-    // A site update may have reused a chat photo; keep those.
-    const kept = new Set((await SiteUpdateModel.find({ "photos.path": { $in: keys } }).select("photos.path").lean()).flatMap((u) => u.photos.map((p) => p.path)));
+    // A site update or a room concept may have reused a chat photo; keep those.
+    // Concepts are read with the raw driver: one on a project this member no longer sees still needs its photo.
+    const [updates, concepts] = await Promise.all([
+      SiteUpdateModel.find({ "photos.path": { $in: keys } }).select("photos.path").lean(),
+      mongoose.connection.collection("design_concepts").find({ orgId: ctx().orgId, sourceKey: { $in: keys } }, { projection: { sourceKey: 1 } }).toArray(),
+    ]);
+    const kept = new Set([...updates.flatMap((u) => u.photos.map((p) => p.path)), ...concepts.map((c) => c.sourceKey as string)]);
     await Promise.all([
       AssistantMessageModel.deleteMany({ conversationId: conversation._id }),
       AssistantToolCallModel.deleteMany({ conversationId: conversation._id }),
