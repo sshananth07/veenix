@@ -89,7 +89,7 @@ registerJob<{ taskId: string; dueAt: string }>(
     if (!whatsappConfigured()) return;
     // Done, deleted or rescheduled since this was queued: nothing (a reschedule queues its own reminder).
     const task = await TaskModel.findOne({ _id: taskId, status: "open", dueAt: new Date(dueAt) }).lean();
-    if (!task?.assigneeId) return;
+    if (!task?.assigneeId || task.dueAt! <= new Date()) return; // too late: without the per-minute cron a job can wait for the next request
     if (!(await MembershipModel.exists({ orgId: task.orgId, userId: task.assigneeId, status: "active" }))) return;
     const link = await WhatsAppLinkModel.findOne({ userId: task.assigneeId }).lean();
     if (!link?.notify) return;

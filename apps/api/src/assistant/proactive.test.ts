@@ -7,7 +7,8 @@ import { enqueue, runDue } from "../jobs/jobs";
 import { JobModel } from "../jobs/job.model";
 import { MembershipModel } from "../orgs/membership.model";
 import { ProjectModel } from "../projects/project.model";
-import { ensureBucket, getObject, putObject } from "../storage/storage";
+import { deleteObject, ensureBucket, getObject, putObject } from "../storage/storage";
+import { JobsController } from "../jobs/jobs.controller";
 import { TaskModel } from "../tasks/task.model";
 import { TasksService } from "../tasks/tasks.service";
 import { SiteUpdateModel } from "../updates/site-update.model";
@@ -17,6 +18,10 @@ import { asOrg, newId } from "../../test/ctx";
 import { AssistantMessageModel, PendingActionModel } from "./models";
 import { buildSummary, purgeOldAudio, scheduleDaily } from "./proactive";
 
+vi.mock("../storage/storage", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../storage/storage")>();
+  return { ...actual, deleteObject: vi.fn(actual.deleteObject) };
+});
 vi.mock("../whatsapp/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../whatsapp/client")>()),
   sendText: vi.fn().mockResolvedValue({}),
@@ -246,6 +251,16 @@ describe("task reminders", () => {
     expect(vi.mocked(sendText).mock.calls.filter((c) => c[0] === BOB)).toEqual([[BOB, expect.stringContaining("Sign quote")]]);
   });
 
+  it("a reminder that only runs after the task's time sends nothing", async () => {
+    // Without the per-minute cron, a job can wait for the next request or the next morning's cron.
+    const { id } = await asCreator(() => tasks.create({ title: "Late one", assigneeId: String(alice), dueAt: inHours(3) }));
+    const past = inHours(-1);
+    await asOwner(() => TaskModel.updateOne({ _id: id }, { $set: { dueAt: past } }));
+    await JobModel.updateOne({ "payload.taskId": id }, { $set: { "payload.dueAt": past } });
+    await reachReminders(id);
+    expect(sentTo(ALICE)).toHaveLength(0);
+  });
+
   it("no assignee or no link: nothing is sent and the job completes", async () => {
     const frank = newId();
     await MembershipModel.create([{ orgId: org, userId: frank, role: "site_staff" }]);
@@ -256,5 +271,18 @@ describe("task reminders", () => {
     for (const t of [none, unlinked, removed]) await reachReminders(t.id);
     expect(vi.mocked(sendText).mock.calls.length + vi.mocked(sendTemplate).mock.calls.length).toBe(0);
     for (const t of [none, unlinked, removed]) expect((await reminderOf(t.id))[0].status).toBe("done");
+  });
+});
+
+describe("cron", () => {
+  it("a failed audio delete doesn't stop the cron running due jobs", async () => {
+    const [m] = await asOwner(() => AssistantMessageModel.create([{ conversationId: newId(), role: "user", text: "x", attachments: [{ key: "orgs/x/assistant/stuck.ogg", name: "Voice note", kind: "audio" }] }]));
+    await backdate("assistant_messages", m._id, new Date(Date.now() - 100 * DAY));
+    vi.mocked(deleteObject).mockRejectedValueOnce(new Error("AccessDenied"));
+    const { id } = await asOrg(org, () => new TasksService().create({ title: "Cron one", assigneeId: String(alice), dueAt: new Date(Date.now() + 3 * 3_600_000).toISOString() }), { userId: bob });
+    await JobModel.updateOne({ "payload.taskId": id }, { $set: { runAt: new Date() } });
+    const r = await new JobsController().run(`Bearer ${env.CRON_SECRET}`);
+    expect(r.ran).toBeGreaterThanOrEqual(1);
+    expect(sentTo(ALICE)).toHaveLength(1);
   });
 });
