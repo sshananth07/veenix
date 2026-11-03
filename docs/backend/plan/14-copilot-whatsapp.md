@@ -126,14 +126,14 @@ Expected: PASS, and the existing suite still passes with `rawBody` on.
   - `inWindow(link): boolean`: `lastInboundAt` within 24 hours.
   - `WhatsAppSendError` for failures, retried by the job.
 
-- [ ] **Step 1: Write the failing tests**: exact payloads for each send type, over-long button text rejected before the call, and a Meta error raising `WhatsAppSendError`.
+- [x] **Step 1: Write the failing tests**: exact payloads for each send type, over-long button text rejected before the call, and a Meta error raising `WhatsAppSendError`.
 
-- [ ] **Step 2: Implement, then run the tests**
+- [x] **Step 2: Implement, then run the tests**
 
 Run: `pnpm --filter api test client`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**: `feat(api): WhatsApp sending`
+- [x] **Step 3: Commit**: `feat(api): WhatsApp sending`
 
 ### Task 14.4: Inbound job, voice and buttons
 

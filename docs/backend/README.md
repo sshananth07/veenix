@@ -144,7 +144,7 @@ Concretely:
 ### 14 Copilot on WhatsApp
 - [x] 14.1 Phone linking (with tests)
 - [x] 14.2 Webhook (with tests)
-- [ ] 14.3 Sending (with tests)
+- [x] 14.3 Sending (with tests)
 - [ ] 14.4 Inbound job, voice and buttons (with tests)
 
 ### 15 Copilot proactive messages
