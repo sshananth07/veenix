@@ -187,6 +187,8 @@ export interface TaskDto {
 }
 
 // ---- Assistant ---------------------------------------------------------------
+/** The signed-in user's linked WhatsApp number. `available` is false until Veenix's WhatsApp number is configured. */
+export interface WhatsAppLinkDto { available: boolean; phone: string | null; verifiedAt: Date | null }
 export interface AssistantCardDto {
   id: Id; status: "pending" | "applied" | "rejected"; expired: boolean; title: string;
   lines: { label: string; value: string }[]; changes: { label: string; before: string; after: string }[]; missing: string[]; link: string | null;

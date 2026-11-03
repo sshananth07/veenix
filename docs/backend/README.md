@@ -142,7 +142,7 @@ Concretely:
 - [x] 13.4 Assistant evaluation; the paid run waits for `OPENAI_API_KEY`
 
 ### 14 Copilot on WhatsApp
-- [ ] 14.1 Phone linking (with tests)
+- [x] 14.1 Phone linking (with tests)
 - [ ] 14.2 Webhook (with tests)
 - [ ] 14.3 Sending (with tests)
 - [ ] 14.4 Inbound job, voice and buttons (with tests)

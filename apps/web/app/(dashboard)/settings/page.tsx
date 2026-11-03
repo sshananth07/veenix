@@ -1,5 +1,5 @@
-import { Building2, CreditCard, Percent, ReceiptText, User } from "lucide-react";
-import { can, type EinvoiceSettingsDto, type InvitationDto, type MemberDto, type OrgDto } from "@veenix/shared";
+import { Building2, CreditCard, MessageCircle, Percent, ReceiptText, User } from "lucide-react";
+import { can, type EinvoiceSettingsDto, type InvitationDto, type MemberDto, type OrgDto, type WhatsAppLinkDto } from "@veenix/shared";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { EinvoiceSettingsDialog } from "@/components/settings/EinvoiceSettingsDialog";
@@ -8,6 +8,7 @@ import { MembersCard } from "@/components/settings/MembersCard";
 import { EditBankDetailsDialog } from "@/components/settings/EditBankDetailsDialog";
 import { EditLetterheadDialog } from "@/components/settings/EditLetterheadDialog";
 import { MarkupSettingsCard } from "@/components/settings/MarkupSettingsCard";
+import { WhatsAppLink } from "@/components/settings/WhatsAppLink";
 
 export const dynamic = "force-dynamic";
 
@@ -18,17 +19,19 @@ const NAV = [
   { href: "#markup", label: "Minimum Markup", icon: Percent },
   { href: "#einvoice", label: "E-invoicing", icon: ReceiptText },
   { href: "#users", label: "Users & Permissions", icon: User },
+  { href: "#whatsapp", label: "WhatsApp", icon: MessageCircle },
 ];
 
 export default async function SettingsPage() {
   const { role } = await requireOrg();
   const canManage = can(role, "member:manage");
   const canManageOrg = can(role, "org:manage");
-  const [settings, members, invitations, einvoice] = await Promise.all([
+  const [settings, members, invitations, einvoice, whatsapp] = await Promise.all([
     api<OrgDto>("/org"),
     canManage ? api<MemberDto[]>("/org/members") : [],
     canManage ? api<InvitationDto[]>("/org/invitations") : [],
     canManageOrg ? api<EinvoiceSettingsDto | null>("/org/einvoice") : null,
+    api<WhatsAppLinkDto>("/whatsapp/link"),
   ]);
 
   return (
@@ -133,6 +136,8 @@ export default async function SettingsPage() {
           )}
 
           {canManage && <MembersCard members={members} invitations={invitations} />}
+
+          <WhatsAppLink link={whatsapp} />
         </div>
       </div>
     </div>

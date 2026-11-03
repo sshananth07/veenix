@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { apiAction } from "@/lib/api";
+import { apiAction, apiActionData } from "@/lib/api";
 import { parseAddress } from "@/lib/address";
 import { fileRef, num, optStr, str, type ActionResult } from "@/lib/actionResult";
 
@@ -65,6 +65,16 @@ export async function updateEinvoiceSettings(formData: FormData): Promise<Action
       certificatePassword: certificateBase64 ? str(formData, "certificatePassword") : undefined,
     },
   });
+  revalidatePath("/settings");
+  return r;
+}
+
+export async function startWhatsAppLink() {
+  return apiActionData<{ code: string; waUrl: string }>("/whatsapp/link", { method: "POST" });
+}
+
+export async function unlinkWhatsApp(): Promise<ActionResult> {
+  const r = await apiAction("/whatsapp/link", { method: "DELETE" });
   revalidatePath("/settings");
   return r;
 }

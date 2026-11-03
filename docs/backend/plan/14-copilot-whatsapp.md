@@ -46,7 +46,7 @@
   - `unlink()`, `myLink()`
   - Routes: `POST /v1/whatsapp/link`, `DELETE /v1/whatsapp/link`, `GET /v1/whatsapp/link` (`@Can()`, `@RateLimit(10)` on POST).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("normalizes Malaysian numbers and WhatsApp IDs to the same form", ...);
@@ -55,14 +55,14 @@ it("a number already linked to another user is refused", ...);
 it("linking needs a signed-in session: the webhook alone can't create a link without a code", ...);
 ```
 
-- [ ] **Step 2: Implement.** The settings section shows the linked number, an unlink button and "Link WhatsApp", which opens `waUrl`. Because login requires MFA, the code proves an MFA-verified session.
+- [x] **Step 2: Implement.** The settings section shows the linked number, an unlink button and "Link WhatsApp", which opens `waUrl`. Because login requires MFA, the code proves an MFA-verified session.
 
-- [ ] **Step 3: Run the tests**
+- [x] **Step 3: Run the tests**
 
 Run: `pnpm --filter api test links; pnpm --filter web build`
 Expected: PASS and a successful build.
 
-- [ ] **Step 4: Commit**: `feat(api): link WhatsApp numbers to members`
+- [x] **Step 4: Commit**: `feat(api): link WhatsApp numbers to members`
 
 ### Task 14.2: Webhook
 

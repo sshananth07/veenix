@@ -28,6 +28,13 @@ const schema = z.object({
   // The assistant. Optional so the API boots without it; the assistant then replies that it is off.
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default("gpt-6.1-sol"),
+  // WhatsApp (plan 14). All optional so the API boots without them; the webhook then answers 503.
+  WHATSAPP_APP_SECRET: z.string().optional(),
+  WHATSAPP_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_NUMBER: z.string().optional(), // digits with country code, no +
+  STT_API_KEY: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);
