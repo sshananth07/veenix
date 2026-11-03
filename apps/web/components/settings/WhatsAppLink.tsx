@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import type { WhatsAppLinkDto } from "@veenix/shared";
-import { startWhatsAppLink, unlinkWhatsApp } from "@/actions/settings";
+import { setWhatsAppNotify, startWhatsAppLink, unlinkWhatsApp } from "@/actions/settings";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 
@@ -21,6 +21,11 @@ export function WhatsAppLink({ link }: { link: WhatsAppLinkDto }) {
       const r = await startWhatsAppLink();
       if (r.ok) setStarted(r.data);
       else setError(r.error);
+    });
+  const toggleNotify = (notify: boolean) =>
+    startTransition(async () => {
+      const r = await setWhatsAppNotify(notify);
+      if (!r.ok) setError(r.error);
     });
   const unlink = () =>
     startTransition(async () => {
@@ -45,11 +50,17 @@ export function WhatsAppLink({ link }: { link: WhatsAppLinkDto }) {
       {!link.available ? (
         <p className="text-sm text-muted-foreground">Not available yet. Veenix&apos;s WhatsApp number hasn&apos;t been set up.</p>
       ) : link.phone ? (
-        <p className="text-sm">
-          Linked to <span className="font-medium">+{link.phone}</span>
-          {link.verifiedAt && <span className="text-muted-foreground"> since {formatDate(link.verifiedAt)}</span>}. Text, voice notes and photos you send act with
-          your permissions.
-        </p>
+        <div className="space-y-3 text-sm">
+          <p>
+            Linked to <span className="font-medium">+{link.phone}</span>
+            {link.verifiedAt && <span className="text-muted-foreground"> since {formatDate(link.verifiedAt)}</span>}. Text, voice notes and photos you send act with
+            your permissions.
+          </p>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={link.notify} disabled={pending} onChange={(e) => toggleNotify(e.target.checked)} />
+            Send me a morning summary at 8am and reminders before my tasks
+          </label>
+        </div>
       ) : started ? (
         <div className="space-y-3 text-sm">
           <p>

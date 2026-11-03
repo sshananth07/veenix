@@ -19,6 +19,9 @@ export function taskScope(): object {
   return { $or: [{ assigneeId: c.userId }, { createdBy: c.userId }, { projectId: { $in: c.projectScope } }] };
 }
 
+/** Tasks that are mine: assigned to me, or created by me with no assignee. */
+export const myTasks = () => ({ $or: [{ assigneeId: ctx().userId }, { createdBy: ctx().userId, assigneeId: null }] });
+
 async function loadTask(id: Types.ObjectId) {
   const t = await TaskModel.findOne({ _id: id, ...taskScope() });
   if (!t) throw notFound("Task");
@@ -66,8 +69,7 @@ export class TasksService {
 
   /** Open tasks assigned to me, or created by me with no assignee; then the last 20 done. */
   async listMine(): Promise<TaskDto[]> {
-    const me = ctx().userId;
-    const mine = { $or: [{ assigneeId: me }, { createdBy: me, assigneeId: null }] };
+    const mine = myTasks();
     const [open, done] = await Promise.all([
       TaskModel.find({ ...mine, status: "open" }).sort({ dueAt: 1, createdAt: 1 }).limit(200).lean(),
       TaskModel.find({ ...mine, status: "done" }).sort({ doneAt: -1 }).limit(20).lean(),

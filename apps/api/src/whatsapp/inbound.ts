@@ -6,7 +6,7 @@ import { tx } from "../common/tx";
 import { registerJob } from "../jobs/jobs";
 import { MembershipModel } from "../orgs/membership.model";
 import { OrgModel } from "../orgs/org.model";
-import { getObject, newKey, putObject } from "../storage/storage";
+import { getObject, newKey, putObject, removeObject } from "../storage/storage";
 import { AssistantConversationModel, PendingActionModel } from "../assistant/models";
 import { approve, reject, undoToolCall, type Card } from "../assistant/pending";
 import { startTurn } from "../assistant/turn";
@@ -85,7 +85,7 @@ async function storeMedia(e: Event): Promise<string | null> {
   if (!ext) return replyAndStop(e, e.payload.type === "image" ? "Please send photos as JPG or PNG." : "I can't play that kind of audio. Please send a voice note.").then(() => null);
   try {
     const { bytes, mimeType } = await getMedia(e.payload.mediaId!);
-    const key = newKey("assistant", ext); // ponytail: raw audio should be deleted after 90 days (spec §10 PDPA review); no lifecycle rule yet
+    const key = newKey("assistant", ext); // audio kept on a message is deleted after 90 days by purgeOldAudio
     await putObject(key, bytes, mimeType.split(";")[0]);
     await WhatsAppEventModel.updateOne({ _id: e._id }, { $set: { mediaKey: key } });
     return key;
@@ -123,7 +123,10 @@ async function handle(e: Event, link: Link) {
       transcript = (await transcribe(await getObject(key), m.mimeType ?? "audio/ogg")).text;
       await WhatsAppEventModel.updateOne({ _id: e._id }, { $set: { transcript } }); // paid once, even if the job retries
     }
-    if (!transcript.replace(/[\s.…]/g, "")) return replyAndStop(e, "Sorry, I couldn't hear that. Please send the voice note again.");
+    if (!transcript.replace(/[\s.…]/g, "")) {
+      await removeObject(key); // no message keeps it, so the 90-day purge would never find it
+      return replyAndStop(e, "Sorry, I couldn't hear that. Please send the voice note again.");
+    }
   }
 
   const photos = await waitingPhotos(e.phone, e._id);

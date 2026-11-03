@@ -4,7 +4,7 @@ import { ctx, runWithCtx, systemCtx } from "../common/context";
 import { afterCommit } from "../common/tx";
 import { JobModel } from "./job.model";
 
-export type JobType = "mail.send" | "document.snapshot" | "einvoice.submit" | "einvoice.poll" | "assistant.turn" | "whatsapp.inbound";
+export type JobType = "mail.send" | "document.snapshot" | "einvoice.submit" | "einvoice.poll" | "assistant.turn" | "whatsapp.inbound" | "assistant.morning";
 
 type JobOpts<P> = {
   lockMs?: number;

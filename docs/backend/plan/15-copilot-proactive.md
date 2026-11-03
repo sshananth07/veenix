@@ -42,7 +42,7 @@
 
 `JobsController.run` calls `scheduleDaily()` and `purgeOldAudio()` before `runDue`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("runs once a day however often cron fires", ...);
@@ -54,12 +54,12 @@ it("counts a work-in-progress project with no update for 3 days as quiet", ...);
 it("purges audio at 90 days and keeps the transcript", ...);
 ```
 
-- [ ] **Step 2: Implement, then run the tests**
+- [x] **Step 2: Implement, then run the tests**
 
 Run: `pnpm --filter api test proactive; pnpm --filter web build`
 Expected: PASS and a successful build.
 
-- [ ] **Step 3: Commit**: `feat(api): morning summary and audio retention`
+- [x] **Step 3: Commit**: `feat(api): morning summary and audio retention`
 
 ### Task 15.2: Task reminders
 

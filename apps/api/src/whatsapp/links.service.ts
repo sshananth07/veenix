@@ -54,5 +54,10 @@ export async function unlink() {
 
 export async function myLink(): Promise<WhatsAppLinkDto> {
   const link = await WhatsAppLinkModel.findOne({ userId: ctx().userId }).lean();
-  return { available: !!env.WHATSAPP_NUMBER, phone: link?.phone ?? null, verifiedAt: link?.verifiedAt ?? null };
+  return { available: !!env.WHATSAPP_NUMBER, phone: link?.phone ?? null, verifiedAt: link?.verifiedAt ?? null, notify: link?.notify ?? true };
+}
+
+/** Morning summaries and task reminders on or off. */
+export async function setNotify(notify: boolean) {
+  await WhatsAppLinkModel.updateOne({ userId: ctx().userId }, { $set: { notify } });
 }

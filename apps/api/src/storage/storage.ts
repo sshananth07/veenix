@@ -95,8 +95,14 @@ export async function getObject(key: string): Promise<Buffer> {
   return Buffer.from(await r.Body!.transformToByteArray());
 }
 
+/** Throws on failure; deleting a key that's already gone succeeds. */
+export async function deleteObject(key: string) {
+  await s3.send(new DeleteObjectCommand({ Bucket, Key: key }));
+}
+
+/** Best effort: a failure is ignored. */
 export async function removeObject(key: string) {
-  await s3.send(new DeleteObjectCommand({ Bucket, Key: key })).catch(() => undefined);
+  await deleteObject(key).catch(() => undefined);
 }
 
 /** Local and first-deploy setup: create the bucket and let the web origin PUT and GET directly. */

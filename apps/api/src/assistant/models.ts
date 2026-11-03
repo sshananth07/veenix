@@ -22,7 +22,7 @@ conversationSchema.index({ orgId: 1, userId: 1 }, { unique: true, partialFilterE
 conversationSchema.plugin(tenantPlugin);
 export const AssistantConversationModel = model("AssistantConversation", conversationSchema);
 
-const attachmentSchema = new Schema({ key: { type: String, required: true }, name: { type: String, required: true }, kind: { type: String, enum: ["photo", "audio"], required: true } }, { _id: false });
+const attachmentSchema = new Schema({ key: { type: String, required: true }, name: { type: String, required: true }, kind: { type: String, enum: ["photo", "audio"], required: true }, removedAt: { type: Date, default: null } }, { _id: false }); // removedAt: raw audio deleted after 90 days
 
 /**
  * Append-only. `items` holds Responses API input or output items exactly as sent or returned

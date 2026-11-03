@@ -148,7 +148,7 @@ Concretely:
 - [x] 14.4 Inbound job, voice and buttons (with tests); live check waits for the owner's test number
 
 ### 15 Copilot proactive messages
-- [ ] 15.1 Morning summary (with tests)
+- [x] 15.1 Morning summary (with tests)
 - [ ] 15.2 Task reminders (with tests)
 
 ### 16 Copilot 3D room concepts

@@ -14,7 +14,7 @@ import { JobModel } from "../jobs/job.model";
 import { MembershipModel } from "../orgs/membership.model";
 import { OrgModel } from "../orgs/org.model";
 import { ProjectModel } from "../projects/project.model";
-import { ensureBucket } from "../storage/storage";
+import { ensureBucket, getObject } from "../storage/storage";
 import { SiteUpdateModel } from "../updates/site-update.model";
 import { asOrg, newId } from "../../test/ctx";
 import { getMedia, MediaTooLargeError, sendButtons, sendText } from "./client";
@@ -163,9 +163,13 @@ describe("WhatsApp inbound", () => {
 
   it("empty audio asks for a retry and makes no LLM call", async () => {
     vi.mocked(transcribe).mockResolvedValueOnce({ text: " … " });
-    await deliver(voice(ALICE));
+    const m = voice(ALICE);
+    await deliver(m);
     expect(llm).not.toHaveBeenCalled();
     expect(sentTo(ALICE)).toEqual(["Sorry, I couldn't hear that. Please send the voice note again."]);
+    // No message keeps it, so the 90-day purge would never find it: deleted now.
+    const { mediaKey } = (await WhatsAppEventModel.findOne({ messageId: m.id }).lean())!;
+    await expect(getObject(mediaKey!)).rejects.toThrow();
   });
 
   it("too-large media gets a friendly reply and isn't downloaded twice", async () => {

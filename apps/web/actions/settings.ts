@@ -73,6 +73,12 @@ export async function startWhatsAppLink() {
   return apiActionData<{ code: string; waUrl: string }>("/whatsapp/link", { method: "POST" });
 }
 
+export async function setWhatsAppNotify(notify: boolean): Promise<ActionResult> {
+  const r = await apiAction("/whatsapp/link", { method: "PATCH", body: { notify } });
+  revalidatePath("/settings");
+  return r;
+}
+
 export async function unlinkWhatsApp(): Promise<ActionResult> {
   const r = await apiAction("/whatsapp/link", { method: "DELETE" });
   revalidatePath("/settings");
