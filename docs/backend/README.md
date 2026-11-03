@@ -21,7 +21,7 @@ This folder holds the design and the step-by-step build guide for moving Veenix 
 | [plan/13-copilot-procurement-and-budget.md](plan/13-copilot-procurement-and-budget.md) | Vendor quotes, budget lines, quote acceptance and vendor payment tools; financial questions and procurement catalogue; the assistant evaluation |
 | [plan/14-copilot-whatsapp.md](plan/14-copilot-whatsapp.md) | Phone linking, webhook, sending, voice notes and buttons |
 | [plan/15-copilot-proactive.md](plan/15-copilot-proactive.md) | Morning summary, task reminders, audio retention |
-| [plan/16-copilot-room-concepts.md](plan/16-copilot-room-concepts.md) | 3D spike, concept generation, WhatsApp delivery, the viewer in chat |
+| [plan/16-copilot-room-concepts.md](plan/16-copilot-room-concepts.md) | Room concepts: restyled photo and a hand-built 3D room (no paid 3D vendor), WhatsApp delivery, chat card and full-screen viewer |
 
 ## How to use the plan
 
@@ -151,8 +151,9 @@ Concretely:
 - [x] 15.1 Morning summary (with tests)
 - [x] 15.2 Task reminders (with tests)
 
-### 16 Copilot 3D room concepts
-- [ ] 16.1 Spike (owner judges)
-- [ ] 16.2 Concepts and generation jobs (with tests)
-- [ ] 16.3 WhatsApp delivery (with tests)
-- [ ] 16.4 Viewer in the chat and on its own page
+### 16 Copilot room concepts
+- [ ] 16.1 Concepts and generation jobs (with tests)
+- [ ] 16.2 WhatsApp delivery (with tests)
+- [ ] 16.3 Chat card and the concept page
+- [ ] 16.4 The 3D room (viewer and editor)
+- [ ] 16.5 Owner check on real photos (needs OPENAI_API_KEY)

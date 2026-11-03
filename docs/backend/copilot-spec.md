@@ -22,7 +22,7 @@ This is one assistant with two channels (WhatsApp and an in-app chat) and one sh
 **Goals**
 - **Owner:** follow Zoye's behaviour: text, voice notes and photos; one message can do several things; the assistant acts instead of filling forms; it takes initiative with reminders and summaries.
 - **Owner:** handle project updates and procurement first.
-- **Owner:** in-app chat shows a rotatable 3D room inside the chat message (mockup option A), which the contractor presents to the client.
+- **Owner (revised 2026-11-03):** the chat, a narrow side rail, shows a preview card; **View** opens the concept full screen, where the room rotates and can be explored and presented to the client. No paid 3D vendor: the room is built in the browser with Three.js (§7).
 - **Owner:** WhatsApp gets a static preview image and a link that opens the 3D room in Veenix, because WhatsApp can't render WebGL.
 - **Owner:** requests can't all be predicted, so the assistant answers any question about data the user may see, and can do anything the app lets them do, with approval by default (§5.7, §5.8).
 
@@ -30,7 +30,7 @@ This is one assistant with two channels (WhatsApp and an in-app chat) and one sh
 - **Owner:** customers messaging the system. Only staff send messages. No Lead Bot, broadcasts, or replies to leads, even though Zoye has them.
 - **Owner:** saved reports, custom automations, dashboards, a visual builder and ERP features. See §14.
 - **Owner:** tools or queries written by the LLM at runtime. New tools are added in reviewed code (§5.7).
-- **Author's call:** Slack, email, SMS, Facebook and Instagram channels; Google Calendar sync; a client login or portal (already ruled out in the backend spec); a separate vector database; Kafka, RabbitMQ or BullMQ; editable 3D scenes; budgets derived from 3D geometry; streaming replies token by token.
+- **Author's call:** Slack, email, SMS, Facebook and Instagram channels; Google Calendar sync; a client login or portal (already ruled out in the backend spec); a separate vector database; Kafka, RabbitMQ or BullMQ; budgets derived from 3D geometry; streaming replies token by token.
 
 **Anti-goals: it has failed if any of these happen, even if it works**
 - A price, quantity or measurement on a client document that nobody stated.
@@ -52,7 +52,7 @@ This is one assistant with two channels (WhatsApp and an in-app chat) and one sh
 | Search | `search_entries` | Backs the project and record lookup tool |
 | Reports | `DashboardService.reports` | Backs `get_business_report` |
 | Audit | `audit()` | Add channel, conversation and message IDs to `data` |
-| Files | S3 storage service, `/v1/downloads/:kind/:id`, `UPLOAD_RULES` | Add a `concept` download kind and the 3D file type |
+| Files | S3 storage service, `/v1/downloads/:kind/:id`, `UPLOAD_RULES` | Concepts store a restyled image under `orgs/<org>/concepts/`; no new upload rule, since only server jobs write there |
 | Quotation pricing | `refreshDraftQuotation`, `withMarkup` | Quotation lines always flow from the BOM |
 
 ## 4. Main flows
@@ -65,9 +65,9 @@ This is one assistant with two channels (WhatsApp and an in-app chat) and one sh
 
 **Procurement.** "Ali quoted RM5,000 for tiling, accept it." The quote is recorded. Accepting it only creates an approval card ("Accept Ali's quote, RM5,000.00, creates a PO"). The PO exists only after the tap. A PO needs payment terms totalling 100%, so if the contractor didn't state them, the card lists them as missing and they're entered on the card in the app.
 
-**3D concept (in-app, option A).** The contractor attaches a photo and types "Japandi, oak furniture". A "generating" message appears in the chat. When it finishes, the message becomes a rotatable room labelled "AI concept, not to scale", with Present full screen, Try another style and Save to project actions. The contractor can continue chatting in the meantime.
+**Room concept (in-app).** The contractor attaches a photo and types "Japandi, oak furniture". A "Designing your room…" card appears in the chat. When it finishes, the card shows the restyled photo with a before/after slider, labelled "AI concept, not to scale", and **View**, **Try another style** and **Save** actions. View opens the concept full screen: the photo, and a 3D room to rotate, walk into and re-finish in front of the client. The contractor can continue chatting in the meantime.
 
-**3D concept (WhatsApp).** The same request by photo and voice note. The reply is the preview image with an "Open 3D view" button that opens Veenix in the phone's browser, behind normal login.
+**3D concept (WhatsApp).** The same request by photo and voice note. The reply is the restyled image with an "Open 3D view" button that opens Veenix in the phone's browser, behind normal login.
 
 **Budget from a brief.** "400 sq ft of flooring, RM6,000 allowance." The card proposes one line: 400 `sq ft` at RM15.00, RM6,000.00 cost, and shows the client price after markup. Approving calls `saveBomItem`, which refreshes any draft quotation.
 
@@ -88,7 +88,7 @@ In-app chat ──server action──► API ───────► jobs ─�
                                                            ├─ Claude API (tool loop)
                                                            ├─ tools ─► existing services ─► MongoDB
                                                            ├─ pending action ─► approval card
-                                                           └─ concept job ─► restyle + 3D vendors ─► storage
+                                                           └─ concept job ─► OpenAI image edit + room description ─► storage
 Reply ◄── WhatsApp API, or changed() + SSE refetch for in-app
 ```
 
@@ -100,8 +100,8 @@ The runner was built for short, independent jobs. It needs these changes:
 
 - **Per-conversation ordering.** `claimNext` takes any due job, so two voice notes could run at once or out of order. Add an optional lane key to jobs, and allow only one running job per lane, oldest first. The lane is the conversation. How to make this atomic is left to the builder (for example a small lock document with a unique key), and it must not burn `attempts` while waiting.
 - **Per-type retry.** Backoff of `2^attempts` minutes is too slow for chat. Assistant jobs retry within seconds a few times, then tell the user it failed.
-- **Duration.** `LOCK_MS` is 2 minutes and `runDue` is serial per instance, so a slow assistant turn can expire its lock and also delay mail on that instance. Keep each job short: no job waits for a render, which is polled in separate short jobs. Assistant turns must be retry-safe (§5.5), and lock duration should be set per type.
-- **`JobType`.** Add types for inbound processing, assistant turns, concept generation and polling, and proactive sends.
+- **Duration.** `LOCK_MS` is 2 minutes and `runDue` is serial per instance, so a slow assistant turn can expire its lock and also delay mail on that instance. Keep each job short: a concept job makes two OpenAI calls with their own timeouts and skips any step whose result is already stored. Assistant turns must be retry-safe (§5.5), and lock duration should be set per type.
+- **`JobType`.** Add types for inbound processing, assistant turns, concept generation, and proactive sends.
 
 **Hosting (author's call).** Keep the planned Vercel setup: Pro with a per-minute cron, which is needed anyway because Hobby is non-commercial and only runs a daily cron. Keep every job within the function time limit. Move to a small always-on worker only if measurements show that fails. Nothing gets provisioned as part of this work: the owner has said not to set up Vercel yet, and local development doesn't need it. **Pro is a launch prerequisite for WhatsApp**, because a lost `waitUntil` run would otherwise wait up to a day for the next sweep.
 
@@ -244,33 +244,40 @@ All tenant collections use `tenantPlugin`. Names are the builder's to adjust.
 | `pending_actions` | Yes | `userId`, tool, validated input, expiry, status, result | |
 | `site_updates` | Yes, `projectId` | `kind` (`progress`, `issue`, `material_request`, `delivery`), text, photos, author, source message | Projects have no activity log today, so this is new |
 | `tasks` | Yes | `projectId` or `leadId` or neither, title, assignee, `dueAt`, status, source message | Follow-ups and meetings are tasks with a time |
-| `design_concepts` | Yes | `projectId` or `leadId` (exactly one), source photo, brief, status, preview key, 3D key, vendor task IDs, name, saved flag | See below |
+| `design_concepts` | Yes | `projectId` or `leadId` (exactly one), source photo, brief, status, restyled image key, room description (§7), name, saved flag | See below |
 
 **Concepts on leads (author's call).** Selling happens before a project exists, so a concept can attach to a lead and moves to the project on conversion. `tenantPlugin` scopes `projectId`, so check that lead concepts stay out of reach of project-scoped roles, who also have no `lead:read`.
 
 **Tenant plugin caveat.** `site_updates`, `design_concepts` and `tasks` with no `projectId` need a test that project-scoped users can't see or miss records in unintended ways. The plugin's `projectId ∈ scope` filter hides rows with a null `projectId` from those roles, which would hide their own general tasks. Filter tasks by assignee as well, or leave them outside project scope.
 
-## 7. 3D concepts
+## 7. Room concepts
 
-**Pipeline (author's call, subject to the spike in §10).** Photo and brief → restyled image that keeps the room's layout → World Labs Marble ([World API](https://radiancefields.com/world-labs-introduces-world-api-for-marble)) → explorable 3D scene, stored in Veenix's own storage.
+**Revised 2026-11-03 (owner).** The first plan sent the photo to World Labs Marble for a photoreal 3D scene. At about RM6 per render that was too dear, so the owner chose a hand-built 3D room instead. Nothing here needs a vendor beyond OpenAI, which the copilot already uses.
 
-- **Not Meshy or Tripo.** These are aimed at single objects, not rooms. This is judgement, not a test result, and they can join the spike if wanted.
-- **Output format.** Marble [returns Gaussian splats](https://docs.scenario.com/get-started/generation/3d-model-generation/3d-model-generation-world-labs) (`.spz`, `.ply`), not GLB. The viewer must render splats (⚠ Verify the current library, for example Spark on Three.js).
-- **Vendor code.** Plain functions in one file. No provider interface until there's a second vendor. ⚠ Verify the API, price (a [third-party figure](https://invideo.io/blog/world-labs-marble-3d-worlds/) of about US$1.20–1.28 per world), and that [commercial use](https://www.nukepedia.com/tools/python/3d/marble-x-nuke-ai-3d-world-generation-gaussian/) is allowed on the chosen plan.
-- **Restyling vendor.** Builder's choice from the spike. It must keep walls and windows in place.
+**Pipeline.** Photo and brief → two OpenAI calls in one background job:
+1. **Restyle (the "wow" picture).** OpenAI image edit (`gpt-image-2`, ⚠ verify price and quality on real photos in Task 16.5) with the photo itself as input, never a URL, and a fixed prompt around the brief that keeps the camera angle, walls, windows, doors and ceiling, and changes only furniture, finishes, colours and lighting. About RM0.20–0.80 per image.
+2. **Room description (the 3D).** The chat model looks at the same photo and brief and returns a structured room: size in metres, wall colour, floor finish, windows and doors on each wall, and furniture from a fixed catalogue with position, rotation and colour. Server code validates it and fits every item inside the room. A few sen per request.
 
-**Job flow.** Save the concept record and job in one transaction, then call the vendors from jobs. Poll for completion in short jobs, and use a vendor webhook only as a speed-up, verified, with polling still in place. Copy results into storage straight away. Failures update the chat message and don't consume the org's quota. A retried job can't start a second paid render, because of the tool-call record.
+**The 3D room is drawn in the browser** with Three.js from that description: walls, floor and openings, plus furniture built from simple shapes in code (no downloaded models, no licences), lit with a soft studio environment and shadows. It looks like a clean architectural model, not a photo. The restyled photo is the photoreal part.
 
-**Fallback.** If 3D fails or the device can't render it, the restyled image still shows. The feature must be useful with the image alone.
+- **Why not a vendor 3D model:** cost per render (owner's call), and a hand-built room can be edited, which a generated scene can't.
+- **Vendor code.** Plain functions in one file (`concepts/ai.ts`). If OpenAI's edits move walls on real photos, swap the restyle function for a depth-guided interior model (for example on Replicate). Nothing else changes.
 
-**Privacy.** Vendors get a short-lived presigned URL, never a permanent one.
+**Job flow.** Save the concept record and job in one transaction. The job runs as the member and skips any step whose result is stored, so a retry never pays twice. A concept is `ready` once the image is stored; a failed room description leaves it image-only. After the last retry it is `failed`, the chat says so, and it no longer counts toward the quota.
 
-**Viewer (owner: inside the chat message; author's call: details).**
-- One component, used in the chat message and a full page at `/concepts/:id`.
-- Loaded with `next/dynamic` and `ssr: false`, only when needed. `apps/web` is on React 18, so ⚠ Verify the React Three Fiber version that supports it (current releases target React 19).
-- Drag to rotate, scroll or pinch to zoom, and a full-screen button using the browser's Fullscreen API.
-- "AI concept, not to scale" always visible, including full screen.
-- Falls back to the image when WebGL is missing or the context is lost.
+**Quota.** 20 concepts per organisation in any 24 hours; failed ones don't count.
+
+**Privacy.** The photo goes to OpenAI (the PDPA disclosure in §10 covers it). Nothing in our storage is exposed by URL to a vendor.
+
+**In the chat (owner: side rail; author's call: details).** A card: "Designing your room…" while generating, then the restyled photo with a before/after slider, the label, **View**, **Try another style** (prefills the chat with the concept's name) and **Save** (shows it on the project or lead).
+
+**Full screen at `/concepts/:id` (owner: rotatable and explorable; author's call: the rest).**
+- **Photo:** the restyled image with a before/after slider.
+- **3D:** drag to rotate, scroll or pinch to zoom; **Walk in** drops the camera to eye level; **Day / Evening** lighting.
+- **Re-finish live:** wall colour and floor swatches; room width, length and height.
+- **Furniture:** tap to select, drag along the floor, rotate, recolour, delete, and add from the catalogue. **Save changes** stores the edited room.
+- **Present:** browser Fullscreen API. "AI concept, not to scale" always visible, including full screen.
+- Three.js loads only on this page (`next/dynamic`, `ssr: false`). It falls back to the photo when WebGL is missing, the context is lost, or the scene throws.
 - Never attached to quotations or other client documents.
 
 ## 8. WhatsApp replies
@@ -296,7 +303,7 @@ All tenant collections use `tenantPlugin`. Names are the builder's to adjust.
 
 **Spikes before their phase (throwaway code, paid API calls, owner approves the spend):**
 1. **Speech.** Run 20–30 real voice notes, including Manglish, Malay and renovation jargon, through a few transcription providers. Measure errors on names, amounts and project names. If it isn't accurate enough, voice notes need stronger read-back before anything applies. ⚠ Verify whether the chosen provider accepts OGG directly, since [OpenAI's guide](https://developers.openai.com/api/docs/guides/speech-to-text) doesn't list it. That decides whether FFmpeg is needed at all.
-2. **3D.** Run 5–10 real Malaysian room photos through the pipeline. The owner judges whether a contractor would show the result to a client, on a laptop or tablet and on a phone. If not, ship the restyled image without 3D, or reconsider a room-shell-plus-catalogue approach (full rotation and editable, but not photoreal and much more work).
+2. **Room concepts (revised 2026-11-03).** The paid 3D spike is dropped with the vendor. Instead, once `OPENAI_API_KEY` is set, run 5–10 real Malaysian room photos through the built feature (plan 16, Task 16.5). The owner judges, on a laptop or tablet and on a phone, whether a contractor would show it to a client, and whether the restyle keeps walls and windows in place.
 
 **Assistant evaluation.** A set of 20–30 real requests with expected tool calls, including vague ones and prompt-injection text placed in a vendor note and in a photo. It must never invent a figure, pick the wrong project without asking, or claim something is done before it is. Re-run on any prompt or model change.
 
@@ -328,9 +335,9 @@ All tenant collections use `tenantPlugin`. Names are the builder's to adjust.
 2. **Procurement and budget tools,** plus financial questions and procurement catalogue entries.
 3. **WhatsApp:** linking, webhook, voice, replies.
 4. **Proactive messages.**
-5. **3D:** spike, then concepts, viewer, and WhatsApp preview and link.
+5. **Room concepts:** generation, WhatsApp preview and link, chat card and full-screen viewer, then the owner's check on real photos.
 
-Each step leaves Veenix working and is usable alone. The 3D work is last because it depends on a spike and is the most independent.
+Each step leaves Veenix working and is usable alone. Room concepts are last because they are the most independent.
 
 ## 12. Known limits
 
@@ -342,10 +349,10 @@ The catalogue adds more cards, so people may start approving without reading. Sh
 
 ## 13. Left to the builder
 
-- Library choices not named here: FFmpeg packaging if needed, splat renderer. (The plan settles the lane lock: a partial unique index on running jobs.)
+- Library choices not named here: FFmpeg packaging if needed. (The plan settles the lane lock: a partial unique index on running jobs.)
 - Tool Runner or manual loop.
 - File layout, within the README's one-module rule.
-- Exact chat placement and visual design, keeping option A's in-message viewer. The mockup is in `.superpowers/brainstorm/` and isn't committed.
+- Exact chat placement and visual design, keeping the preview card in the chat and the room full screen (§7).
 - Exact prompts, limits and timings, starting from the values above.
 
 ## 14. Where this release stops, and what comes later
