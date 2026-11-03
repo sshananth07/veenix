@@ -7,6 +7,7 @@ import type {
 import type { Sen } from "./money";
 import type { Role } from "./permissions";
 import type { QuotationTotals } from "./quotation";
+import type { Room } from "./room";
 
 export type Id = string;
 
@@ -204,6 +205,12 @@ export interface AssistantMessageDto {
   changes: { toolCallId: Id; text: string; undone: boolean; undoable: boolean }[];
   steps: { name: string; isError: boolean }[];
   seconds: number | null;
+  concepts: ConceptDto[];
+}
+/** A room concept (spec §7). URLs are short-lived; room is null when the concept is image-only. */
+export interface ConceptDto {
+  id: Id; name: string; brief: string; status: "generating" | "ready" | "failed"; error: string | null;
+  projectId: Id | null; leadId: Id | null; photoUrl: string; imageUrl: string | null; room: Room | null; saved: boolean; createdAt: Date;
 }
 export interface AssistantConversationDto { id: Id; title: string; projectId: Id | null; projectName: string | null; messages: AssistantMessageDto[]; busy: boolean }
 export interface AssistantConversationListItemDto { id: Id; title: string; projectId: Id | null; projectName: string | null; lastMessageAt: Date }

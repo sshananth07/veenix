@@ -19,6 +19,8 @@ import { INBOUND_PER_MINUTE } from "./limits";
 import { AssistantConversationModel, AssistantMessageModel, AssistantToolCallModel, PendingActionModel } from "./models";
 import { approve, reject, undoToolCall, type Card } from "./pending";
 import { startTurn } from "./turn";
+import { DesignConceptModel, type DesignConcept } from "../concepts/concept.model";
+import { toDto as toConceptDto } from "../concepts/concepts.service";
 
 const DAY = 86_400_000;
 const approveInput = z.strictObject({ edits: z.record(z.string(), z.unknown()).default({}) });
@@ -97,8 +99,11 @@ export async function getConversation(id: Types.ObjectId): Promise<AssistantConv
     JobModel.exists({ orgId: ctx().orgId, lane: `conv:${conversationId}`, status: { $in: ["pending", "running"] } }),
   ]);
 
+  const conceptIds = calls.flatMap((c) => ((c.display as { type?: string } | null)?.type === "concept" ? [(c.display as { conceptId: string }).conceptId] : []));
+  const concepts = await Promise.all((await DesignConceptModel.find({ _id: { $in: conceptIds } }).lean()).map((c) => toConceptDto(c as DesignConcept)));
+
   const messages: AssistantMessageDto[] = [];
-  const blank = { photos: [], cards: [], tables: [], changes: [], steps: [], seconds: null };
+  const blank = { photos: [], cards: [], tables: [], changes: [], steps: [], seconds: null, concepts: [] };
   for (const u of recent.filter((m) => m.role === "user")) {
     const photos = await Promise.all(u.attachments.filter((a) => a.kind === "photo").map(async (a) => ({ name: a.name, url: await downloadUrl(a.key, a.name) })));
     messages.push({ ...blank, id: String(u._id), role: "user", text: u.text, createdAt: u.createdAt, photos });
@@ -111,6 +116,7 @@ export async function getConversation(id: Types.ObjectId): Promise<AssistantConv
       seconds: Math.round((reply.createdAt.getTime() - u.createdAt.getTime()) / 1000),
       steps: turnCalls.map((c) => ({ name: c.toolName, isError: c.isError })),
       tables: turnCalls.flatMap((c) => ((c.display as { type?: string } | null)?.type === "table" ? [c.display as { columns: string[]; rows: string[][] }] : [])),
+      concepts: concepts.filter((k) => turnCalls.some((c) => (c.display as { conceptId?: string } | null)?.conceptId === k.id)),
       changes: turnCalls.filter((c) => c.undo && !c.isError).map((c) => ({
         toolCallId: String(c._id), text: c.result, undone: !!c.undoneAt, undoable: !c.undoneAt && c.createdAt.getTime() > Date.now() - DAY,
       })),

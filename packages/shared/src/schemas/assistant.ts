@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { dateOrNull, objectId, uploadRef } from "./common";
+import { roomSchema } from "../room";
 
 export const SITE_UPDATE_KINDS = ["progress", "issue", "material_request", "delivery"] as const;
 export type SiteUpdateKind = (typeof SITE_UPDATE_KINDS)[number];
@@ -29,3 +30,10 @@ export const assistantMessageInput = z.strictObject({
   photos: z.array(uploadRef).max(5, "Send up to 5 photos at a time").default([]),
 });
 export type AssistantMessageInput = z.infer<typeof assistantMessageInput>;
+
+export const conceptPatchInput = z.strictObject({
+  name: z.string().trim().min(1).max(80).optional(),
+  saved: z.boolean().optional(),
+  room: roomSchema.optional(),
+});
+export type ConceptPatchInput = z.infer<typeof conceptPatchInput>;

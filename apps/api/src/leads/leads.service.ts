@@ -11,6 +11,7 @@ import { changed } from "../live/live";
 import { indexEntry } from "../search/search";
 import { LeadModel } from "./lead.model";
 import { ProjectModel } from "../projects/project.model";
+import { DesignConceptModel } from "../concepts/concept.model";
 
 const PAGE_SIZE = 10; // same as the old leads page
 const ADDRESS = ["addressLine1", "addressLine2", "addressLine3", "postcode", "city", "state"] as const;
@@ -132,6 +133,7 @@ export class LeadsService {
         leadId: lead._id,
       }]);
 
+      await DesignConceptModel.updateMany({ leadId: lead._id }, { $set: { projectId: project._id, leadId: null } });
       lead.set({ ...address, siteAddress, status: "CONVERTED" });
       lead.activities.push({ note: `Converted to project ${project.code}`, author: "System" });
       await lead.save();

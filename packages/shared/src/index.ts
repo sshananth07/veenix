@@ -11,3 +11,4 @@ export * from "./procurement";
 export * from "./attention";
 export * from "./dto";
 export * from "./schemas";
+export * from "./room";

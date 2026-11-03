@@ -7,6 +7,8 @@ import "./assistant/tools.procurement"; // registers the procurement and budget 
 import "./assistant/turn"; // registers the assistant.turn job handler
 import "./whatsapp/inbound"; // registers the whatsapp.inbound job handler and reply sink
 import "./assistant/proactive"; // registers the assistant.morning job handler
+import "./assistant/tools.concepts"; // registers generate_room_concept
+import "./concepts/concepts.jobs"; // registers the concept.generate job handler
 import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { ClsModule } from "nestjs-cls";
@@ -50,11 +52,13 @@ import { TasksService } from "./tasks/tasks.service";
 import { AssistantController } from "./assistant/assistant.controller";
 import { WhatsAppLinksController } from "./whatsapp/links.controller";
 import { WhatsAppController } from "./whatsapp/whatsapp.controller";
+import { ConceptsController } from "./concepts/concepts.controller";
+import { ConceptsService } from "./concepts/concepts.service";
 
 // One module for the whole API. Later tasks append to `controllers` and `providers`.
 @Module({
   imports: [ClsModule.forRoot({ global: true, middleware: { mount: true } })],
-  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController, QuotationsController, ProcurementController, VariationsController, BillingController, FilesController, SettingsController, DashboardController, DocumentsController, UpdatesController, TasksController, AssistantController, WhatsAppLinksController, WhatsAppController],
-  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService, BomService, QuotationsService, ProcurementService, VariationsService, BillingService, FilesService, SettingsService, DashboardService, DocumentsService, UpdatesService, TasksService],
+  controllers: [HealthController, OrgsController, UploadsController, JobsController, LiveController, SearchController, VendorsController, LeadsController, ProjectsController, BomController, QuotationsController, ProcurementController, VariationsController, BillingController, FilesController, SettingsController, DashboardController, DocumentsController, UpdatesController, TasksController, AssistantController, WhatsAppLinksController, WhatsAppController, ConceptsController],
+  providers: [{ provide: APP_GUARD, useClass: AccessGuard }, { provide: APP_FILTER, useClass: ErrorFilter }, OrgsService, VendorsService, LeadsService, ProjectsService, BomService, QuotationsService, ProcurementService, VariationsService, BillingService, FilesService, SettingsService, DashboardService, DocumentsService, UpdatesService, TasksService, ConceptsService],
 })
 export class AppModule {}

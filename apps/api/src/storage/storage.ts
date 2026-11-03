@@ -18,7 +18,7 @@ const s3 = new S3Client({
 });
 const Bucket = env.S3_BUCKET;
 
-export function newKey(purpose: UploadPurpose | "documents" | "assistant", ext: string) {
+export function newKey(purpose: UploadPurpose | "documents" | "assistant" | "concepts", ext: string) {
   return `orgs/${ctx().orgId}/${purpose}/${randomUUID()}${ext}`;
 }
 
@@ -77,8 +77,8 @@ export async function claim(ref: { key: string; name: string }, purpose: UploadP
 const disposition = (filename: string, inline: boolean) =>
   `${inline ? "inline" : "attachment"}; filename="${filename.replace(/[^\w.\- ]+/g, "_")}"`;
 
-export function downloadUrl(key: string, filename: string, inline = true) {
-  return getSignedUrl(s3, new GetObjectCommand({ Bucket, Key: key, ResponseContentDisposition: disposition(filename, inline) }), { expiresIn: 300 });
+export function downloadUrl(key: string, filename: string, inline = true, expiresIn = 300) {
+  return getSignedUrl(s3, new GetObjectCommand({ Bucket, Key: key, ResponseContentDisposition: disposition(filename, inline) }), { expiresIn });
 }
 
 /** A 7-day link for sending a document over WhatsApp. */

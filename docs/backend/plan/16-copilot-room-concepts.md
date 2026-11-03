@@ -76,7 +76,7 @@
     - `GET /v1/projects/:id/concepts` (`project:read`)
     - `GET /v1/leads/:id/concepts` (`lead:read`)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 // room.test.ts
@@ -97,12 +97,12 @@ it("converting a lead moves its concepts to the project", ...);
 it("PATCH refuses a room that fails the schema", ...);
 ```
 
-- [ ] **Step 2: Implement, then run the tests**
+- [x] **Step 2: Implement, then run the tests**
 
 Run: `pnpm --filter @veenix/shared test room; pnpm --filter api test concepts; pnpm --filter api typecheck`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**: `feat(api): room concept generation`
+- [x] **Step 3: Commit**: `feat(api): room concept generation`
 
 ### Task 16.2: WhatsApp delivery
 

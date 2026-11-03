@@ -152,7 +152,7 @@ Concretely:
 - [x] 15.2 Task reminders (with tests)
 
 ### 16 Copilot room concepts
-- [ ] 16.1 Concepts and generation jobs (with tests)
+- [x] 16.1 Concepts and generation jobs (with tests)
 - [ ] 16.2 WhatsApp delivery (with tests)
 - [ ] 16.3 Chat card and the concept page
 - [ ] 16.4 The 3D room (viewer and editor)
