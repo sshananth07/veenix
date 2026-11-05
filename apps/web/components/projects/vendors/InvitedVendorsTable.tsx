@@ -97,13 +97,15 @@ export function InvitedVendorsTable({ items, vendors }: { items: { bom: Bom; rfq
                     )}
                   </td>
                   <td className="px-3 py-3.5">
-                    <Button size="sm" variant="outline" asChild>
-                      <a href={`/api/documents/rfq/${rfq.id}?vendorId=${q.vendorId}&download=1`} title={`Download the RFQ addressed to ${q.vendor.name}`}>
-                        <Download className="h-3.5 w-3.5" />
-                        RFQ PDF
-                      </a>
-                    </Button>
-                    <SendDocumentButtons type="rfq" id={rfq.id} defaultEmail={q.vendor.email} defaultPhone={q.vendor.phone} />
+                    <div className="flex items-center gap-1.5">
+                      <Button size="sm" variant="outline" asChild>
+                        <a href={`/api/documents/rfq/${rfq.id}?vendorId=${q.vendorId}&download=1`} title={`Download the RFQ addressed to ${q.vendor.name}`}>
+                          <Download className="h-3.5 w-3.5" />
+                          RFQ PDF
+                        </a>
+                      </Button>
+                      <SendDocumentButtons type="rfq" id={rfq.id} defaultEmail={q.vendor.email} defaultPhone={q.vendor.phone} small />
+                    </div>
                   </td>
                   <td className="px-3 py-3.5">
                     {q.receivedAt ? (

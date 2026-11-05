@@ -12,7 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 type DocType = "quotation" | "invoice" | "po" | "rfq";
 
 /** Email the PDF as an attachment, or open WhatsApp with a 7-day download link. */
-export function SendDocumentButtons({ type, id, defaultEmail, defaultPhone }: { type: DocType; id: string; defaultEmail?: string | null; defaultPhone?: string | null }) {
+/** small matches a size="sm" button beside it, e.g. in table rows. */
+export function SendDocumentButtons({ type, id, defaultEmail, defaultPhone, small }: { type: DocType; id: string; defaultEmail?: string | null; defaultPhone?: string | null; small?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +35,7 @@ export function SendDocumentButtons({ type, id, defaultEmail, defaultPhone }: { 
     <>
       <FormDialog
         trigger={
-          <Button variant="outline" size="icon" aria-label="Email PDF" title="Email PDF">
+          <Button variant="outline" size="icon" className={small ? "size-8" : undefined} aria-label="Email PDF" title="Email PDF">
             <Mail className="h-4 w-4" />
           </Button>
         }
@@ -51,7 +52,7 @@ export function SendDocumentButtons({ type, id, defaultEmail, defaultPhone }: { 
           <Textarea id={`message-${id}`} name="message" rows={3} placeholder="Please find the document attached." />
         </Field>
       </FormDialog>
-      <Button variant="outline" size="icon" aria-label="Share on WhatsApp" title="Share on WhatsApp" disabled={pending} onClick={whatsapp}>
+      <Button variant="outline" size="icon" className={small ? "size-8" : undefined} aria-label="Share on WhatsApp" title="Share on WhatsApp" disabled={pending} onClick={whatsapp}>
         <MessageCircle className="h-4 w-4" />
       </Button>
       {error && <span role="alert" className="text-xs text-red-700">{error}</span>}

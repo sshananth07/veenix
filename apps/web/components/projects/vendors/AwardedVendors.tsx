@@ -59,7 +59,7 @@ export function AwardedVendors({ items }: { items: { bom: Bom; rfq: Rfq | undefi
                     PO PDF
                   </a>
                 </Button>
-                <SendDocumentButtons type="po" id={po.id} defaultEmail={po.vendor.email} defaultPhone={po.vendor.phone} />
+                <SendDocumentButtons type="po" id={po.id} defaultEmail={po.vendor.email} defaultPhone={po.vendor.phone} small />
                 {rfq && rfq.quotes.length > 0 && (
                   <details className="text-xs">
                     <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">RFQs and quotes ({rfq.quotes.length})</summary>
