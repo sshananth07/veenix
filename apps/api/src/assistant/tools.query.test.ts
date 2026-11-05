@@ -37,6 +37,8 @@ describe("query_records", () => {
   it("site staff only get assigned projects; another organization never appears", async () => {
     const r = await asStaff(() => runQuery(q({ metric: { type: "rows", field: null } })));
     expect(JSON.parse(r.content).rows.map((x: { text: string }) => x.text).sort()).toEqual(["a", "b"]);
+    expect(r.display.columns).not.toContain("Project id"); // the model gets ids; the table people see doesn't
+    expect(Object.keys(JSON.parse(r.content).rows[0])).toContain("projectId");
     const all = await asOwner(() => runQuery(q({ metric: { type: "count", field: null } })));
     expect(JSON.parse(all.content).rows[0].value).toBe(3);
   });

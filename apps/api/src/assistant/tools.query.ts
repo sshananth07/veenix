@@ -141,9 +141,10 @@ export async function runQuery(q: QueryInput) {
     const names = Object.keys(e.fields);
     const get = (r: Record<string, unknown>, path: string) => path.split(".").reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], r);
     const picked = rows.map((r) => Object.fromEntries(names.map((n) => [n, get(r, n) ?? null])));
+    const shown = names.filter((n) => e.fields[n].type !== "id"); // ids are for the model's next call, not for people
     return {
       content: JSON.stringify({ rows: picked, truncated }),
-      display: { type: "table", columns: names.map((n) => e.fields[n].label), rows: picked.map((r) => names.map((n) => show(e.fields[n], r[n]))) },
+      display: { type: "table", columns: shown.map((n) => e.fields[n].label), rows: picked.map((r) => shown.map((n) => show(e.fields[n], r[n]))) },
     };
   }
   const valueField = q.metric.type === "sum" ? e.fields[q.metric.field!] : undefined;

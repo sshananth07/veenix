@@ -1,6 +1,8 @@
 "use client";
 import { useState, useTransition } from "react";
 import { ChevronDown, CircleCheck, Clock, Undo2 } from "lucide-react";
+import Markdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { AssistantMessageDto } from "@veenix/shared";
 import { undoAssistantChange } from "@/actions/assistant";
 import { cn } from "@/lib/utils";
@@ -18,6 +20,23 @@ const STEP_LABELS: Record<string, string> = {
   report_unsupported_request: "Noted a request it can't do yet",
   generate_room_concept: "Started a room concept",
 };
+// The model writes Markdown; raw HTML in it is never rendered. Headings render as bold lines in a chat bubble.
+const styled = (Tag: React.ElementType, className: string) => ({ node: _node, ...p }: { node?: unknown }) => <Tag className={className} {...p} />;
+const heading = styled("p", "mt-3 mb-1 font-semibold");
+const md: Components = {
+  p: styled("p", "my-2 first:mt-0 last:mb-0"),
+  ul: styled("ul", "my-2 list-disc space-y-1 pl-5"),
+  ol: styled("ol", "my-2 list-decimal space-y-1 pl-5"),
+  h1: heading, h2: heading, h3: heading, h4: heading,
+  a: styled("a", "text-primary underline"),
+  code: styled("code", "rounded bg-muted px-1 py-0.5 text-xs"),
+  table: ({ node: _node, ...p }) => <div className="my-2 overflow-x-auto rounded-lg border"><table className="w-full text-xs" {...p} /></div>,
+  thead: styled("thead", "bg-muted/60 text-left"),
+  tr: styled("tr", "border-t first:border-t-0"),
+  th: styled("th", "px-2.5 py-1.5 font-medium"),
+  td: styled("td", "px-2.5 py-1.5 tabular-nums"),
+};
+
 const stepLabel = (name: string) => STEP_LABELS[name] ?? (name.startsWith("propose_") ? "Prepared an approval" : name.replaceAll("_", " "));
 
 type Props = { message: AssistantMessageDto; onChange: () => void; onDraft: (text: string) => void };
@@ -81,8 +100,8 @@ function AssistantReply({ message, onChange, onDraft }: Props) {
           ))}
         </ol>
       )}
-      <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.text}</p>
-      {message.tables.map((t, i) => (
+      {/* The raw lookup results sit with the steps; the reply is the answer. */}
+      {open && message.tables.map((t, i) => (
         <div key={i} className="overflow-x-auto rounded-lg border">
           <table className="w-full text-xs">
             <thead className="bg-muted/60 text-left">
@@ -96,6 +115,9 @@ function AssistantReply({ message, onChange, onDraft }: Props) {
           </table>
         </div>
       ))}
+      <div className="text-sm leading-relaxed">
+        <Markdown remarkPlugins={[remarkGfm]} components={md}>{message.text}</Markdown>
+      </div>
       {message.changes.length > 0 && (
         <ul className="space-y-1.5">
           {message.changes.map((c) => <Change key={c.toolCallId} change={c} onChange={onChange} />)}
