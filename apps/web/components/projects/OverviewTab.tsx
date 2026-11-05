@@ -4,7 +4,7 @@ import type { ProjectDetail, ProjectTabKey } from "@/lib/projectQuery";
 import type { BomCost, Blocker } from "@veenix/shared";
 import { getAttention, type Priority } from "@/lib/attention";
 import { getPackages } from "@/lib/procurement";
-import { splitSstInclusive } from "@veenix/shared";
+import { milestoneCollected, splitSstInclusive } from "@veenix/shared";
 import { Avatar } from "@/components/ui/avatar";
 import { addressLines } from "@/lib/address";
 import { cn, daysBetween, formatCurrency, formatDate } from "@/lib/utils";
@@ -60,7 +60,7 @@ export function OverviewTab({
   const latest = project.quotations[project.quotations.length - 1];
 
   const directCost = Object.values(costs).reduce((s, c) => s + c.cost, 0);
-  const collected = project.milestones.filter((m) => m.status === "PAID").reduce((s, m) => s + m.amount, 0);
+  const collected = project.milestones.reduce((s, m) => s + milestoneCollected(m), 0);
   const revenue = splitSstInclusive(project.contractValue, project.pricing.sstBps).exSst;
   const profit = revenue - directCost;
   const marginPct = revenue > 0 ? (profit / revenue) * 100 : 0;

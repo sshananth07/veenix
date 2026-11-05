@@ -21,8 +21,11 @@ export type VoStatus = (typeof VO_STATUSES)[number];
 export const MILESTONE_STATUSES = ["NOT_YET_DUE", "AWAITING_PAYMENT", "PAID", "HELD", "PENDING_SIGNOFF"] as const;
 export type MilestoneStatus = (typeof MILESTONE_STATUSES)[number];
 
-export const INVOICE_STATUSES = ["ISSUED", "SENT", "PAID"] as const;
+export const INVOICE_STATUSES = ["ISSUED", "SENT", "PARTIALLY_PAID", "PAID"] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+
+export const CLIENT_PAYMENT_METHODS = ["Bank transfer", "DuitNow QR", "FPX", "Cheque", "Cash"] as const;
+export type ClientPaymentMethod = (typeof CLIENT_PAYMENT_METHODS)[number];
 
 export const PERFORMED_BY = ["OUTSOURCED", "SELF"] as const;
 export type PerformedBy = (typeof PERFORMED_BY)[number];

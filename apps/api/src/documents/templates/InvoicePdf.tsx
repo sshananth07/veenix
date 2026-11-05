@@ -29,7 +29,7 @@ export function InvoicePdf({ company, invoice, qr, milestoneName, project, sstBp
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Letterhead company={company} docTitle="Tax Invoice" docCode={invoice.code} badge={invoice.status} />
+        <Letterhead company={company} docTitle="Tax Invoice" docCode={invoice.code} badge={invoice.status.replace("_", " ")} />
 
         <MetaGrid
           items={[

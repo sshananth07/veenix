@@ -215,7 +215,7 @@ defineQueryEntity("client_milestones", {
   unwind: "milestones",
   fields: {
     _id: id("Project id"), code: str("Project code"), name: str("Project"), "milestones.name": str("Milestone"), "milestones.pct": num("Percent"),
-    "milestones.amount": money("Amount"), "milestones.status": str("Status"),
+    "milestones.amount": money("Amount"), "milestones.status": str("Status"), "milestones.paidAmount": money("Collected"),
   },
 });
 

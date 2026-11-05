@@ -87,9 +87,9 @@ export function getAttention(
     items.push({ priority: "high", title: "Set up payment schedule", text: "The quotation is signed. Set up the client payment schedule.", status: "To do", tab: "payments", cta: "Set up schedule" });
   for (const m of project.milestones) {
     if (m.status === "AWAITING_PAYMENT" && !m.invoice)
-      items.push({ priority: "high", title: "Invoice due", text: `"${m.name}" is due. Generate its invoice.`, status: "Due", tab: "payments", cta: "Generate invoice" });
+      items.push({ priority: "high", title: "Invoice due", text: `"${m.name}" is due. Raise its invoice.`, status: "Due", tab: "payments", cta: "Raise invoice" });
     if (m.status === "AWAITING_PAYMENT" && m.invoice)
-      items.push({ priority: "medium", title: "Payment outstanding", text: `${m.invoice.code} (${formatCurrency(m.amount)}) is awaiting payment from the client`, status: "Awaiting client", tab: "payments", cta: "Open" });
+      items.push({ priority: "medium", title: "Payment outstanding", text: `${m.invoice.code} has ${formatCurrency(m.amount - (m.paidAmount ?? 0))} still to come from the client`, status: "Awaiting client", tab: "payments", cta: "Open" });
   }
   if (pendingVos.length > 0)
     items.push({ priority: "low", title: "Variation order unsigned", text: `${pendingVos.length} variation ${pendingVos.length === 1 ? "order is" : "orders are"} not signed yet`, status: "Awaiting client", tab: "variations", cta: "Open" });

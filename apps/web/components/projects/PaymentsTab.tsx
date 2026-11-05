@@ -1,27 +1,41 @@
 import Link from "next/link";
 import { AlertCircle, Building2, CheckCircle2, CircleDollarSign, Download, ExternalLink, Hourglass, QrCode, Smartphone } from "lucide-react";
 import type { ProjectDetail } from "@/lib/projectQuery";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { milestoneCollected, mytStartOfDay } from "@veenix/shared";
+import { cn, formatCurrency, formatDate, formatMoney2 } from "@/lib/utils";
 import { ActionButton } from "@/components/ActionButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MilestoneScheduleDialog } from "@/components/projects/payments/MilestoneScheduleDialog";
-import { generateInvoiceForMilestone, markInvoicePaid, submitEinvoice } from "@/actions/milestones";
+import { RaiseInvoiceDialog, RecordPaymentDialog, ReversePaymentDialog } from "@/components/projects/payments/PaymentDialogs";
+import { submitEinvoice } from "@/actions/milestones";
 import { SendDocumentButtons } from "@/components/SendDocumentButtons";
 
 type Milestone = ProjectDetail["milestones"][number];
 
-const MILESTONE_STATUS: Record<string, { label: string; pill: string }> = {
+const PILL = {
   NOT_YET_DUE: { label: "Not yet due", pill: "bg-muted text-muted-foreground" },
-  AWAITING_PAYMENT: { label: "Awaiting invoice", pill: "bg-amber-100 text-amber-800" },
+  AWAITING_INVOICE: { label: "Awaiting invoice", pill: "bg-amber-100 text-amber-800" },
+  AWAITING_PAYMENT: { label: "Awaiting payment", pill: "bg-amber-100 text-amber-800" },
+  OVERDUE: { label: "Overdue", pill: "bg-red-100 text-red-800" },
+  PART_PAID: { label: "Part paid", pill: "bg-sky-100 text-sky-800" },
   PAID: { label: "Paid", pill: "bg-emerald-100 text-emerald-800" },
   HELD: { label: "Held", pill: "bg-slate-200 text-slate-800" },
   PENDING_SIGNOFF: { label: "Pending sign-off", pill: "bg-amber-100 text-amber-800" },
 };
 
+/** The row's status, read from the invoice once there is one. */
+function rowStatus(m: Milestone) {
+  const inv = m.invoice;
+  if (!inv) return m.status === "AWAITING_PAYMENT" ? PILL.AWAITING_INVOICE : (PILL[m.status as keyof typeof PILL] ?? PILL.NOT_YET_DUE);
+  if (inv.status === "PAID") return PILL.PAID;
+  if (inv.dueDate && new Date(inv.dueDate) < mytStartOfDay()) return PILL.OVERDUE;
+  return inv.paidAmount > 0 ? PILL.PART_PAID : PILL.AWAITING_PAYMENT;
+}
+
 export function PaymentsTab({ project, selectedInvoiceId }: { project: ProjectDetail; selectedInvoiceId: string | null }) {
-  const collected = project.milestones.filter((m) => m.status === "PAID").reduce((s, m) => s + m.amount, 0);
-  const outstanding = project.milestones.filter((m) => m.status === "AWAITING_PAYMENT").reduce((s, m) => s + m.amount, 0);
+  const collected = project.milestones.reduce((s, m) => s + milestoneCollected(m), 0);
+  const outstanding = project.milestones.filter((m) => m.status === "AWAITING_PAYMENT").reduce((s, m) => s + m.amount - milestoneCollected(m), 0);
   const notYetDue = project.milestones.filter((m) => m.status === "NOT_YET_DUE" || m.status === "HELD" || m.status === "PENDING_SIGNOFF").reduce((s, m) => s + m.amount, 0);
   const contract = project.contractValue || collected + outstanding + notYetDue;
   const pct = (n: number) => (contract > 0 ? Math.round((n / contract) * 100) : 0);
@@ -89,7 +103,7 @@ export function PaymentsTab({ project, selectedInvoiceId }: { project: ProjectDe
               </thead>
               <tbody className="divide-y">
                 {project.milestones.map((m) => (
-                  <MilestoneRow key={m.id} m={m} projectId={project.id} active={selected?.id === m.id} />
+                  <MilestoneRow key={m.id} m={m} projectId={project.id} active={selected?.id === m.id} einvoice={project.einvoiceEnabled} />
                 ))}
               </tbody>
             </table>
@@ -102,14 +116,18 @@ export function PaymentsTab({ project, selectedInvoiceId }: { project: ProjectDe
   );
 }
 
-function MilestoneRow({ m, projectId, active }: { m: Milestone; projectId: string; active: boolean }) {
-  const status = MILESTONE_STATUS[m.status] ?? MILESTONE_STATUS.NOT_YET_DUE;
+function MilestoneRow({ m, projectId, active, einvoice }: { m: Milestone; projectId: string; active: boolean; einvoice: boolean }) {
+  const status = rowStatus(m);
+  const paid = milestoneCollected(m);
   return (
     <tr className={active ? "bg-primary/5" : undefined}>
       <td className="px-5 py-3 font-medium">{m.name}</td>
       <td className="px-2 py-3 text-xs text-muted-foreground">{m.trigger}</td>
       <td className="px-2 py-3 text-right tabular-nums">{m.pct != null ? `${m.pct}%` : "-"}</td>
-      <td className="px-2 py-3 text-right tabular-nums">{formatCurrency(m.amount).replace("RM ", "")}</td>
+      <td className="px-2 py-3 text-right tabular-nums">
+        {formatCurrency(m.amount).replace("RM ", "")}
+        {paid > 0 && paid < m.amount && <div className="text-xs text-muted-foreground">{formatCurrency(paid).replace("RM ", "")} paid</div>}
+      </td>
       <td className="px-2 py-3">
         {m.invoice ? (
           <Link href={`/projects/${projectId}?tab=payments&invoice=${m.invoice.id}`} replace scroll={false} className="font-medium text-primary hover:underline">
@@ -123,15 +141,9 @@ function MilestoneRow({ m, projectId, active }: { m: Milestone; projectId: strin
         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${status.pill}`}>{status.label}</span>
       </td>
       <td className="px-5 py-3 text-right">
-        {!m.invoice && m.status === "AWAITING_PAYMENT" && (
-          <ActionButton size="sm" action={generateInvoiceForMilestone.bind(null, m.id)} pendingLabel="Generating...">
-            Generate Invoice
-          </ActionButton>
-        )}
+        {!m.invoice && m.status !== "HELD" && <RaiseInvoiceDialog milestone={m} einvoice={einvoice} primary={m.status === "AWAITING_PAYMENT"} />}
         {m.invoice && m.invoice.status !== "PAID" && (
-          <ActionButton size="sm" variant="outline" action={markInvoicePaid.bind(null, m.invoice.id)}>
-            Mark Paid
-          </ActionButton>
+          <RecordPaymentDialog invoice={m.invoice} milestoneName={m.name} trigger={<Button size="sm">Record payment</Button>} />
         )}
         {m.invoice && m.invoice.status === "PAID" && (
           <Link href={`/projects/${projectId}?tab=payments&invoice=${m.invoice.id}`} replace scroll={false} className="text-sm font-medium text-primary hover:underline">
@@ -146,6 +158,7 @@ function MilestoneRow({ m, projectId, active }: { m: Milestone; projectId: strin
 function TaxInvoiceCard({ project, milestone }: { project: ProjectDetail; milestone: Milestone }) {
   const invoice = milestone.invoice!;
   const total = invoice.amount + invoice.sstAmount;
+  const balance = total - invoice.paidAmount;
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
       <div className="flex items-start justify-between gap-3 border-b px-5 py-4">
@@ -182,24 +195,59 @@ function TaxInvoiceCard({ project, milestone }: { project: ProjectDetail; milest
           </dl>
         </div>
 
-        <div>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">How the client pays</div>
-          <div className="grid grid-cols-3 gap-2">
-            <PayMethod icon={QrCode} label="DuitNow QR" sub="Scan and pay" />
-            <PayMethod icon={Smartphone} label="FPX" sub="Online banking" />
-            <PayMethod icon={Building2} label="Bank transfer" sub="RHB / Maybank / CIMB" />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Bank transfer to {project.name.split(",")[0]}&apos;s account, quoting {invoice.code} as the reference.
-          </p>
-        </div>
+        <PaymentHistory invoice={invoice} balance={balance} />
 
-        {invoice.status !== "PAID" && (
-          <ActionButton size="sm" variant="outline" className="w-full" action={markInvoicePaid.bind(null, invoice.id)}>
-            Mark Paid
-          </ActionButton>
+        {balance > 0 && (
+          <>
+            <div>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">How the client pays</div>
+              <div className="grid grid-cols-3 gap-2">
+                <PayMethod icon={QrCode} label="DuitNow QR" sub="Scan and pay" />
+                <PayMethod icon={Smartphone} label="FPX" sub="Online banking" />
+                <PayMethod icon={Building2} label="Bank transfer" sub="RHB / Maybank / CIMB" />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Bank transfer to {project.name.split(",")[0]}&apos;s account, quoting {invoice.code} as the reference.
+              </p>
+            </div>
+            <RecordPaymentDialog invoice={invoice} milestoneName={milestone.name} trigger={<Button className="w-full">Record payment</Button>} />
+          </>
         )}
       </div>
+    </div>
+  );
+}
+
+function PaymentHistory({ invoice, balance }: { invoice: NonNullable<Milestone["invoice"]>; balance: number }) {
+  if (invoice.payments.length === 0 && invoice.status !== "PAID") return null;
+  return (
+    <div>
+      <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Payments received</div>
+      {invoice.payments.length === 0 ? (
+        <p className="text-muted-foreground">Marked paid in full before payment details were recorded.</p>
+      ) : (
+        <ul className="divide-y rounded-lg border">
+          {invoice.payments.map((p) => (
+            <li key={p.id} className="flex items-center gap-3 px-3 py-2">
+              <div className={cn("min-w-0 flex-1", p.reversedAt && "text-muted-foreground")}>
+                <div className="font-medium">
+                  {formatDate(p.receivedAt)} · {p.method}
+                  {p.reversedAt && <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">Reversed</span>}
+                </div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {[p.reference, p.recordedByName && `Recorded by ${p.recordedByName}`].filter(Boolean).join(" · ") || "No reference"}
+                </div>
+              </div>
+              <span className={cn("tabular-nums", p.reversedAt ? "text-muted-foreground line-through" : "font-medium")}>{formatMoney2(p.amount).replace("RM ", "")}</span>
+              {p.reversedAt ? <span className="w-7" aria-hidden /> : <ReversePaymentDialog invoiceId={invoice.id} payment={p} />}
+            </li>
+          ))}
+        </ul>
+      )}
+      <dl className="mt-2 space-y-1.5">
+        <Row label="Received (RM)" value={formatCurrency(invoice.paidAmount).replace("RM ", "")} />
+        <Row label="Balance (RM)" value={formatCurrency(balance).replace("RM ", "")} bold />
+      </dl>
     </div>
   );
 }

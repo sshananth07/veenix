@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import {
-  addDays, can, daysBetween, formatDate, getAttention, LEAD_SOURCES, LEAD_STATUSES, mytStartOfDay, PRIORITY_ORDER, quotationReadiness, quotationTotals,
+  addDays, can, daysBetween, formatDate, getAttention, LEAD_SOURCES, LEAD_STATUSES, milestoneCollected, mytStartOfDay, PRIORITY_ORDER, quotationReadiness, quotationTotals,
   type DashboardDto, type DashboardRowDto, type LeadStatus, type ReportsDto, type Role,
 } from "@veenix/shared";
 import { ctx, currentUser } from "../common/context";
@@ -36,7 +36,7 @@ export class DashboardService {
 
     const openLeads = leads.filter((l) => l.status !== "CONVERTED");
     const contractValue = projects.reduce((s, p) => s + p.contractValue, 0);
-    const collected = projects.reduce((s, p) => s + p.milestones.filter((m) => m.status === "PAID").reduce((a, m) => a + m.amount, 0), 0);
+    const collected = projects.reduce((s, p) => s + p.milestones.reduce((a, m) => a + milestoneCollected(m), 0), 0);
 
     // Everything waiting on someone, across every active project and open lead.
     const rows: DashboardRowDto[] = [];

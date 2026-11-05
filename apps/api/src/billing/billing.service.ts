@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Types } from "mongoose";
-import { addDays, quotationTotals, splitSstInclusive } from "@veenix/shared";
+import { addDays, formatMoney2, invoicePaid, quotationTotals, splitSstInclusive, toDateInput, type ClientPaymentMethod } from "@veenix/shared";
+import { ctx } from "../common/context";
 import { findSub } from "../common/fields";
 import { notFound, rule } from "../common/errors";
 import { tx } from "../common/tx";
@@ -13,11 +14,31 @@ import { indexEntry } from "../search/search";
 import { loadOrg } from "../orgs/org.model";
 import { loadProject, loadProjectBy } from "../projects/project.model";
 import { QuotationModel } from "../quotations/quotation.model";
+import { UserModel } from "../users/user.model";
 import { InvoiceModel } from "./invoice.model";
 import { applySchedule } from "./schedule";
 
 type Id = Types.ObjectId;
 const INVOICE_DUE_DAYS = 7;
+type Invoice = NonNullable<Awaited<ReturnType<typeof loadInvoice>>>;
+
+async function loadInvoice(id: Id) {
+  const invoice = await InvoiceModel.findById(id);
+  if (!invoice) throw notFound("Invoice");
+  return invoice;
+}
+
+/** Brings the invoice status and its milestone in line with the payments recorded. */
+async function settle(invoice: Invoice) {
+  const total = invoice.amount + invoice.sstAmount;
+  const paid = invoicePaid(invoice);
+  invoice.status = paid >= total ? "PAID" : paid > 0 ? "PARTIALLY_PAID" : "ISSUED";
+  await invoice.save();
+  const project = await loadProject(invoice.projectId);
+  findSub(project.milestones, invoice.milestoneId)?.set({ status: paid >= total ? "PAID" : "AWAITING_PAYMENT", paidAmount: paid });
+  await project.save();
+  changed({ kind: "project", projectId: String(invoice.projectId) });
+}
 
 @Injectable()
 export class BillingService {
@@ -45,6 +66,7 @@ export class BillingService {
       const projectId = project._id;
       const milestone = findSub(project.milestones, milestoneId)!;
       if (milestone.invoiceId) return { invoiceId: String(milestone.invoiceId) };
+      if (milestone.status === "HELD") throw rule("This milestone is on hold, so it can't be invoiced yet");
 
       const { exSst, sst } = splitSstInclusive(milestone.amount, (await loadOrg()).sstBps);
       const now = new Date();
@@ -63,18 +85,32 @@ export class BillingService {
     });
   }
 
-  async markPaid(invoiceId: Id) {
+  /** Records money received against an invoice: the whole balance or part of it. */
+  async recordPayment(invoiceId: Id, input: { amount: number; receivedAt: Date; method: ClientPaymentMethod; reference: string | null }) {
     await tx(async () => {
-      const invoice = await InvoiceModel.findById(invoiceId);
-      if (!invoice) throw notFound("Invoice");
-      if (invoice.status === "PAID") throw rule("This invoice is already paid");
-      invoice.status = "PAID";
-      await invoice.save();
-      const project = await loadProject(invoice.projectId);
-      findSub(project.milestones, invoice.milestoneId)?.set({ status: "PAID" });
-      await project.save();
-      await audit("invoice.paid", "invoice", invoice._id, {}, invoice.projectId);
-      changed({ kind: "project", projectId: String(invoice.projectId) });
+      const invoice = await loadInvoice(invoiceId);
+      const balance = invoice.amount + invoice.sstAmount - invoicePaid(invoice);
+      if (balance <= 0) throw rule("This invoice is already paid in full");
+      if (input.amount > balance) throw rule(`That's more than the ${formatMoney2(balance)} still owed on this invoice`);
+      if (toDateInput(input.receivedAt) > toDateInput(new Date())) throw rule("The payment date can't be in the future");
+      const { userId } = ctx();
+      const recordedByName = userId ? ((await UserModel.findById(userId).select("name").lean())?.name ?? null) : null;
+      invoice.payments.push({ ...input, recordedBy: userId, recordedByName });
+      await settle(invoice);
+      await audit("invoice.payment_recorded", "invoice", invoice._id, { amount: input.amount, method: input.method, reference: input.reference }, invoice.projectId);
+    });
+  }
+
+  /** Undoes a payment recorded by mistake (or one that bounced). The row stays, marked reversed. */
+  async reversePayment(invoiceId: Id, paymentId: Id) {
+    await tx(async () => {
+      const invoice = await loadInvoice(invoiceId);
+      const payment = findSub(invoice.payments, paymentId);
+      if (!payment) throw notFound("Payment");
+      if (payment.reversedAt) throw rule("This payment is already reversed");
+      payment.set({ reversedAt: new Date(), reversedBy: ctx().userId });
+      await settle(invoice);
+      await audit("invoice.payment_reversed", "invoice", invoice._id, { paymentId: String(paymentId), amount: payment.amount }, invoice.projectId);
     });
   }
 }

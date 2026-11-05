@@ -15,6 +15,21 @@ const einvoiceSchema = new Schema(
   { _id: false, suppressReservedKeysWarning: true },
 );
 
+// One payment from the client. Reversing keeps the row (marked reversed) so the history stays readable.
+const paymentSchema = new Schema(
+  {
+    amount: sen(), // SST included
+    receivedAt: { type: Date, required: true },
+    method: { type: String, required: true },
+    reference: text(),
+    recordedBy: { type: Schema.Types.ObjectId, default: null },
+    recordedByName: text(),
+    reversedAt: { type: Date, default: null },
+    reversedBy: { type: Schema.Types.ObjectId, default: null },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
+
 const invoiceSchema = new Schema(
   {
     orgId: orgIdField,
@@ -26,6 +41,7 @@ const invoiceSchema = new Schema(
     amount: sen(), // before SST
     sstAmount: sen(),
     status: { type: String, enum: INVOICE_STATUSES, default: "ISSUED" },
+    payments: { type: [paymentSchema], default: [] },
     einvoice: { type: einvoiceSchema, default: () => ({}) },
     snapshot: { type: new Schema({ key: String, sha256: String }, { _id: false }), default: null },
   },

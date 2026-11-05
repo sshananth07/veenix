@@ -32,6 +32,7 @@ const milestoneSchema = new Schema({
   pct: { type: Number, default: null },
   amount: sen(),
   status: { type: String, enum: MILESTONE_STATUSES, default: "NOT_YET_DUE" },
+  paidAmount: senOrNull(), // mirrors its invoice's payments, so totals need no join
   invoiceId: { type: ObjectId, default: null },
 });
 

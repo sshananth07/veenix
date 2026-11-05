@@ -37,3 +37,14 @@ export const TERM_TEMPLATES: { key: string; label: string; hint: string; rows: T
     ],
   },
 ];
+/** What an invoice has collected (SST included). Invoices marked paid before payments were itemised count in full. */
+export function invoicePaid(i: { status: string; amount: number; sstAmount: number; payments?: { amount: number; reversedAt?: Date | null }[] | null }): number {
+  const payments = i.payments ?? [];
+  if (payments.length === 0 && i.status === "PAID") return i.amount + i.sstAmount;
+  return payments.filter((p) => !p.reversedAt).reduce((s, p) => s + p.amount, 0);
+}
+
+/** What a client milestone has collected. Milestones paid before part payments existed have no paidAmount. */
+export function milestoneCollected(m: { status: string; amount: number; paidAmount?: number | null }): number {
+  return m.paidAmount ?? (m.status === "PAID" ? m.amount : 0);
+}

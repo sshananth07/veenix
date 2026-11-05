@@ -97,9 +97,19 @@ export interface VariationOrderDto {
   amount: Sen; status: VoStatus; raisedAt: Date; bomItemId: Id | null; programmeImpact: string | null;
   attachmentPath: string | null; attachmentName: string | null;
 }
-export interface PaymentMilestoneDto { id: Id; projectId: Id; seq: number; name: string; trigger: string; pct: number | null; amount: Sen; status: MilestoneStatus }
+export interface PaymentMilestoneDto { id: Id; projectId: Id; seq: number; name: string; trigger: string; pct: number | null; amount: Sen; status: MilestoneStatus;
+  /** Received so far, SST included. Null on milestones paid before part payments existed. */
+  paidAmount: Sen | null;
+}
+export interface ClientPaymentDto {
+  id: Id; amount: Sen; receivedAt: Date; method: string; reference: string | null; recordedByName: string | null; reversedAt: Date | null;
+}
 export interface InvoiceDto {
   id: Id; code: string; milestoneId: Id; invoiceDate: Date; dueDate: Date | null; amount: Sen; sstAmount: Sen; status: InvoiceStatus;
+  /** Every payment recorded, reversed ones included, oldest first. */
+  payments: ClientPaymentDto[];
+  /** Received so far, SST included (reversed payments excluded). */
+  paidAmount: Sen;
   eInvoiceStatus: "NOT_SUBMITTED" | "SUBMITTED" | "VALID" | "INVALID" | "CANCELLED";
   eInvoiceUuid: string | null; eInvoiceValidatedAt: Date | null;
   /** LHDN's public validation link (also the QR code's content), once VALID. */

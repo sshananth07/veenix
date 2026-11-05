@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Ban, CalendarCheck2, CheckCircle2, FileSignature, MapPin, Search } from "lucide-react";
 import type { ProjectListItemDto } from "@veenix/shared";
+import { milestoneCollected } from "@veenix/shared";
 import { api } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -60,7 +61,7 @@ export default async function ProjectsPage() {
 
               <div className="flex flex-col gap-2.5">
                 {colProjects.map((p) => {
-                  const billed = p.milestones.filter((m) => m.status === "PAID").reduce((s, m) => s + m.amount, 0);
+                  const billed = p.milestones.reduce((s, m) => s + milestoneCollected(m), 0);
                   const isWip = p.stage === "WORK_IN_PROGRESS";
                   const pctBilled = isWip && p.contractValue > 0 ? Math.round((billed / p.contractValue) * 100) : null;
                   const place = p.city ?? p.siteAddress.split(",")[0];
