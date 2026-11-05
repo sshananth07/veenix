@@ -8,7 +8,7 @@ import { MembershipModel } from "../orgs/membership.model";
 import { OrgModel } from "../orgs/org.model";
 import { getObject, newKey, putObject, removeObject } from "../storage/storage";
 import { AssistantConversationModel, PendingActionModel } from "../assistant/models";
-import { approve, reject, undoToolCall, type Card } from "../assistant/pending";
+import { approve, reject, undoToolCall, type ActionResult, type Card } from "../assistant/pending";
 import { startTurn } from "../assistant/turn";
 import { getMedia, MediaTooLargeError, sendButtons, sendText, showTyping } from "./client";
 import { WhatsAppEventModel } from "./event.model";
@@ -68,8 +68,13 @@ async function runButton(e: Event) {
       await undoToolCall(oid);
       return replyAndStop(e, "Undone.");
     }
-    if (verb === "approve") await approve(oid);
-    else await reject(oid);
+    const result = verb === "approve" ? (await approve(oid)).result : (await reject(oid), null);
+    if (result?.next) {
+      // The follow-up comes back as a next:<id> tap, which handle() turns into the user's message.
+      await sendButtons(e.phone, result.done ?? "Done.", [{ id: `next:${oid}`, title: result.next.label }]);
+      return done(e.messageId);
+    }
+    if (result?.done) return replyAndStop(e, result.done);
     const card = (await PendingActionModel.findById(oid).select("card").lean())?.card as Card | undefined;
     return replyAndStop(e, `${verb === "approve" ? "Done" : "Rejected"}: ${card?.title ?? "the action"}.`);
   } catch (err) {
@@ -104,7 +109,16 @@ async function handle(e: Event, link: Link) {
   await showTyping(e.messageId).catch((err) => log.warn(`Typing indicator failed: ${err instanceof Error ? err.message : err}`));
   const m = e.payload;
 
-  if (m.type === "button") return runButton(e);
+  // A next:<id> tap is sent on as the user's message: the follow-up the approved action offered.
+  const nextOf = m.type === "button" ? /^next:([a-f\d]{24})$/.exec(m.buttonId ?? "")?.[1] : undefined;
+  if (m.type === "button" && !nextOf) return runButton(e);
+  let text = m.text ?? "";
+  if (nextOf) {
+    const a = await PendingActionModel.findOne({ _id: nextOf, userId: link.userId, status: "applied" }).select("result").lean();
+    const next = (a?.result as ActionResult | null)?.next;
+    if (!next) return replyAndStop(e, "That button is no longer valid.");
+    text = next.prompt;
+  }
 
   const attachments: { key: string; name: string; kind: "photo" | "audio" }[] = [];
   let transcript: string | undefined;
@@ -139,7 +153,7 @@ async function handle(e: Event, link: Link) {
   await tx(async () => {
     await WhatsAppEventModel.updateMany({ _id: { $in: photos.map((p) => p._id) } }, { $set: { usedBy: e.messageId } });
     await done(e.messageId);
-    await startTurn({ conversationId: conversation._id, text: transcript ?? m.text ?? "", attachments, transcript, sourceEventId: e.messageId, lane: `wa:${e.phone}` });
+    await startTurn({ conversationId: conversation._id, text: transcript ?? text, attachments, transcript, sourceEventId: e.messageId, lane: `wa:${e.phone}` });
   });
 }
 

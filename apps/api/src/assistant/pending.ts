@@ -15,7 +15,7 @@ export type Card = {
   changes: { label: string; before: string; after: string }[];
   missing: string[];
   /** Fields the user may fill in on the card. key is a path into the action's input, e.g. "lines.0.totalSen". */
-  inputs?: { key: string; label: string; kind: "money" | "terms" }[];
+  inputs?: { key: string; label: string; kind: "money" | "terms" | "address" }[];
   link?: string;
 };
 
@@ -31,6 +31,9 @@ function withEdits(input: unknown, card: Card, edits: Record<string, unknown>) {
   return out;
 }
 
+/** done: what was made. link: where it is now. next: a follow-up the user can start with one tap (the prompt is sent as their message). */
+export type ActionResult = { done?: string; link?: string; next?: { label: string; prompt: string }; [key: string]: unknown };
+
 interface ApprovalAction<I> {
   name: string;
   description: string;
@@ -39,8 +42,8 @@ interface ApprovalAction<I> {
   deferred?: boolean;
   /** Builds the card from current data. Runs at proposal and again at approval. */
   validate(input: I): Promise<Card>;
-  /** Calls the existing service method. Runs only after the tap. */
-  apply(input: I): Promise<object>;
+  /** Calls the existing service method. Runs only after the tap. done, link and next, if returned, are shown to the user. */
+  apply(input: I): Promise<ActionResult>;
 }
 
 const DAY = 86_400_000;
@@ -75,7 +78,7 @@ const tell = (conversationId: Types.ObjectId, note: string) => {
 };
 
 /** Only a tap gets here (a button handled by normal server code); no tool can call it. */
-export async function approve(actionId: Types.ObjectId, edits: Record<string, unknown> = {}): Promise<{ status: "applied"; result: object }> {
+export async function approve(actionId: Types.ObjectId, edits: Record<string, unknown> = {}): Promise<{ status: "applied"; result: ActionResult }> {
   return tx(async () => {
     const c = ctx();
     const p = await PendingActionModel.findById(actionId).lean();
@@ -94,8 +97,9 @@ export async function approve(actionId: Types.ObjectId, edits: Record<string, un
     const claimed = await PendingActionModel.updateOne({ _id: actionId, status: "pending" }, { $set: { status: "applied", input: parsed.data, card } });
     if (claimed.modifiedCount === 0) throw rule("This was already handled");
     const result = await a.apply(parsed.data);
-    await PendingActionModel.updateOne({ _id: actionId }, { $set: { result } });
-    await tell(p.conversationId, `The user approved: ${card.title}.`);
+    // An action may say what it made (done) and where it is now (link), for the card and the chat.
+    await PendingActionModel.updateOne({ _id: actionId }, { $set: { result, ...(result.link ? { "card.link": result.link } : {}) } });
+    await tell(p.conversationId, `The user approved: ${card.title}.${result.done ? ` ${result.done}` : ""} Result: ${JSON.stringify(result)}`);
     return { status: "applied" as const, result };
   });
 }

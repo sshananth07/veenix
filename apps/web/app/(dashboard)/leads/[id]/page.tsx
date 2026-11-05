@@ -29,7 +29,7 @@ import { LeadFormDialog } from "@/components/leads/LeadFormDialog";
 import { LogActivityForm } from "@/components/leads/LogActivityForm";
 import { ConceptList } from "@/components/concepts/ConceptList";
 
-export default async function LeadDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ edit?: string }> }) {
+export default async function LeadDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ edit?: string; convert?: string }> }) {
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const [lead, concepts] = await Promise.all([api<LeadDetailDto>(`/leads/${params.id}`), api<ConceptDto[]>(`/leads/${params.id}/concepts`)]);
 
@@ -104,6 +104,7 @@ export default async function LeadDetailPage(props: { params: Promise<{ id: stri
               assignedTo={lead.assignedTo}
               address={lead}
               legacyAddress={lead.siteAddress}
+              defaultOpen={searchParams.convert === "1"}
               carryOver={[
                 { label: "Client", value: lead.name },
                 { label: "Contact", value: lead.phone },

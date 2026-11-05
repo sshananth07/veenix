@@ -123,7 +123,7 @@ function AssistantReply({ message, onChange, onDraft }: Props) {
           {message.changes.map((c) => <Change key={c.toolCallId} change={c} onChange={onChange} />)}
         </ul>
       )}
-      {message.cards.map((card) => <ActionCard key={card.id} card={card} onDone={onChange} />)}
+      {message.cards.map((card) => <ActionCard key={card.id} card={card} onDone={onChange} onDraft={onDraft} />)}
       {message.concepts.map((c) => <ConceptCard key={c.id} concept={c} onTryAnother={onDraft} onChange={onChange} />)}
     </div>
   );

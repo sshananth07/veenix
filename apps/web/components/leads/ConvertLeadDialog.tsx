@@ -16,12 +16,14 @@ export function ConvertLeadDialog({
   carryOver,
   address,
   legacyAddress,
+  defaultOpen,
 }: {
   leadId: string;
   assignedTo: string | null;
   carryOver: { label: string; value: string }[];
   address: AddressParts;
   legacyAddress: string | null;
+  defaultOpen?: boolean;
 }) {
   const complete = hasStructuredAddress(address);
   return (
@@ -38,6 +40,7 @@ export function ConvertLeadDialog({
       pendingLabel="Converting..."
       action={(fd) => convertLead(leadId, fd)}
       size="lg"
+      defaultOpen={defaultOpen}
     >
       <dl className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-lg border bg-muted/40 p-3 text-sm">
         {carryOver.map((item) => (

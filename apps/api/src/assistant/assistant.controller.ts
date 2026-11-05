@@ -17,7 +17,7 @@ import { claim, downloadUrl, removeObject } from "../storage/storage";
 import { SiteUpdateModel } from "../updates/site-update.model";
 import { INBOUND_PER_MINUTE } from "./limits";
 import { AssistantConversationModel, AssistantMessageModel, AssistantToolCallModel, PendingActionModel } from "./models";
-import { approve, reject, undoToolCall, type Card } from "./pending";
+import { approve, reject, undoToolCall, type ActionResult, type Card } from "./pending";
 import { startTurn } from "./turn";
 import { DesignConceptModel, type DesignConcept } from "../concepts/concept.model";
 import { toDto as toConceptDto } from "../concepts/concepts.service";
@@ -130,6 +130,8 @@ export async function getConversation(id: Types.ObjectId): Promise<AssistantConv
         return {
           id: String(a._id), status: a.status, expired: a.expiresAt < new Date(), title: card.title,
           lines: card.lines, changes: card.changes, missing: card.missing, inputs: card.inputs ?? [], link: card.link ?? null,
+          done: (a.result as ActionResult | null)?.done ?? null,
+          next: (a.result as ActionResult | null)?.next ?? null,
         };
       }),
     });

@@ -1,28 +1,39 @@
 "use client";
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Plus, X } from "lucide-react";
+import { ArrowRight, Check, Plus, Sparkles, X } from "lucide-react";
 import { parseRinggit, type AssistantCardDto } from "@veenix/shared";
 import { approveAssistantAction, rejectAssistantAction } from "@/actions/assistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { AddressFields } from "@/components/ui/AddressFields";
+
+const ADDRESS_KEYS = ["addressLine1", "addressLine2", "addressLine3", "postcode", "city", "state"] as const;
+type Address = Record<(typeof ADDRESS_KEYS)[number], string | null>;
+/** The address form's values, or null until line 1, a 5-digit postcode, city and state are in. The server checks again. */
+function readAddress(form: HTMLFormElement): Address | null {
+  const fd = new FormData(form);
+  const a = Object.fromEntries(ADDRESS_KEYS.map((k) => [k, String(fd.get(k) ?? "").trim() || null])) as Address;
+  return a.addressLine1 && /^\d{5}$/.test(a.postcode ?? "") && a.city && a.state ? a : null;
+}
 
 /** An approval card: nothing changes until the user taps Approve. */
-export function ActionCard({ card, onDone }: { card: AssistantCardDto; onDone: () => void }) {
+export function ActionCard({ card, onDone, onDraft }: { card: AssistantCardDto; onDone: () => void; onDraft: (text: string) => void }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const open = card.status === "pending" && !card.expired;
   const inputs = open ? card.inputs : [];
   const [money, setMoney] = useState<Record<string, string>>({});
   const [terms, setTerms] = useState([{ label: "", pct: "" }]);
+  const [address, setAddress] = useState<Address | null>(null);
   const setTerm = (n: number, patch: Partial<{ label: string; pct: string }>) => setTerms(terms.map((t, k) => (k === n ? { ...t, ...patch } : t)));
   const termRows = terms.map((t) => ({ label: t.label.trim(), pct: Number(t.pct) }));
   const termsTotal = termRows.reduce((s, t) => s + (Number.isInteger(t.pct) ? t.pct : 0), 0);
   // The card's inputs as edits keyed by path, or null while any is incomplete. The server checks them again.
-  const edits = inputs.every((i) => (i.kind === "money" ? parseRinggit(money[i.key] ?? "") : termsTotal === 100 && termRows.every((t) => t.label && t.pct >= 1)))
-    ? Object.fromEntries(inputs.map((i) => [i.key, i.kind === "money" ? parseRinggit(money[i.key]!) : termRows]))
-    : null;
+  const valueOf = (i: AssistantCardDto["inputs"][number]) =>
+    i.kind === "money" ? parseRinggit(money[i.key] ?? "") : i.kind === "address" ? address : termsTotal === 100 && termRows.every((t) => t.label && t.pct >= 1) ? termRows : null;
+  const edits = inputs.every((i) => valueOf(i)) ? Object.fromEntries(inputs.map((i) => [i.key, valueOf(i)])) : null;
   const run = (fn: (id: string) => Promise<{ ok: boolean; error?: string }>) =>
     start(async () => {
       const r = await fn(card.id);
@@ -66,7 +77,12 @@ export function ActionCard({ card, onDone }: { card: AssistantCardDto; onDone: (
         <div className="mt-3 space-y-3 rounded-lg bg-accent/60 p-2.5">
           <p className="text-xs font-medium text-accent-foreground">Fill in before approving</p>
           {inputs.map((i) =>
-            i.kind === "money" ? (
+            i.kind === "address" ? (
+              // Uncontrolled fields, read on every change; Enter doesn't submit anything.
+              <form key={i.key} onChange={(e) => setAddress(readAddress(e.currentTarget))} onSubmit={(e) => e.preventDefault()}>
+                <AddressFields required label={i.label} />
+              </form>
+            ) : i.kind === "money" ? (
               <label key={i.key} className="flex items-center gap-2 text-sm">
                 <span className="min-w-0 flex-1">{i.label}</span>
                 <span className="text-muted-foreground">RM</span>
@@ -102,6 +118,19 @@ export function ActionCard({ card, onDone }: { card: AssistantCardDto; onDone: (
         <p className="mt-3 rounded-lg bg-accent px-2.5 py-2 text-sm text-accent-foreground">Needs: {card.missing.join(", ")}. Fill these in Veenix before approving.</p>
       )}
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+      {card.status === "applied" && (card.done || card.link) && (
+        <div className="mt-3 flex items-center justify-between gap-2 rounded-lg bg-emerald-50 px-2.5 py-2 text-sm text-emerald-900">
+          <span className="flex min-w-0 items-center gap-1.5"><Check className="size-3.5 shrink-0" aria-hidden />{card.done ?? "Done."}</span>
+          {card.link && <Link href={card.link} className="shrink-0 font-medium underline">Open</Link>}
+        </div>
+      )}
+      {card.status === "applied" && card.next && (
+        <div className="mt-2 flex justify-end">
+          <Button size="sm" variant="outline" onClick={() => onDraft(card.next!.prompt)}>
+            <Sparkles className="size-3.5" aria-hidden /> {card.next.label}
+          </Button>
+        </div>
+      )}
       {open && (
         <div className="mt-4 flex items-center justify-end gap-2">
           {card.link && card.missing.length > 0 && inputs.length === 0 && (

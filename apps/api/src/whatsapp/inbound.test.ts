@@ -52,6 +52,14 @@ defineApprovalAction({
   validate: async ({ note }) => ({ title: `Note ${note}`, lines: [{ label: "Note", value: note }], changes: [], missing: [] }),
   apply: async () => ({ applied: ++applied }),
 });
+defineApprovalAction({
+  name: "zz_wa_next",
+  description: "test",
+  input: z.strictObject({ note: z.string() }),
+  permission: "update:write",
+  validate: async ({ note }) => ({ title: `Note ${note}`, lines: [], changes: [], missing: [] }),
+  apply: async ({ note }) => ({ done: `Saved ${note}.`, next: { label: "Do the next bit", prompt: `Follow up on ${note}` } }),
+});
 
 const usage = { input_tokens: 100, output_tokens: 10, input_tokens_details: { cached_tokens: 0 }, output_tokens_details: { reasoning_tokens: 0 }, total_tokens: 110 };
 const say = (text: string) => ({ type: "message", id: "msg", role: "assistant", status: "completed", content: [{ type: "output_text", text, annotations: [] }] });
@@ -198,6 +206,22 @@ describe("WhatsApp inbound", () => {
     expect((await pendingOf("a")).status).toBe("applied");
     expect(applied).toBe(1);
     expect(sentTo(ALICE).at(-1)).toBe("Done: Note a.");
+  });
+
+  it("an approval's next step is a button whose tap is sent on as the user's message", async () => {
+    llm.mockResolvedValueOnce(resp([call("propose_zz_wa_next", { note: "n" })])).mockResolvedValueOnce(resp([say("Tap Approve.")]));
+    await deliver(text(ALICE, "save note n"));
+    const action = await pendingOf("n");
+    llm.mockReset();
+    await deliver(tap(ALICE, `approve:${action._id}`));
+    expect(lastButtons(ALICE).slice(1)).toEqual(["Saved n.", [{ id: `next:${action._id}`, title: "Do the next bit" }]]);
+    expect(llm).not.toHaveBeenCalled();
+
+    llm.mockResolvedValueOnce(resp([say("On it.")]));
+    await deliver(tap(ALICE, `next:${action._id}`));
+    expect(JSON.stringify(llm.mock.calls[0][0].input)).toContain("Follow up on n");
+    await deliver(tap(CAROL, `next:${action._id}`)); // someone else's action
+    expect(sentTo(CAROL).at(-1)).toBe("That button is no longer valid.");
   });
 
   it("typed 'yes' goes to the LLM and approves nothing", async () => {
