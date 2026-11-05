@@ -110,7 +110,7 @@ export function ActionCard({ card, onDone, onDraft }: { card: AssistantCardDto; 
                   {(i.options ?? []).map((o) => (
                     <label
                       key={o}
-                      className="cursor-pointer rounded-md border bg-background px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted has-checked:border-primary has-checked:bg-primary/10 has-checked:text-primary has-focus-visible:ring-2 has-focus-visible:ring-ring"
+                      className="relative cursor-pointer rounded-md border bg-background px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted has-checked:border-primary has-checked:bg-primary/10 has-checked:text-primary has-focus-visible:ring-2 has-focus-visible:ring-ring"
                     >
                       <input type="radio" className="sr-only" name={`${card.id}-${i.key}`} value={o} checked={fields[i.key] === o} onChange={() => setField(i.key, o)} />
                       {o}

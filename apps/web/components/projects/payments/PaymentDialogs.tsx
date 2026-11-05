@@ -88,7 +88,7 @@ function RecordPaymentForm({ invoice, milestoneName, trigger, balance }: { invoi
             return (
               <label
                 key={m}
-                className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-1.5 py-2.5 text-center text-xs font-medium transition-colors hover:bg-muted/50 has-checked:border-primary has-checked:bg-primary/5 has-checked:text-primary has-focus-visible:ring-2 has-focus-visible:ring-ring"
+                className="relative flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-1.5 py-2.5 text-center text-xs font-medium transition-colors hover:bg-muted/50 has-checked:border-primary has-checked:bg-primary/5 has-checked:text-primary has-focus-visible:ring-2 has-focus-visible:ring-ring"
               >
                 <input type="radio" name="method" value={m} defaultChecked={i === 0} className="sr-only" />
                 <Icon className="h-4 w-4" />
