@@ -44,7 +44,7 @@ export async function VendorsTab({ project }: { project: ProjectDetail }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 @5xl:grid-cols-5">
         <Stat icon={Inbox} label="Needs RFQ" value={count("REQUEST")} />
         <Stat icon={Hourglass} label="Awaiting quotes" value={count("AWAITING")} />
         <Stat icon={ListChecks} label="Ready to accept" value={count("COMPARE")} tone={count("COMPARE") > 0 ? "alert" : undefined} />
@@ -53,7 +53,7 @@ export async function VendorsTab({ project }: { project: ProjectDetail }) {
       </div>
 
       <Section title="Outsourced packages" chip={`${packages.length} ${packages.length === 1 ? "package" : "packages"}`}>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 @3xl:grid-cols-2 @7xl:grid-cols-3">
           {packages.map((p) => (
             <PackageSummaryCard key={p.bom.id} bom={p.bom} rfq={p.rfq} po={p.po} stage={p.stage} workItemName={workItemName(p.bom.workItemId)} vendors={vendors} />
           ))}

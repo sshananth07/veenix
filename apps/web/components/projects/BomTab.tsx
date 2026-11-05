@@ -80,7 +80,7 @@ export function BomTab({ project, costs }: { project: ProjectDetail; costs: Reco
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 @7xl:grid-cols-4">
         <Stat icon={Layers} label="Work items" value={String(project.workItems.length)} sub="Rooms / scopes" />
         <Stat icon={Package} label="BOM lines" value={String(project.bomItems.length)} sub={`${selfCount} self-performed, ${outsourcedCount} outsourced`} />
         <Stat icon={Wallet} label="Direct cost" value={formatCurrency(total)} sub="Total cost, before markup" />
@@ -180,7 +180,7 @@ export function BomTab({ project, costs }: { project: ProjectDetail; costs: Reco
             ) : (
               <div className="px-4 pb-4">
                 <div className="overflow-hidden rounded-lg border">
-                  <div className={cn("hidden gap-x-4 bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground md:grid", BOM_GRID)}>
+                  <div className={cn("hidden gap-x-4 bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground @3xl:grid", BOM_GRID)}>
                     <span>Job name</span>
                     <span>Type</span>
                     <span>Quantity &amp; rate</span>

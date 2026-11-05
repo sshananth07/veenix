@@ -149,7 +149,7 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 @7xl:grid-cols-4">
         {kpis.map((k) => (
           <Link
             key={k.label}
@@ -176,7 +176,7 @@ export default async function HomePage() {
         ))}
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
+      <div className="grid gap-5 @7xl:grid-cols-[1.35fr_1fr]">
         <section className="rounded-xl border bg-card p-5 shadow-xs">
           <div className="mb-4 flex items-center gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
@@ -206,7 +206,7 @@ export default async function HomePage() {
             </div>
           ) : (
             <div className="overflow-hidden rounded-lg border">
-              <div className="hidden grid-cols-[90px_1.1fr_1.5fr_130px_84px] gap-4 bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground md:grid">
+              <div className="hidden grid-cols-[90px_1.1fr_1.5fr_130px_84px] gap-4 bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground @3xl:grid">
                 <span>Priority</span>
                 <span>Project / Lead</span>
                 <span>Issue / Task</span>
@@ -217,7 +217,7 @@ export default async function HomePage() {
                 {visible.map((r) => {
                   const p = PRIORITY_STYLE[r.priority];
                   return (
-                    <li key={r.key} className="grid items-center gap-x-4 gap-y-2 px-4 py-3.5 md:grid-cols-[90px_1.1fr_1.5fr_130px_84px]">
+                    <li key={r.key} className="grid items-center gap-x-4 gap-y-2 px-4 py-3.5 @3xl:grid-cols-[90px_1.1fr_1.5fr_130px_84px]">
                       <span className="flex items-center gap-2 text-sm font-medium">
                         <span className={cn("flex h-7 w-7 items-center justify-center rounded-full", p.dot)}>
                           <CircleAlert className="h-4 w-4" />
@@ -238,7 +238,7 @@ export default async function HomePage() {
                       <span className={cn("w-fit rounded-full px-2.5 py-0.5 text-xs font-medium", p.pill)}>{r.status}</span>
                       <Link
                         href={r.href}
-                        className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:justify-self-end"
+                        className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 @3xl:justify-self-end"
                       >
                         View
                       </Link>
@@ -270,7 +270,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 @7xl:grid-cols-2 @[96rem]:grid-cols-4">
             {tiles.map((t) => (
               <div key={t.label} className="rounded-lg border px-3 py-2.5">
                 <div className="text-xs text-muted-foreground">{t.label}</div>

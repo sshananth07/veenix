@@ -11,7 +11,7 @@ export function OrgSwitcher({ orgs, currentOrgId }: { orgs: MeDto["memberships"]
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm font-medium hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
-          <span className="max-w-48 truncate">{current?.companyName ?? "Choose organization"}</span>
+          <span className="max-w-32 truncate" title={current?.companyName}>{current?.companyName ?? "Choose organization"}</span>
           <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>

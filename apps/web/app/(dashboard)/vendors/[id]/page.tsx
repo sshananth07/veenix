@@ -73,7 +73,7 @@ export default async function VendorDetailPage(props: { params: Promise<{ id: st
       </nav>
 
       {tab === "details" && (
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-5 @5xl:grid-cols-2">
           <section className="rounded-xl border bg-card p-5 shadow-xs">
             <h2 className="mb-4 flex items-center gap-2 font-semibold">
               <Building2 className="h-4 w-4 text-primary" />

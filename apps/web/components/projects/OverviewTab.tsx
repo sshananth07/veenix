@@ -162,7 +162,8 @@ export function OverviewTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-5 lg:grid-cols-3">
+      {/* Two columns first: three only once the financial card has room for its three figures side by side. */}
+      <div className="grid gap-5 @5xl:grid-cols-2 @[82rem]:grid-cols-3">
         <Card title="Project details" icon={FileText}>
           <dl className="space-y-4 text-sm">
             {details.map((d) => (
@@ -235,7 +236,7 @@ export function OverviewTab({
           </div>
         </Card>
 
-        <div className="space-y-5">
+        <div className="grid content-start gap-5 @5xl:col-span-2 @5xl:grid-cols-2 @[82rem]:col-span-1 @[82rem]:grid-cols-1">
           <Card title="Next actions" icon={ClipboardList} aside={attention.length > 0 ? `${attention.length}` : undefined}>
             {attention.length === 0 ? (
               <div className="flex flex-col items-center px-2 py-6 text-center">
@@ -302,7 +303,7 @@ export function OverviewTab({
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Where things stand</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-5">
           {cards.map((c) => (
             <Link
               key={c.tab}
@@ -351,7 +352,7 @@ function Stat({ label, value, hint, muted, good }: { label: string; value: strin
   return (
     <div className="min-w-0 px-4">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className={cn("mt-1 whitespace-nowrap text-base font-semibold tabular-nums leading-tight xl:text-lg", muted && "font-medium text-muted-foreground", good && "text-emerald-700")}>{value}</dd>
+      <dd className={cn("mt-1 whitespace-nowrap text-base font-semibold tabular-nums leading-tight", muted && "font-medium text-muted-foreground", good && "text-emerald-700")}>{value}</dd>
       {hint && <div className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{hint}</div>}
     </div>
   );

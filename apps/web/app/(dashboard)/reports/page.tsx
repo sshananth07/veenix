@@ -27,7 +27,7 @@ export default async function ReportsPage() {
         <p className="mt-1 text-muted-foreground">How leads, jobs and vendors are performing, from your real data.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 @7xl:grid-cols-4">
         {kpis.map((k) => (
           <div key={k.label} className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3.5 shadow-xs">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -42,7 +42,7 @@ export default async function ReportsPage() {
         ))}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 @5xl:grid-cols-2">
         <section className="rounded-xl border bg-card p-5 shadow-xs">
           <h2 className="mb-1 flex items-center gap-2 font-semibold">
             <TrendingUp className="h-4 w-4 text-primary" />

@@ -8,7 +8,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <AssistantProvider>
       <div className="flex min-h-screen bg-background">
-        <div className="min-w-0 flex-1">
+        {/* A size container: page layouts follow the space left beside the assistant, not the window. */}
+        <div className="@container min-w-0 flex-1">
           <NavBar userName={user.name} orgs={me.memberships} currentOrgId={orgId} role={role} />
           <main className="mx-auto max-w-[1400px] px-6 py-6">{children}</main>
         </div>

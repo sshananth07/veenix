@@ -28,7 +28,8 @@ export function NavBar({ userName, orgs, currentOrgId, role }: { userName: strin
   const links = LINKS.filter((l) => !l.needs || can(role, l.needs));
   return (
     <header className="border-b bg-card">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-6">
+      {/* Measured against the page container: labels need ~86rem; below that the links go icon-only rather than scroll out of sight. */}
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-5 px-6">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tight text-primary">
           <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M3 11.5 12 4l9 7.5" />
@@ -37,7 +38,7 @@ export function NavBar({ userName, orgs, currentOrgId, role }: { userName: strin
           </svg>
           Veenix
         </Link>
-        <span className="hidden h-7 w-px bg-border md:block" aria-hidden />
+        <span className="hidden h-7 w-px bg-border @3xl:block" aria-hidden />
         <nav className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]">
           {links.map((link) => {
             const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
@@ -46,13 +47,15 @@ export function NavBar({ userName, orgs, currentOrgId, role }: { userName: strin
                 key={link.href}
                 href={link.href}
                 aria-current={active ? "page" : undefined}
+                aria-label={link.label}
+                title={link.label}
                 className={cn(
-                  "relative flex h-16 items-center gap-2 whitespace-nowrap px-3 text-sm font-medium transition-colors",
+                  "relative flex h-16 items-center gap-2 whitespace-nowrap px-2.5 text-sm font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <link.icon className="h-[18px] w-[18px]" />
-                <span>{link.label}</span>
+                <span className="hidden @[86rem]:inline">{link.label}</span>
                 {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" />}
               </Link>
             );

@@ -11,7 +11,7 @@ export function ConceptList({ concepts }: { concepts: ConceptDto[] }) {
         <h2 className="text-sm font-semibold">Room concepts</h2>
         <span className="text-xs text-muted-foreground">{NOT_TO_SCALE}</span>
       </div>
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 @5xl:grid-cols-4">
         {concepts.map((c) => (
           <li key={c.id}>
             <Link href={`/concepts/${c.id}`} className="group block overflow-hidden rounded-lg border">

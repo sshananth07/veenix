@@ -17,7 +17,7 @@ const KIND_TONE: Record<SiteUpdateDto["kind"], "secondary" | "destructive" | "wa
 /** What happened on site, and the project's tasks. Staff check and correct what the assistant recorded here. */
 export function UpdatesTab({ projectId, updates, tasks, canWrite, canDeleteTasks }: { projectId: string; updates: SiteUpdateDto[]; tasks: TaskDto[]; canWrite: boolean; canDeleteTasks: boolean }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid gap-6 @5xl:grid-cols-[minmax(0,1fr)_380px]">
       <section className="space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>

@@ -118,7 +118,7 @@ export default async function LeadDetailPage(props: { params: Promise<{ id: stri
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-5 @5xl:grid-cols-[1.4fr_1fr]">
         <section className="rounded-xl border bg-card p-5 shadow-xs">
           <h2 className="mb-4 font-semibold">Lead Details</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

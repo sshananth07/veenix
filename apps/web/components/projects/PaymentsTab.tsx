@@ -68,7 +68,7 @@ export function PaymentsTab({ project, selectedInvoiceId }: { project: ProjectDe
         <StatCard icon={CircleDollarSign} tint="bg-slate-100 text-slate-700" label="Not yet due" value={formatCurrency(notYetDue)} sub={`${pct(notYetDue)}% of contract`} />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid gap-5 @5xl:grid-cols-[1.5fr_1fr]">
         <section className="overflow-hidden rounded-xl border bg-card shadow-xs">
           <div className="border-b px-5 py-4">
             <h3 className="font-semibold">Payment milestones</h3>

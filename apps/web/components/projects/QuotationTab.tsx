@@ -140,7 +140,7 @@ export function QuotationTab({
           <QuotationTable groups={groups} clientView={clientView} editable={!clientView && isDraft} minMarkupPct={settings.minMarkupPct} />
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 @5xl:grid-cols-3">
           <SummaryCard totals={totals} sstBps={project.pricing.sstBps} />
           <TermsCard terms={current.terms} amounts={termAmounts} total={totals.total} />
           {isDraft && !clientView && <PendingActionCard readiness={readiness} termsOk={termsOk} />}

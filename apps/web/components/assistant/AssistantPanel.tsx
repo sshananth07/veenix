@@ -29,13 +29,15 @@ export function AssistantToggle() {
       type="button"
       onClick={() => setOpen(!open)}
       aria-pressed={open}
+      aria-label="AI Assistant"
+      title="AI Assistant"
       className={cn(
         "flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border px-3 text-sm font-medium transition-colors",
         open ? "border-primary/30 bg-primary/10 text-primary" : "bg-card hover:bg-muted",
       )}
     >
       <Bot className="size-4" aria-hidden />
-      <span className="hidden sm:inline">AI Assistant</span>
+      <span className="hidden @[63rem]:inline">AI Assistant</span>
     </button>
   );
 }

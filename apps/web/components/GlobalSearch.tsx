@@ -57,7 +57,7 @@ export function GlobalSearch() {
   };
 
   return (
-    <div ref={box} className="relative hidden xl:block">
+    <div ref={box} className="relative hidden @[58rem]:block">
       <input
         type="search"
         aria-label="Search"
@@ -69,7 +69,7 @@ export function GlobalSearch() {
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-        className="h-9 w-56 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+        className="h-9 w-36 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
       />
       {open && results && (
         <div className="absolute right-0 z-50 mt-1 max-h-96 w-80 overflow-y-auto rounded-md border bg-popover p-1 text-sm shadow-lg">
