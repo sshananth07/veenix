@@ -28,9 +28,9 @@ const resp = (output: object[], over: object = {}) =>
   ({ id: "r", status: "completed", output, output_text: output.flatMap((o) => ("content" in o ? (o.content as { text: string }[]).map((c) => c.text) : [])).join(""), usage, ...over }) as never;
 const update = (text = "tiling done") => call("add_project_update", { projectId: String(project), kind: "progress", text, attachPhotos: false });
 
-async function newTurn(o = org, text = "hello") {
+async function newTurn(o = org, text = "hello", channel = "app") {
   return as(async () => {
-    const [conv] = await AssistantConversationModel.create([{ userId: user, channel: "app", projectId: newId() }]);
+    const [conv] = await AssistantConversationModel.create([{ userId: user, channel, projectId: newId() }]);
     const [m] = await AssistantMessageModel.create([{ conversationId: conv._id, role: "user", text }]);
     await AssistantMessageModel.updateOne({ _id: m._id }, { $set: { turnOf: m._id } });
     return { conv: conv._id, msg: m._id };
@@ -56,6 +56,17 @@ describe("assistant turn", () => {
     expect((await turnMessages(t)).map((m) => m.role)).toEqual(["user", "context", "assistant", "tool", "assistant"]);
     expect(await as(() => SiteUpdateModel.countDocuments({ projectId: project }))).toBe(1);
     expect(llm.mock.calls[0][0]).toMatchObject({ store: false, tool_choice: "auto", include: ["reasoning.encrypted_content"] });
+  });
+
+  it("tells the model to ask for card fields first on WhatsApp only", async () => {
+    const context = async (channel: string) => {
+      const t = await newTurn(org, "add a BOM line", channel);
+      llm.mockResolvedValueOnce(resp([say("Which price?")]));
+      await as(() => runTurn(t.conv, t.msg));
+      return (await turnMessages(t)).find((m) => m.role === "context")!.text;
+    };
+    expect(await context("whatsapp")).toContain("ask for any price or payment terms");
+    expect(await context("app")).not.toContain("WhatsApp");
   });
 
   it("returns all tool results in one message, marking failures", async () => {

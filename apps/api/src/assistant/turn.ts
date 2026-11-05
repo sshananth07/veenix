@@ -111,7 +111,7 @@ async function toInput(messages: Msg[], current: Types.ObjectId): Promise<OpenAI
   return input;
 }
 
-async function contextText(conversation: { projectId?: Types.ObjectId | null; notes: string[] }) {
+async function contextText(conversation: { channel: string; projectId?: Types.ObjectId | null; notes: string[] }) {
   const c = ctx();
   const [user, project] = await Promise.all([
     UserModel.findById(c.userId).select("name").lean(),
@@ -122,6 +122,8 @@ async function contextText(conversation: { projectId?: Types.ObjectId | null; no
     `Now: ${today} (Malaysia).`,
     `User: ${user?.name || "unknown"}, role ${c.role}.`,
     project ? `They opened the chat from project ${project.name} (${project.code}), id ${project._id}.` : "No current project.",
+    // Per channel, so the cached system prompt stays the same for every chat.
+    ...(conversation.channel === "whatsapp" ? ["They're on WhatsApp, where approval cards can't be filled in. Before proposing, ask for any price or payment terms the card would need, so it can be approved here."] : []),
     ...(conversation.notes.length ? ["Since the last message:", ...conversation.notes.map((n) => `- ${n}`)] : []),
   ].join("\n");
 }
