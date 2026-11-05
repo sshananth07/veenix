@@ -2,7 +2,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Plus, Sparkles, X } from "lucide-react";
-import { parseRinggit, type AssistantCardDto } from "@veenix/shared";
+import { parseRinggit, type AssistantCardDto, type AssistantCardInput } from "@veenix/shared";
 import { approveAssistantAction, rejectAssistantAction } from "@/actions/assistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,16 +24,26 @@ export function ActionCard({ card, onDone, onDraft }: { card: AssistantCardDto; 
   const [error, setError] = useState<string | null>(null);
   const open = card.status === "pending" && !card.expired;
   const inputs = open ? card.inputs : [];
-  const [money, setMoney] = useState<Record<string, string>>({});
+  // Typed fields (money, date, choice, text), prefilled with what the assistant proposed.
+  const [fields, setFields] = useState<Record<string, string>>(() => Object.fromEntries(card.inputs.filter((i) => i.value).map((i) => [i.key, i.value!])));
+  const setField = (key: string, value: string) => setFields({ ...fields, [key]: value });
   const [terms, setTerms] = useState([{ label: "", pct: "" }]);
   const [address, setAddress] = useState<Address | null>(null);
   const setTerm = (n: number, patch: Partial<{ label: string; pct: string }>) => setTerms(terms.map((t, k) => (k === n ? { ...t, ...patch } : t)));
   const termRows = terms.map((t) => ({ label: t.label.trim(), pct: Number(t.pct) }));
   const termsTotal = termRows.reduce((s, t) => s + (Number.isInteger(t.pct) ? t.pct : 0), 0);
   // The card's inputs as edits keyed by path, or null while any is incomplete. The server checks them again.
-  const valueOf = (i: AssistantCardDto["inputs"][number]) =>
-    i.kind === "money" ? parseRinggit(money[i.key] ?? "") : i.kind === "address" ? address : termsTotal === 100 && termRows.every((t) => t.label && t.pct >= 1) ? termRows : null;
-  const edits = inputs.every((i) => valueOf(i)) ? Object.fromEntries(inputs.map((i) => [i.key, valueOf(i)])) : null;
+  const valueOf = (i: AssistantCardInput) => {
+    const v = (fields[i.key] ?? "").trim();
+    if (i.kind === "money") return parseRinggit(v);
+    if (i.kind === "date") return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+    if (i.kind === "choice") return i.options?.includes(v) ? v : null;
+    if (i.kind === "text") return v || null;
+    if (i.kind === "address") return address;
+    return termsTotal === 100 && termRows.every((t) => t.label && t.pct >= 1) ? termRows : null;
+  };
+  // Web-only fields are optional; every other one must be filled.
+  const edits = inputs.every((i) => i.webOnly || valueOf(i)) ? Object.fromEntries(inputs.map((i) => [i.key, valueOf(i)])) : null;
   const run = (fn: (id: string) => Promise<{ ok: boolean; error?: string }>) =>
     start(async () => {
       const r = await fn(card.id);
@@ -75,7 +85,7 @@ export function ActionCard({ card, onDone, onDraft }: { card: AssistantCardDto; 
       )}
       {inputs.length > 0 && (
         <div className="mt-3 space-y-3 rounded-lg bg-accent/60 p-2.5">
-          <p className="text-xs font-medium text-accent-foreground">Fill in before approving</p>
+          <p className="text-xs font-medium text-accent-foreground">{edits ? "Check before approving" : "Fill in before approving"}</p>
           {inputs.map((i) =>
             i.kind === "address" ? (
               // Uncontrolled fields, read on every change; Enter doesn't submit anything.
@@ -86,7 +96,35 @@ export function ActionCard({ card, onDone, onDraft }: { card: AssistantCardDto; 
               <label key={i.key} className="flex items-center gap-2 text-sm">
                 <span className="min-w-0 flex-1">{i.label}</span>
                 <span className="text-muted-foreground">RM</span>
-                <Input className="h-8 w-32" inputMode="decimal" placeholder="0.00" value={money[i.key] ?? ""} onChange={(e) => setMoney({ ...money, [i.key]: e.target.value })} />
+                <Input className="h-8 w-32 tabular-nums" inputMode="decimal" placeholder="0.00" value={fields[i.key] ?? ""} onChange={(e) => setField(i.key, e.target.value)} />
+              </label>
+            ) : i.kind === "date" ? (
+              <label key={i.key} className="flex items-center gap-2 text-sm">
+                <span className="min-w-0 flex-1">{i.label}</span>
+                <Input type="date" className="h-8 w-40" value={fields[i.key] ?? ""} onChange={(e) => setField(i.key, e.target.value)} />
+              </label>
+            ) : i.kind === "choice" ? (
+              <fieldset key={i.key} className="text-sm">
+                <legend className="mb-1.5">{i.label}</legend>
+                <div className="flex flex-wrap gap-1.5">
+                  {(i.options ?? []).map((o) => (
+                    <label
+                      key={o}
+                      className="cursor-pointer rounded-md border bg-background px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted has-checked:border-primary has-checked:bg-primary/10 has-checked:text-primary has-focus-visible:ring-2 has-focus-visible:ring-ring"
+                    >
+                      <input type="radio" className="sr-only" name={`${card.id}-${i.key}`} value={o} checked={fields[i.key] === o} onChange={() => setField(i.key, o)} />
+                      {o}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            ) : i.kind === "text" ? (
+              <label key={i.key} className="flex items-center gap-2 text-sm">
+                <span className="min-w-0 flex-1">
+                  {i.label}
+                  {i.webOnly && <span className="block text-xs text-muted-foreground">Optional. Not shared with the AI.</span>}
+                </span>
+                <Input className="h-8 w-40" maxLength={80} value={fields[i.key] ?? ""} onChange={(e) => setField(i.key, e.target.value)} />
               </label>
             ) : (
               <div key={i.key} className="space-y-2 text-sm">
@@ -141,7 +179,7 @@ export function ActionCard({ card, onDone, onDraft }: { card: AssistantCardDto; 
           <Button variant="outline" size="sm" disabled={pending} onClick={() => run(rejectAssistantAction)}>
             <X className="size-3.5" aria-hidden /> Reject
           </Button>
-          <Button size="sm" disabled={pending || (card.missing.length > 0 && (inputs.length === 0 || !edits))} onClick={() => run((id) => approveAssistantAction(id, edits ?? {}))}>
+          <Button size="sm" disabled={pending || (inputs.length > 0 ? !edits : card.missing.length > 0)} onClick={() => run((id) => approveAssistantAction(id, edits ?? {}))}>
             <Check className="size-3.5" aria-hidden /> Approve
           </Button>
         </div>

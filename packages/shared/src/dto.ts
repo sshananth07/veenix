@@ -200,11 +200,23 @@ export interface TaskDto {
 // ---- Assistant ---------------------------------------------------------------
 /** The signed-in user's linked WhatsApp number. `available` is false until Veenix's WhatsApp number is configured. */
 export interface WhatsAppLinkDto { available: boolean; phone: string | null; verifiedAt: Date | null; notify: boolean }
+/** A field the user fills in on an approval card. */
+export interface AssistantCardInput {
+  /** A path into the action's input, e.g. "lines.0.totalSen". */
+  key: string;
+  label: string;
+  kind: "money" | "terms" | "address" | "date" | "choice" | "text";
+  /** Prefill, as typed: ringgit "300.00", date "2026-11-05", or one of options. */
+  value?: string | null;
+  options?: string[];
+  /** Optional, filled on the web card only: never shown on WhatsApp, never in what the model proposes. */
+  webOnly?: boolean;
+}
 export interface AssistantCardDto {
   id: Id; status: "pending" | "applied" | "rejected"; expired: boolean; title: string;
   lines: { label: string; value: string }[]; changes: { label: string; before: string; after: string }[]; missing: string[]; link: string | null;
-  /** Fields the user fills in on the card before approving. Money is sent in sen; terms as { label, pct }[]; address as the address parts. */
-  inputs: { key: string; label: string; kind: "money" | "terms" | "address" }[];
+  /** Fields the user fills in on the card before approving. Money is sent in sen; terms as { label, pct }[]; address as the address parts; date as "YYYY-MM-DD". */
+  inputs: AssistantCardInput[];
   /** After approval: what was made, e.g. "Project PRJ-0012 created: …". link then points at it. */
   done: string | null;
   /** After approval: a follow-up the user can start, e.g. "Make it a project". The prompt is sent as their message. */

@@ -65,7 +65,7 @@ describe("assistant turn", () => {
       await as(() => runTurn(t.conv, t.msg));
       return (await turnMessages(t)).find((m) => m.role === "context")!.text;
     };
-    expect(await context("whatsapp")).toContain("ask for any price, payment terms or site address");
+    expect(await context("whatsapp")).toContain("a client payment's amount, date and method");
     expect(await context("app")).not.toContain("WhatsApp");
   });
 

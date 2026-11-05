@@ -1,4 +1,5 @@
 import { Logger } from "@nestjs/common";
+import { formatDate } from "@veenix/shared";
 import { env } from "../config/env";
 import { AssistantMessageModel, AssistantToolCallModel, PendingActionModel } from "../assistant/models";
 import type { Card } from "../assistant/pending";
@@ -13,6 +14,8 @@ export function cardText(card: Card) {
     `*${card.title}*`,
     ...card.lines.map((l) => `${l.label}: ${l.value}`),
     ...card.changes.map((c) => `${c.label}: ${c.before} → ${c.after}`),
+    // Prefilled card fields, so they can be checked before Approve. Web-only fields (payment references) never go out.
+    ...(card.inputs ?? []).filter((i) => i.value && !i.webOnly).map((i) => `${i.label}: ${i.kind === "money" ? `RM ${i.value}` : i.kind === "date" ? formatDate(i.value!) : i.value}`),
     ...(card.missing.length ? [`Missing: ${card.missing.join(", ")}. Fill these in Veenix.`] : []),
   ].join("\n");
 }

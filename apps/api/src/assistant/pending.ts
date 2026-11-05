@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { z } from "zod";
-import { can, type Permission, type Role } from "@veenix/shared";
+import { can, type AssistantCardInput, type Permission, type Role } from "@veenix/shared";
 import { ctx } from "../common/context";
 import { forbidden, notFound, rule } from "../common/errors";
 import { tx } from "../common/tx";
@@ -15,7 +15,7 @@ export type Card = {
   changes: { label: string; before: string; after: string }[];
   missing: string[];
   /** Fields the user may fill in on the card. key is a path into the action's input, e.g. "lines.0.totalSen". */
-  inputs?: { key: string; label: string; kind: "money" | "terms" | "address" }[];
+  inputs?: AssistantCardInput[];
   link?: string;
 };
 
@@ -38,6 +38,8 @@ interface ApprovalAction<I> {
   name: string;
   description: string;
   input: z.ZodType<I>;
+  /** What the model may fill in, when narrower than input. The fields it leaves out come from their defaults and the card. */
+  proposal?: z.ZodType;
   permission: Permission;
   deferred?: boolean;
   /** Builds the card from current data. Runs at proposal and again at approval. */
@@ -55,11 +57,11 @@ export function defineApprovalAction<I>(a: ApprovalAction<I>) {
   defineTool<I>({
     name: `propose_${a.name}`,
     description: `${a.description} Shows an approval card; nothing changes until the user approves it.`,
-    input: a.input,
+    input: (a.proposal ?? a.input) as z.ZodType<I>,
     permission: a.permission,
     level: "approval",
     deferred: a.deferred ?? true,
-    run: (input, c) => propose(c, a.name, input),
+    run: (input, c) => propose(c, a.name, a.input.parse(input)),
   });
 }
 

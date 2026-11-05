@@ -123,7 +123,7 @@ async function contextText(conversation: { channel: string; projectId?: Types.Ob
     `User: ${user?.name || "unknown"}, role ${c.role}.`,
     project ? `They opened the chat from project ${project.name} (${project.code}), id ${project._id}.` : "No current project.",
     // Per channel, so the cached system prompt stays the same for every chat.
-    ...(conversation.channel === "whatsapp" ? ["They're on WhatsApp, where approval cards can't be filled in. Before proposing, ask for any price, payment terms or site address the card would need, so it can be approved here."] : []),
+    ...(conversation.channel === "whatsapp" ? ["They're on WhatsApp, where approval cards can't be filled in. Before proposing, ask for any price, payment terms, site address, or a client payment's amount, date and method the card would need, so it can be approved here. Never ask for bank account numbers or payment references."] : []),
     ...(conversation.notes.length ? ["Since the last message:", ...conversation.notes.map((n) => `- ${n}`)] : []),
   ].join("\n");
 }

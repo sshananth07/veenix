@@ -31,7 +31,7 @@ defineTool({
 
 defineTool({
   name: "get_project",
-  description: "A project's name, code, stage, client, work items, assigned staff, and procurement packages with their vendor quote ids, PO and payment milestone ids. Money is in sen.",
+  description: "A project's name, code, stage, client, work items, assigned staff, procurement packages with their vendor quote ids, PO and payment milestone ids, and the client's payment milestones with their invoice ids and balances. Money is in sen.",
   input: z.strictObject({ projectId: id }),
   permission: "project:read",
   level: "read",
@@ -50,6 +50,14 @@ defineTool({
           },
         })),
         assignees: p.assignees.map((a) => ({ userId: a.userId, name: a.name, role: a.role })),
+        // Whitelisted on purpose: no payment references, who recorded them, or e-invoice ids.
+        clientMilestones: p.milestones.map((m) => ({
+          name: m.name, amountSen: m.amount, status: m.status,
+          invoice: m.invoice && {
+            invoiceId: m.invoice.id, code: m.invoice.code, status: m.invoice.status, dueDate: m.invoice.dueDate,
+            paidSen: m.invoice.paidAmount, balanceSen: m.invoice.amount + m.invoice.sstAmount - m.invoice.paidAmount,
+          },
+        })),
       }),
     };
   },
