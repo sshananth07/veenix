@@ -253,6 +253,8 @@ Expected: PASS.
 
 ### Task 17.7: Owner check on real photos (needs `OPENAI_API_KEY`)
 
+> Replaced by Task 18.8 in [18-copilot-room-3d-fidelity.md](18-copilot-room-3d-fidelity.md), which checks plans 17 and 18 together.
+
 This replaces Task 16.5. Tick 16.5 when this is done.
 
 - [ ] **Step 1: Run it.** Send 5–10 real photos of different room types: kitchen, bedroom, living room, office, a shop or clinic. Note, for each:
@@ -274,6 +276,6 @@ No code is merged in this task. It decides whether Phase 2 is worth a plan.
 - [ ] **Step 1: Collect** the item `description`s from the Task 17.7 concepts, 20 at least, across room types.
 - [ ] **Step 2: Search** the CC0 candidates (Kenney, Quaternius, Poly Haven, and any other CC0 furniture set found) for each description by hand. Score each: **good** (a client wouldn't notice), **close** (right kind, wrong style) or **none**.
 - [ ] **Step 3: Decide**, and record it in [../copilot-spec.md](../copilot-spec.md) §7:
-  - **Mostly good:** write plan 18. Offline import that normalises scale, facing and polygon count, files in our bucket, `text-embedding-3-small` vectors searched in memory, and the catalogue shape as the fallback.
+  - **Mostly good:** write plan 19 (plan 18 is the 3D fidelity work). Offline import that normalises scale, facing and polygon count, files in our bucket, `text-embedding-3-small` vectors searched in memory, and the catalogue shape as the fallback.
   - **Mostly close or none:** price a licensed furniture pack (it must allow showing models in our web app), or move per-object 3D generation (a new vendor) forward. The owner decides.
   - **Not worth it:** stop at Phase 1. The catalogue shapes plus finishes and built-ins are the product.

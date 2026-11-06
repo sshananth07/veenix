@@ -23,6 +23,7 @@ This folder holds the design and the step-by-step build guide for moving Veenix 
 | [plan/15-copilot-proactive.md](plan/15-copilot-proactive.md) | Morning summary, task reminders, audio retention |
 | [plan/16-copilot-room-concepts.md](plan/16-copilot-room-concepts.md) | Room concepts: restyled photo and a hand-built 3D room (no paid 3D vendor), WhatsApp delivery, chat card and full-screen viewer |
 | [plan/17-copilot-room-3d.md](plan/17-copilot-room-3d.md) | Realistic 3D: split style and layout, every photo, image costs in the cap, on-demand presentation render, room v2 (finishes, ceilings, built-ins), dollhouse renderer; furniture library test gates Phase 2 |
+| [plan/18-copilot-room-3d-fidelity.md](plan/18-copilot-room-3d-fidelity.md) | 3D that matches the render: contents laid out from the render (photo shell wins, edits kept, Match render / Undo match), studio and cove lighting, slat and fabric surfaces with depth, wall panels and nibs, furniture sets, CC0 glTF props |
 
 ## How to use the plan
 
@@ -166,5 +167,15 @@ Concretely:
 - [x] 17.4 Room v2: finishes, ceilings, built-ins, wall placement (with tests)
 - [x] 17.5 The renderer: thick walls, cut-away, materials, ceilings, built-ins
 - [x] 17.6 The editor for v2
-- [ ] 17.7 Owner check on real photos (needs OPENAI_API_KEY)
-- [ ] 17.8 Furniture library coverage test (gates Phase 2)
+- [ ] 17.7 Owner check on real photos (needs OPENAI_API_KEY); replaced by 18.8
+- [ ] 17.8 Furniture library coverage test (gates the furniture library, plan 19)
+
+### 18 Copilot room concepts, 3D that matches the render
+- [ ] 18.1 Room schema: sets, built-in colour, panels, nibs, contents (with tests)
+- [ ] 18.2 Lay out the 3D room from the render (with tests)
+- [ ] 18.3 Lighting: coves in the overview, area lights, Studio
+- [ ] 18.4 Slats and fabric with depth, wall panels, nibs
+- [ ] 18.5 Sets and wall shelves
+- [ ] 18.6 The editor and Match render
+- [ ] 18.7 glTF props
+- [ ] 18.8 Owner check on real photos (needs OPENAI_API_KEY)
