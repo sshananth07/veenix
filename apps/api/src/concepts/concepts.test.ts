@@ -21,11 +21,11 @@ import { env } from "../config/env";
 import { asOrg, newId } from "../../test/ctx";
 import { redis } from "../common/redis";
 import { DAILY_SPEND_CAP_MICROS, spendKey } from "../assistant/limits";
-import { describeRoom, dollhouse, restyle } from "./ai";
+import { describeContents, describeRoom, dollhouse, restyle } from "./ai";
 import { DesignConceptModel } from "./concept.model";
 import { ConceptsService } from "./concepts.service";
 
-vi.mock("./ai", () => ({ restyle: vi.fn(), describeRoom: vi.fn(), dollhouse: vi.fn() }));
+vi.mock("./ai", () => ({ restyle: vi.fn(), describeRoom: vi.fn(), dollhouse: vi.fn(), describeContents: vi.fn() }));
 vi.mock("../whatsapp/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../whatsapp/client")>()),
   sendCtaUrl: vi.fn().mockResolvedValue({}),
@@ -51,6 +51,12 @@ const SHELL = {
 /** What the model returns: a sofa placed free-standing, inside the schema but outside a 4 m room. */
 const DESCRIBED: RoomDescription = { ...SHELL, panels: [], builtIns: [], items: [{ type: "sofa", description: "linen sofa", wall: null, along: 7, out: 0, rotation: 0, color: "#c8b8a0" }] };
 const ROOM: Room = { version: 2, ...SHELL, panels: [], builtIns: [], items: [{ type: "sofa", description: "linen sofa", x: 7, z: 0, rotation: 0, color: "#c8b8a0" }] };
+/** What the model sees in the render: a run of desks on the back wall and a slat panel. */
+const CONTENTS = {
+  panels: [{ wall: "left" as const, at: 2, width: 1.2, height: 2.4, finish: "timber_slats" as const, color: "#a87d55" }],
+  builtIns: [{ kind: "workstation" as const, wall: "back" as const, along: 2, out: 0.5, rotation: 0, length: 2.8, depth: 1.4, height: 1.2, body: "white_laminate" as const, top: "oak" as const, color: "#8f9f7d" }],
+  items: [],
+};
 
 function tc(attachments = [{ key: photoKey, name: "room.jpg", kind: "photo" as const }]) {
   return { conversationId: conv, messageId: newId(), attachments };
@@ -95,6 +101,7 @@ beforeEach(async () => {
   vi.mocked(restyle).mockReset().mockResolvedValue(RESTYLED);
   vi.mocked(describeRoom).mockReset().mockResolvedValue(DESCRIBED);
   vi.mocked(dollhouse).mockReset().mockResolvedValue(RENDER);
+  vi.mocked(describeContents).mockReset().mockResolvedValue(CONTENTS);
 });
 
 describe("generate_room_concept", () => {
@@ -502,5 +509,85 @@ describe("review fixes", () => {
 
   it("the room schema is accepted by OpenAI strict mode", () => {
     expect(() => strictSchema(roomDescriptionSchema)).not.toThrow();
+  });
+});
+
+describe("layout from the render", () => {
+  async function readyConcept() {
+    await start();
+    await runJobs();
+    return (await latest())!;
+  }
+  async function rendered(id: Types.ObjectId) {
+    await asOwner(() => svc.render(id));
+    await runJobs();
+    return asOwner(() => svc.get(id));
+  }
+
+  it("after the render, lays out an unedited room from it, keeping the walls, doors and windows", async () => {
+    const c = await readyConcept();
+    const dto = await rendered(c._id);
+    expect(dto.room!.builtIns.map((b) => b.kind)).toEqual(["workstation"]);
+    expect(dto.room!.panels).toHaveLength(1);
+    expect(dto.room!.items).toEqual([]);
+    expect(dto.room).toMatchObject({ width: 4, length: 5, height: 2.8, openings: SHELL.openings, walls: SHELL.walls });
+    expect(dto).toMatchObject({ renderStatus: "ready", canMatchRender: false, canRestoreRoom: true });
+    const [render, restyled, room, style, layout] = vi.mocked(describeContents).mock.calls[0];
+    expect([render, restyled, style, layout]).toEqual([RENDER, RESTYLED, "Japandi, light oak", null]);
+    expect(room).toMatchObject({ width: 4, openings: SHELL.openings });
+  });
+
+  it("keeps an edited room and offers the render's layout instead", async () => {
+    const c = await readyConcept();
+    await asOwner(() => svc.update(c._id, { room: ROOM }));
+    const dto = await rendered(c._id);
+    expect(dto.room!.items.map((i) => i.type)).toEqual(["sofa"]);
+    expect(dto.room!.builtIns).toEqual([]);
+    expect(dto).toMatchObject({ canMatchRender: true, canRestoreRoom: false });
+  });
+
+  it("Match render swaps in the render's layout and Undo match puts the earlier room back", async () => {
+    const c = await readyConcept();
+    await asOwner(() => svc.update(c._id, { room: ROOM }));
+    await rendered(c._id);
+    const matched = await asOwner(() => svc.matchRender(c._id));
+    expect(matched.room!.builtIns.map((b) => b.kind)).toEqual(["workstation"]);
+    expect(matched).toMatchObject({ canMatchRender: false, canRestoreRoom: true });
+    const back = await asOwner(() => svc.restoreRoom(c._id));
+    expect(back.room!.items.map((i) => i.type)).toEqual(["sofa"]);
+    expect(back).toMatchObject({ canMatchRender: true, canRestoreRoom: false });
+  });
+
+  it("refuses Match render without a render layout and Undo match without an earlier room", async () => {
+    const c = await readyConcept();
+    await expect(asOwner(() => svc.matchRender(c._id))).rejects.toThrow("This concept has no layout from its render yet.");
+    await expect(asOwner(() => svc.restoreRoom(c._id))).rejects.toThrow("There's no earlier room to go back to.");
+  });
+
+  it("a retried render job doesn't describe the contents again", async () => {
+    const c = await readyConcept();
+    await rendered(c._id);
+    await asOwner(() => DesignConceptModel.updateOne({ _id: c._id }, { $set: { renderStatus: "generating" } }));
+    await asOwner(() => JobModel.create([{ orgId: org, type: "concept.render", payload: { conceptId: String(c._id), userId: String(owner) } }]));
+    await runJobs();
+    expect(describeContents).toHaveBeenCalledTimes(1);
+    expect((await latest())!.renderStatus).toBe("ready");
+  });
+
+  it("a failed contents description still finishes the render", async () => {
+    vi.mocked(describeContents).mockRejectedValue(new Error("bad json"));
+    const c = await readyConcept();
+    const before = (await asOwner(() => svc.get(c._id))).room;
+    const dto = await rendered(c._id);
+    expect(dto).toMatchObject({ renderStatus: "ready", canMatchRender: false, canRestoreRoom: false });
+    expect(dto.room).toEqual(before);
+  });
+
+  it("an image-only concept gets no render layout", async () => {
+    vi.mocked(describeRoom).mockRejectedValue(new Error("bad json"));
+    const c = await readyConcept();
+    const dto = await rendered(c._id);
+    expect(describeContents).not.toHaveBeenCalled();
+    expect(dto).toMatchObject({ renderStatus: "ready", room: null, canMatchRender: false });
   });
 });

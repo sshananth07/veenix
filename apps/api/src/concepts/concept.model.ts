@@ -17,6 +17,9 @@ const conceptSchema = new Schema(
     status: { type: String, enum: ["generating", "ready", "failed"], default: "generating" },
     imageKey: { type: String, default: null },
     room: { type: Mixed, default: null }, // a fitted Room; null when image-only
+    roomEdited: { type: Boolean, default: false }, // saved from the editor: the render's layout is then only offered
+    renderRoom: { type: Mixed, default: null }, // the room laid out from the presentation render (plan 18)
+    roomBefore: { type: Mixed, default: null }, // the room the render's layout replaced, for Undo match
     renderKey: { type: String, default: null }, // the on-demand presentation render (dollhouse image)
     renderStatus: { type: String, enum: ["none", "generating", "ready", "failed"], default: "none" },
     error: { type: String, default: null },

@@ -48,3 +48,35 @@ describe("presentation render", () => {
     expect(args.image).toHaveLength(2);
   });
 });
+
+describe("layout from the render", () => {
+  it("asks for the far wall of the render to be the wall the photo faces", async () => {
+    const { dollhouse } = await import("./ai");
+    edit.mockClear();
+    await asOrg(newId(), () => dollhouse(Buffer.from([0xff, 0xd8]), [], "Japandi"));
+    expect(edit.mock.calls[0][0].prompt).toContain("the wall that photo faces is the far wall");
+  });
+
+  it("describes the contents from the render first, with the fixed shell as text", async () => {
+    const { describeContents } = await import("./ai");
+    vi.mocked(createMessage).mockClear();
+    const paint = { finish: "paint" as const, color: "#f4f1ea" };
+    const room = {
+      version: 2 as const, width: 4.2, length: 5, height: 2.8, floor: "light_oak" as const,
+      walls: { back: paint, left: paint, right: paint, front: paint },
+      ceiling: { color: "#f7f6f2", drops: [], cove: false, downlights: 0, units: [] },
+      openings: [{ wall: "back" as const, kind: "door" as const, at: 1, width: 0.9, height: 2.1, sill: 0 }],
+      nibs: [{ wall: "left" as const, at: 1, width: 0.4, depth: 0.3 }], panels: [], builtIns: [], items: [],
+    };
+    const render = Buffer.from("RIFF0000WEBPVP8 ");
+    await asOrg(newId(), () => describeContents(render, Buffer.from([0xff, 0xd8]), room, "Japandi", "desks by the window"));
+    const args = vi.mocked(createMessage).mock.calls[0][0];
+    const [text, first, second] = args.input[0].content;
+    expect(first.image_url).toBe(`data:image/webp;base64,${render.toString("base64")}`);
+    expect(second.image_url).toMatch(/^data:image\/jpeg;base64,/);
+    expect(text.text).toContain('"width":4.2');
+    expect(text.text).toContain('"nibs":[{"wall":"left"');
+    expect(text.text).toContain("desks by the window");
+    expect(args.text.format.name).toBe("contents");
+  });
+});

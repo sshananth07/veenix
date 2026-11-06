@@ -239,6 +239,8 @@ export interface ConceptDto {
   projectId: Id | null; leadId: Id | null; photoUrl: string; imageUrl: string | null; room: Room | null; saved: boolean; createdAt: Date;
   /** The on-demand presentation render (a still dollhouse image). */
   renderStatus: "none" | "generating" | "ready" | "failed"; renderUrl: string | null;
+  /** The render's layout (plan 18) differs from the room and can replace it; an earlier room can be put back. */
+  canMatchRender: boolean; canRestoreRoom: boolean;
 }
 export interface AssistantConversationDto { id: Id; title: string; projectId: Id | null; projectName: string | null; messages: AssistantMessageDto[]; busy: boolean }
 export interface AssistantConversationListItemDto { id: Id; title: string; projectId: Id | null; projectName: string | null; lastMessageAt: Date }

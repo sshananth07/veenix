@@ -13,6 +13,8 @@ export class ConceptsController {
   @Can("project:read") @Get("concepts/:id") get(@OidParam("id") id: Types.ObjectId) { return this.concepts.get(id); }
   @Can("concept:generate") @Patch("concepts/:id") update(@OidParam("id") id: Types.ObjectId, @ZBody(conceptPatchInput) b: ConceptPatchInput) { return this.concepts.update(id, b); }
   @Can("concept:generate") @Post("concepts/:id/render") render(@OidParam("id") id: Types.ObjectId) { return this.concepts.render(id); }
+  @Can("concept:generate") @Post("concepts/:id/match-render") matchRender(@OidParam("id") id: Types.ObjectId) { return this.concepts.matchRender(id); }
+  @Can("concept:generate") @Post("concepts/:id/restore-room") restoreRoom(@OidParam("id") id: Types.ObjectId) { return this.concepts.restoreRoom(id); }
   @Can("project:read") @Get("projects/:id/concepts") forProject(@OidParam("id") id: Types.ObjectId) { return this.concepts.list({ projectId: id }); }
   @Can("lead:read") @Get("leads/:id/concepts") forLead(@OidParam("id") id: Types.ObjectId) { return this.concepts.list({ leadId: id }); }
 }

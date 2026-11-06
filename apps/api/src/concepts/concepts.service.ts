@@ -45,6 +45,8 @@ export async function toDto(c: DesignConcept): Promise<ConceptDto> {
     room: upgradeRoom(c.room), saved: c.saved, createdAt: c.createdAt,
     renderStatus: (c.renderStatus ?? "none") as ConceptDto["renderStatus"],
     renderUrl: c.renderKey && c.renderStatus === "ready" ? await downloadUrl(c.renderKey, `${c.name} render.webp`) : null,
+    canMatchRender: !!c.renderRoom && JSON.stringify(c.renderRoom) !== JSON.stringify(c.room),
+    canRestoreRoom: !!c.roomBefore,
   };
 }
 
@@ -63,7 +65,23 @@ export class ConceptsService {
 
   async update(id: Types.ObjectId, patch: ConceptPatchInput) {
     await this.load(id);
-    await DesignConceptModel.updateOne({ _id: id }, { $set: { ...patch, ...(patch.room ? { room: fitRoom(patch.room) } : {}) } });
+    await DesignConceptModel.updateOne({ _id: id }, { $set: { ...patch, ...(patch.room ? { room: fitRoom(patch.room), roomEdited: true } : {}) } });
+    return this.get(id);
+  }
+
+  /** Replaces the room with the one laid out from the presentation render, keeping the old one for Undo match. */
+  async matchRender(id: Types.ObjectId) {
+    const c = await this.load(id);
+    if (!c.renderRoom) throw rule("This concept has no layout from its render yet.");
+    await DesignConceptModel.updateOne({ _id: id }, { $set: { roomBefore: c.room, room: c.renderRoom, roomEdited: false } });
+    return this.get(id);
+  }
+
+  /** Puts back the room the render's layout replaced. */
+  async restoreRoom(id: Types.ObjectId) {
+    const c = await this.load(id);
+    if (!c.roomBefore) throw rule("There's no earlier room to go back to.");
+    await DesignConceptModel.updateOne({ _id: id }, { $set: { room: c.roomBefore, roomBefore: null, roomEdited: true } });
     return this.get(id);
   }
 

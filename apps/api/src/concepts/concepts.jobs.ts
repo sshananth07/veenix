@@ -1,7 +1,7 @@
 import { extname } from "node:path";
 import { Logger } from "@nestjs/common";
 import { Types } from "mongoose";
-import { resolveRoom, roomDescriptionSchema, type Room } from "@veenix/shared";
+import { resolveRoom, roomContentsSchema, roomDescriptionSchema, upgradeRoom, withContents, type Room } from "@veenix/shared";
 import { runAsMember } from "../auth/member-ctx";
 import { ctx } from "../common/context";
 import { registerJob } from "../jobs/jobs";
@@ -12,7 +12,7 @@ import { AssistantConversationModel } from "../assistant/models";
 import { inWindow, sendCtaUrl, sendTemplate, sendText } from "../whatsapp/client";
 import { WhatsAppLinkModel } from "../whatsapp/link.model";
 import { addConversationNote } from "../assistant/turn";
-import { describeRoom, dollhouse, restyle } from "./ai";
+import { describeContents, describeRoom, dollhouse, restyle } from "./ai";
 import { DesignConceptModel, type DesignConcept } from "./concept.model";
 
 const log = new Logger("Concepts");
@@ -57,14 +57,33 @@ registerJob<GenerateJob>("concept.render", asMember("render", (id) => renderConc
 const photosOf = (c: Pick<DesignConcept, "sourceKey" | "extraKeys">) =>
   Promise.all([c.sourceKey, ...(c.extraKeys ?? [])].map(async (k) => ({ photo: await getObject(k), ext: extname(k).toLowerCase() })));
 
-/** The on-demand presentation render. A stored render is never paid for again on a retry. */
+/**
+ * The on-demand presentation render, then the 3D room's contents laid out from it (plan 18). Neither is paid for again
+ * on a retry. The layout replaces the room only while nobody has edited it; otherwise it's kept for Match render.
+ */
 export async function renderConcept(id: Types.ObjectId) {
   const c = await DesignConceptModel.findById(id).lean();
   if (!c || c.renderStatus !== "generating" || !c.imageKey) return;
-  if (!c.renderKey) {
+  const restyled = await getObject(c.imageKey);
+  let render: Buffer;
+  if (c.renderKey) render = await getObject(c.renderKey);
+  else {
+    render = await dollhouse(restyled, await photosOf(c), c.brief);
     const key = newKey("concepts", ".webp");
-    await putObject(key, await dollhouse(await getObject(c.imageKey), await photosOf(c), c.brief), "image/webp");
+    await putObject(key, render, "image/webp");
     await DesignConceptModel.updateOne({ _id: id }, { $set: { renderKey: key } });
+  }
+  const room = upgradeRoom(c.room);
+  if (room && !c.renderRoom) {
+    // The render is usable without a layout, so a bad description isn't retried.
+    try {
+      const renderRoom = withContents(room, roomContentsSchema.parse(await describeContents(render, restyled, room, c.brief, c.layout ?? null)));
+      await DesignConceptModel.updateOne({ _id: id }, { $set: { renderRoom } });
+      // Checked again here: the room may have been edited while the render was being made.
+      await DesignConceptModel.updateOne({ _id: id, roomEdited: { $ne: true } }, { $set: { roomBefore: room, room: renderRoom } });
+    } catch (e) {
+      log.warn(`Concept ${id} has no layout from its render: ${e instanceof Error ? e.message : e}`);
+    }
   }
   await DesignConceptModel.updateOne({ _id: id, renderStatus: "generating" }, { $set: { renderStatus: "ready" } });
   changed({ kind: "assistant", userId: String(c.createdBy) });
