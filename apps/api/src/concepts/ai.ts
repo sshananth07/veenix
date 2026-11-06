@@ -78,7 +78,7 @@ export async function describeRoom(restyled: Buffer, originals: { photo: Buffer;
     text: { format: { type: "json_schema", name: "room", strict: true, schema: strictSchema(roomDescriptionSchema) } },
     reasoning: { effort: "low" },
     store: false,
-    max_output_tokens: 4_000,
+    max_output_tokens: 8_000, // a full v2 room (40 items, 12 built-ins, each described) plus reasoning
   });
   if (response.usage) await addSpend(String(ctx().orgId), costMicros(response.usage));
   return JSON.parse(response.output_text);

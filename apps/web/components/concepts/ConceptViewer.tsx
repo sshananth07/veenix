@@ -51,7 +51,10 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  useEffect(() => setRoom(concept.room), [concept.room]);
+  // Keyed on the stored room's value: polling (while a render is made) hands over a new but equal object every 5 s,
+  // which must not wipe edits that aren't saved yet.
+  const stored = JSON.stringify(concept.room);
+  useEffect(() => setRoom(JSON.parse(stored) as Room | null), [stored]);
   // ponytail: polls while generating; the chat's live event doesn't reach this page.
   const waiting = concept.status === "generating" || concept.renderStatus === "generating";
   useEffect(() => {

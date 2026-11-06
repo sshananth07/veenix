@@ -93,6 +93,28 @@ describe("resolveRoom", () => {
     expect(clear.x).toBeCloseTo(0);
   });
 
+  it("keeps a corner run out of a door on the next wall, shortening it when it can't slide", () => {
+    // Left-wall door next to the back corner: z −2.35…−1.45, its doorway reaching 0.9 m in (x −2…−1.1).
+    const r = resolveRoom(described({
+      openings: [{ wall: "left", kind: "door", at: 4.4, width: 0.9, height: 2.1, sill: 0 }],
+      builtIns: [builtIn({ wall: "back", along: 2, length: 4 })], // the full back wall, across the doorway
+    }));
+    const [run] = r.builtIns;
+    expect(run.x - run.length / 2).toBeGreaterThanOrEqual(-1.1 - 1e-9);
+    expect(run.x + run.length / 2).toBeLessThanOrEqual(2 + 1e-9);
+    expect(run.length).toBeCloseTo(3.1);
+  });
+
+  it("pushes a free-standing item out of a doorway, into the room", () => {
+    const r = resolveRoom(described({
+      openings: [{ wall: "front", kind: "door", at: 2, width: 0.9, height: 2.1, sill: 0 }], // x −0.45…0.45, doorway z 1.6…2.5
+      items: [item({ type: "armchair", wall: null, along: 0, out: 2.1 })],
+    }));
+    const [chair] = r.items;
+    expect(chair.z + FURNITURE.armchair.d / 2).toBeLessThanOrEqual(1.6 + 1e-9);
+    expect(chair.x).toBeCloseTo(0);
+  });
+
   it("pulls everything inside the walls, rotation included", () => {
     const r = resolveRoom(described({
       builtIns: [builtIn({ wall: "right", along: 9, length: 2 })],

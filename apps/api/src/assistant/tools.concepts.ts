@@ -44,7 +44,7 @@ defineTool({
     let layout = input.layout || null;
     if (input.fromConceptId) {
       const from = await DesignConceptModel.findById(input.fromConceptId).lean();
-      keys = from ? [from.sourceKey, ...from.extraKeys] : [];
+      keys = from ? [from.sourceKey, ...(from.extraKeys ?? [])] : []; // concepts before plan 17 have no extraKeys
       layout ??= from?.layout ?? null;
     } else {
       const all = await photoKeys(c);

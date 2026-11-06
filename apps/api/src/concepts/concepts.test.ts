@@ -171,6 +171,14 @@ describe("generate_room_concept", () => {
     expect(await latest()).toMatchObject({ sourceKey: keys[2], extraKeys: [keys[0]] });
   });
 
+  it("another style works on a concept stored before extra photos existed", async () => {
+    const { _id } = (await asOwner(() => DesignConceptModel.create([{ projectId: project, sourceKey: photoKey, brief: "old", name: "old", conversationId: conv, createdBy: owner, status: "ready" }])))[0];
+    await mongoose.connection.collection("design_concepts").updateOne({ _id }, { $unset: { extraKeys: "", layout: "" } }); // as stored before plan 17
+    const r = await start({ style: "Industrial", fromConceptId: String(_id) }, tc([]));
+    expect(r.isError).toBe(false);
+    expect(await latest()).toMatchObject({ sourceKey: photoKey, extraKeys: [], brief: "Industrial" });
+  });
+
   it("another style keeps the earlier concept's photos and layout", async () => {
     const keys = await Promise.all([5, 6].map(storePhoto));
     await start({ layout: "door on the back wall" }, tc(photos(keys)));

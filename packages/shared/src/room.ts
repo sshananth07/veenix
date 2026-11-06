@@ -170,29 +170,64 @@ export function wallPieces(len: number, h: number, openings: { at: number; width
 }
 
 type Described = { wall: Wall | null; along: number; out: number; rotation: number };
+type Placed = { x: number; z: number; rotation: number };
+
+/**
+ * Moves anything standing in a doorway (the door's width, DOOR_CLEARANCE into the room) out of it, whichever wall the door
+ * is on. Against a wall it slides along that wall, and a built-in that can't slide is shortened to the larger free side;
+ * free-standing it's pushed into the room. ponytail: one pass, so a nudge can land in a second door; loop if that shows up.
+ */
+function clearDoors<T extends Placed>(room: Room, things: T[], walls: (Wall | null)[], size: (t: T) => [number, number], resize?: (t: T, length: number) => T): T[] {
+  const [hw, hl] = [room.width / 2, room.length / 2];
+  const zones = room.openings.filter((o) => o.kind === "door").map((o) => {
+    const [ax, az] = wallPoint(room, o.wall, o.at - o.width / 2, 0);
+    const [bx, bz] = wallPoint(room, o.wall, o.at + o.width / 2, DOOR_CLEARANCE);
+    return { wall: o.wall, x: [Math.min(ax, bx), Math.max(ax, bx)], z: [Math.min(az, bz), Math.max(az, bz)] };
+  });
+  return things.map((t0, i) => {
+    let t = t0;
+    for (const zone of zones) {
+      const [w, d] = size(t);
+      const { ex, ez } = extent(w, d, t.rotation);
+      const e = { x: ex, z: ez };
+      const half = { x: hw, z: hl };
+      if (!(t.x - ex < zone.x[1] && t.x + ex > zone.x[0] && t.z - ez < zone.z[1] && t.z + ez > zone.z[0])) continue;
+      const wall = walls[i];
+      if (!wall) {
+        // Into the room, away from the door's wall.
+        if (zone.wall === "back") t = { ...t, z: zone.z[1] + ez };
+        else if (zone.wall === "front") t = { ...t, z: zone.z[0] - ez };
+        else if (zone.wall === "left") t = { ...t, x: zone.x[1] + ex };
+        else t = { ...t, x: zone.x[0] - ex };
+        continue;
+      }
+      const axis = wall === "back" || wall === "front" ? "x" : "z";
+      const [lo, hi] = [-half[axis] + e[axis], half[axis] - e[axis]];
+      const sides = [zone[axis][0] - e[axis], zone[axis][1] + e[axis]].filter((v) => v >= lo - 1e-9 && v <= hi + 1e-9);
+      if (sides.length) {
+        const v = sides.reduce((best, c) => (Math.abs(c - t[axis]) < Math.abs(best - t[axis]) ? c : best));
+        t = { ...t, [axis]: v };
+      } else if (resize && Math.abs(Math.sin(rad(t.rotation - WALL_FACING[wall]))) < 0.01) { // only when its length runs along the wall
+        const [before, after] = [zone[axis][0] - -half[axis], half[axis] - zone[axis][1]]; // free run each side of the doorway
+        const [from, to] = before >= after ? [-half[axis], zone[axis][0]] : [zone[axis][1], half[axis]];
+        if (to - from >= 0.3) t = { ...resize(t, to - from), [axis]: (from + to) / 2 };
+      }
+    }
+    return t;
+  });
+}
 
 /** The model's description as a fitted Room: wall placements become x/z, nothing blocks a door, everything is inside. */
 export function resolveRoom(d: RoomDescription): Room {
-  const doors = d.openings.filter((o) => o.kind === "door");
   const place = (p: Described, w: number, depth: number) => {
     if (!p.wall) return { x: p.along, z: p.out, rotation: p.rotation };
-    const wall = p.wall;
-    const len = wallLength(d, wall);
+    const len = wallLength(d, p.wall);
     const { ex: halfAlong, ez: halfOut } = extent(w, depth, p.rotation); // in the wall's frame
-    let along = clamp(p.along, halfAlong, len - halfAlong);
-    if (p.out < DOOR_CLEARANCE) {
-      for (const o of doors.filter((x) => x.wall === wall)) {
-        const gap = o.width / 2 + halfAlong;
-        if (Math.abs(along - o.at) >= gap) continue;
-        const sides = [o.at - gap, o.at + gap].filter((a) => a >= halfAlong && a <= len - halfAlong);
-        if (sides.length) along = sides.reduce((best, a) => (Math.abs(a - along) < Math.abs(best - along) ? a : best));
-      }
-    }
-    const [x, z] = wallPoint(d, wall, along, p.out + halfOut);
-    return { x, z, rotation: (WALL_FACING[wall] + p.rotation) % 360 };
+    const [x, z] = wallPoint(d, p.wall, clamp(p.along, halfAlong, len - halfAlong), p.out + halfOut);
+    return { x, z, rotation: (WALL_FACING[p.wall] + p.rotation) % 360 };
   };
   const split = <T extends Described>({ wall, along, out, rotation, ...rest }: T) => [{ wall, along, out, rotation }, rest] as const;
-  return fitRoom({
+  const room = fitRoom({
     version: 2,
     width: d.width, length: d.length, height: d.height, floor: d.floor, walls: d.walls, ceiling: d.ceiling, openings: d.openings,
     builtIns: d.builtIns.map((b) => {
@@ -203,6 +238,12 @@ export function resolveRoom(d: RoomDescription): Room {
       const [p, rest] = split(it);
       return { ...rest, ...place(p, FURNITURE[it.type].w, FURNITURE[it.type].d) };
     }),
+  });
+  const onWall = (list: Described[]) => list.map((p) => p.wall);
+  return fitRoom({
+    ...room,
+    builtIns: clearDoors(room, room.builtIns, onWall(d.builtIns), (b) => [b.length, b.depth], (b, length) => ({ ...b, length })),
+    items: clearDoors(room, room.items, onWall(d.items), (it) => [FURNITURE[it.type].w, FURNITURE[it.type].d]),
   });
 }
 

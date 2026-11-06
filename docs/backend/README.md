@@ -160,11 +160,11 @@ Concretely:
 - [ ] 16.5 Owner check on real photos (needs OPENAI_API_KEY); replaced by 17.7
 
 ### 17 Copilot room concepts, realistic 3D
-- [ ] 17.1 Split style and layout, every photo, describe the restyled photo (with tests)
-- [ ] 17.2 Image costs against the daily cap (with tests)
-- [ ] 17.3 On-demand presentation render (with tests)
-- [ ] 17.4 Room v2: finishes, ceilings, built-ins, wall placement (with tests)
-- [ ] 17.5 The renderer: thick walls, cut-away, materials, ceilings, built-ins
-- [ ] 17.6 The editor for v2
+- [x] 17.1 Split style and layout, every photo, describe the restyled photo (with tests)
+- [x] 17.2 Image costs against the daily cap (with tests)
+- [x] 17.3 On-demand presentation render (with tests)
+- [x] 17.4 Room v2: finishes, ceilings, built-ins, wall placement (with tests)
+- [x] 17.5 The renderer: thick walls, cut-away, materials, ceilings, built-ins
+- [x] 17.6 The editor for v2
 - [ ] 17.7 Owner check on real photos (needs OPENAI_API_KEY)
 - [ ] 17.8 Furniture library coverage test (gates Phase 2)
