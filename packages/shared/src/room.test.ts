@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FURNITURE, fitRoom, resolveRoom, roomSchema, upgradeRoom, type Room, type RoomDescription } from "./room";
+import { FURNITURE, WALL_FACING, fitRoom, resolveRoom, roomSchema, upgradeRoom, wallPieces, wallPoint, type Room, type RoomDescription } from "./room";
 
 const paint = { finish: "paint" as const, color: "#f4f1ea" };
 const shell = {
@@ -101,6 +101,40 @@ describe("resolveRoom", () => {
     expect(r.builtIns[0]).toMatchObject({ rotation: 270 });
     expect(r.builtIns[0].z).toBeCloseTo(2.5 - 1); // 2 m run, pulled back from beyond the front corner
     expect(r.items[0].x).toBeCloseTo(2 - FURNITURE.bookshelf.w / 2);
+  });
+});
+
+describe("wallPieces", () => {
+  const door = { wall: "back" as const, kind: "door" as const, at: 1, width: 0.8, height: 2.1, sill: 0 };
+  const window = { wall: "back" as const, kind: "window" as const, at: 3, width: 1, height: 1.2, sill: 0.9 };
+
+  it("splits a wall into solid pieces around its openings", () => {
+    expect(wallPieces(4, 2.8, [])).toEqual([[0, 4, 0, 2.8]]);
+    const pieces = wallPieces(4, 2.8, [door, window]);
+    expect(pieces).toContainEqual([0.6, 1.4, 2.1, 2.8]); // over the door; nothing under it
+    expect(pieces.some(([x0, , y0]) => x0 === 0.6 && y0 === 0)).toBe(false);
+    expect(pieces).toContainEqual([2.5, 3.5, 0, 0.9]); // under the window
+    expect(pieces).toContainEqual([2.5, 3.5, 2.1, 2.8]); // over it
+    const area = pieces.reduce((a, [x0, x1, y0, y1]) => a + (x1 - x0) * (y1 - y0), 0);
+    expect(area).toBeCloseTo(4 * 2.8 - 0.8 * 2.1 - 1 * 1.2);
+  });
+
+  it("a cut-down wall keeps only what's below the cut", () => {
+    const pieces = wallPieces(4, 1, [door, window]);
+    expect(pieces.every(([, , , y1]) => y1 <= 1)).toBe(true);
+    expect(pieces.some(([x0]) => x0 === 0.6)).toBe(false); // the door goes right through a low wall
+    expect(pieces).toContainEqual([2.5, 3.5, 0, 0.9]);
+  });
+});
+
+describe("wallPoint", () => {
+  it("matches resolveRoom's placement on every wall", () => {
+    const r = { width: 4, length: 5 };
+    expect(wallPoint(r, "back", 1, 0.5)).toEqual([-1, -2]);
+    expect(wallPoint(r, "left", 1, 0.5)).toEqual([-1.5, 1.5]);
+    expect(wallPoint(r, "right", 1, 0.5)).toEqual([1.5, -1.5]);
+    expect(wallPoint(r, "front", 1, 0.5)).toEqual([1, 2]);
+    expect(WALL_FACING).toEqual({ back: 0, left: 90, right: 270, front: 180 });
   });
 });
 

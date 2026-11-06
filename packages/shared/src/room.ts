@@ -131,15 +131,42 @@ export function fitRoom(room: Room): Room {
   };
 }
 
-const FACING: Record<Wall, number> = { back: 0, left: 90, right: 270, front: 180 }; // facing into the room
+/** The rotation, in degrees, that faces into the room from each wall. */
+export const WALL_FACING: Record<Wall, number> = { back: 0, left: 90, right: 270, front: 180 };
 const DOOR_CLEARANCE = 0.9; // anything closer to a door's wall than this is moved off the doorway
 
 /** Wall coordinates to x/z: `along` from the wall's left end seen from inside, `inset` into the room. */
-function toXZ(wall: Wall, along: number, inset: number, W: number, L: number): [number, number] {
+export function wallPoint(room: { width: number; length: number }, wall: Wall, along: number, inset: number): [number, number] {
+  const [W, L] = [room.width, room.length];
   if (wall === "back") return [-W / 2 + along, -L / 2 + inset];
   if (wall === "left") return [-W / 2 + inset, L / 2 - along];
   if (wall === "right") return [W / 2 - inset, -L / 2 + along];
   return [W / 2 - along, L / 2 - inset];
+}
+
+/**
+ * The solid parts of a wall `len` long and `h` high, as [x0, x1, y0, y1] in wall coordinates: vertical strips split
+ * at every opening's edge, less the openings. A door (or anything reaching above `h`) cuts right through.
+ */
+export function wallPieces(len: number, h: number, openings: { at: number; width: number; sill: number; height: number }[]): [number, number, number, number][] {
+  const xs = [...new Set([0, len, ...openings.flatMap((o) => [o.at - o.width / 2, o.at + o.width / 2])])].filter((x) => x >= 0 && x <= len).sort((a, b) => a - b);
+  const pieces: [number, number, number, number][] = [];
+  for (let i = 0; i < xs.length - 1; i++) {
+    const [x0, x1] = [xs[i], xs[i + 1]];
+    const mid = (x0 + x1) / 2;
+    const holes = openings
+      .filter((o) => Math.abs(mid - o.at) < o.width / 2)
+      .map((o) => [o.sill, Math.min(h, o.sill + o.height)] as const)
+      .filter(([a, b]) => a < h && b > a)
+      .sort((a, b) => a[0] - b[0]);
+    let y = 0;
+    for (const [a, b] of holes) {
+      if (a > y) pieces.push([x0, x1, y, a]);
+      y = Math.max(y, b);
+    }
+    if (h > y) pieces.push([x0, x1, y, h]);
+  }
+  return pieces;
 }
 
 type Described = { wall: Wall | null; along: number; out: number; rotation: number };
@@ -161,8 +188,8 @@ export function resolveRoom(d: RoomDescription): Room {
         if (sides.length) along = sides.reduce((best, a) => (Math.abs(a - along) < Math.abs(best - along) ? a : best));
       }
     }
-    const [x, z] = toXZ(wall, along, p.out + halfOut, d.width, d.length);
-    return { x, z, rotation: (FACING[wall] + p.rotation) % 360 };
+    const [x, z] = wallPoint(d, wall, along, p.out + halfOut);
+    return { x, z, rotation: (WALL_FACING[wall] + p.rotation) % 360 };
   };
   const split = <T extends Described>({ wall, along, out, rotation, ...rest }: T) => [{ wall, along, out, rotation }, rest] as const;
   return fitRoom({

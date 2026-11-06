@@ -3,8 +3,14 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { WALLS, type Room } from "@veenix/shared";
-import { buildItem, FLOOR_TILE_METRES, floorTexture } from "./furniture";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import type { Room } from "@veenix/shared";
+import { buildBuiltIn } from "./builtins";
+import { buildItem } from "./furniture";
+import { buildShell, downlightSpots, type WallPart } from "./shell";
 
 export type Light = "day" | "evening";
 export type RoomCanvasProps = {
@@ -18,7 +24,8 @@ export type RoomCanvasProps = {
 };
 type Stage = {
   renderer: THREE.WebGLRenderer; scene: THREE.Scene; camera: THREE.PerspectiveCamera; controls: OrbitControls;
-  shell: THREE.Group; items: THREE.Group; lights: THREE.Group; glass: THREE.MeshStandardMaterial; helper: THREE.BoxHelper | null;
+  shell: THREE.Group; walls: WallPart[]; ceiling: THREE.Group; builtIns: THREE.Group; items: THREE.Group; lights: THREE.Group;
+  glass: THREE.MeshStandardMaterial; helper: THREE.BoxHelper | null;
 };
 
 const WARM = "#ffb36b";
@@ -27,54 +34,18 @@ function dispose(o: THREE.Object3D) {
   o.traverse((m) => {
     if (!(m instanceof THREE.Mesh)) return;
     m.geometry.dispose();
-    for (const material of [m.material].flat()) if (!(material as THREE.MeshStandardMaterial).map) material.dispose(); // floor textures are shared
+    for (const material of [m.material].flat()) if (!material.userData.shared) material.dispose(); // finishes are shared and cached
   });
 }
 
-/** The walls (openings cut out), floor and ceiling. Walls face inward, so from outside the near ones vanish: a doll's house view. */
-function buildShell(room: Room, glass: THREE.Material) {
+function buildBuiltIns(room: Room) {
   const g = new THREE.Group();
-  const { width: W, length: L, height: H } = room;
-  // ponytail: one colour per wall until the material renderer (Task 17.5).
-  const place: Record<(typeof WALLS)[number], [number, number, number]> = { back: [-W / 2, -L / 2, 0], left: [-W / 2, L / 2, Math.PI / 2], right: [W / 2, -L / 2, -Math.PI / 2], front: [W / 2, L / 2, Math.PI] };
-  for (const side of WALLS) {
-    const len = side === "back" || side === "front" ? W : L;
-    const shape = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(len, 0), new THREE.Vector2(len, H), new THREE.Vector2(0, H)]);
-    const wall = new THREE.Group();
-    for (const o of room.openings.filter((x) => x.wall === side)) {
-      const [x0, x1, y0, y1] = [o.at - o.width / 2, o.at + o.width / 2, o.sill, o.sill + o.height];
-      shape.holes.push(new THREE.Path([new THREE.Vector2(x0, y0), new THREE.Vector2(x0, y1), new THREE.Vector2(x1, y1), new THREE.Vector2(x1, y0)]));
-      const pane = new THREE.Mesh(
-        new THREE.PlaneGeometry(o.width, o.height),
-        o.kind === "window" ? glass : new THREE.MeshStandardMaterial({ color: "#8a6a4f", roughness: 0.6 }),
-      );
-      pane.position.set(o.at, o.sill + o.height / 2, o.kind === "window" ? -0.08 : -0.03); // set back into the wall
-      wall.add(pane);
-      if (o.kind === "window") {
-        const sill = new THREE.Mesh(new THREE.BoxGeometry(o.width + 0.1, 0.03, 0.12), new THREE.MeshStandardMaterial({ color: "#f4f2ee" }));
-        sill.position.set(o.at, o.sill, 0.04);
-        wall.add(sill);
-      }
-    }
-    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshStandardMaterial({ color: room.walls[side].color, roughness: 0.92 }));
-    mesh.receiveShadow = true;
-    wall.add(mesh);
-    const [x, z, rot] = place[side];
-    wall.position.set(x, 0, z);
-    wall.rotation.y = rot;
-    g.add(wall);
-  }
-  const map = floorTexture(room.floor);
-  map.repeat.set(W / FLOOR_TILE_METRES, L / FLOOR_TILE_METRES);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, L), new THREE.MeshStandardMaterial({ map, roughness: room.floor === "marble" || room.floor.endsWith("tile") ? 0.35 : 0.8 }));
-  floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(W, L), new THREE.MeshStandardMaterial({ color: "#f7f6f2", roughness: 1 }));
-  ceiling.rotation.x = Math.PI / 2; // faces down, so it hides from above
-  ceiling.position.y = H;
-  g.add(floor, ceiling);
+  for (const b of room.builtIns) g.add(buildBuiltIn(b, room.height));
   return g;
 }
+
+// ponytail: device heuristic for ambient occlusion; add a quality toggle if it guesses wrong.
+const highQuality = () => matchMedia("(pointer: fine)").matches || (devicePixelRatio <= 2 && (navigator.hardwareConcurrency ?? 0) >= 8);
 
 function buildItems(room: Room) {
   const g = new THREE.Group();
@@ -107,9 +78,13 @@ function buildLights(room: Room, light: Light, scene: THREE.Scene, glass: THREE.
   g.add(sun, sun.target);
   if (!day) {
     const lamps = room.items.filter((it) => it.type === "floor_lamp" || it.type === "pendant_light");
-    const spots = lamps.length ? lamps.map((it) => [it.x, it.type === "pendant_light" ? H - 0.75 : 1.45, it.z] as const) : [[0, H - 0.4, 0] as const];
+    const spots = [
+      ...lamps.map((it) => [it.x, it.type === "pendant_light" ? H - 0.75 : 1.45, it.z] as const),
+      ...downlightSpots(room).map(([x, z]) => [x, H - 0.3, z] as const),
+    ];
+    if (!spots.length) spots.push([0, H - 0.4, 0]);
     spots.slice(0, 4).forEach(([x, y, z], i) => {
-      const lamp = new THREE.PointLight(WARM, 9, 9, 1.6);
+      const lamp = new THREE.PointLight(WARM, Math.max(3, 12 / Math.min(4, spots.length)), 9, 1.6); // shared out, so more lights don't blow out the room
       lamp.position.set(x, y, z);
       lamp.castShadow = i === 0;
       g.add(lamp);
@@ -156,13 +131,25 @@ export default function RoomCanvas(props: RoomCanvasProps) {
     controls.enableDamping = true;
     controls.maxPolarAngle = Math.PI * 0.49; // never below the floor
     const glass = new THREE.MeshStandardMaterial({ color: "#cfe3f2", roughness: 0.1, metalness: 0.1 });
-    const s: Stage = { renderer, scene, camera, controls, shell: new THREE.Group(), items: new THREE.Group(), lights: new THREE.Group(), glass, helper: null };
+    const s: Stage = {
+      renderer, scene, camera, controls, shell: new THREE.Group(), walls: [], ceiling: new THREE.Group(), builtIns: new THREE.Group(),
+      items: new THREE.Group(), lights: new THREE.Group(), glass, helper: null,
+    };
+    // Ambient occlusion darkens corners and the feet of furniture; only where the device can afford it.
+    let composer: EffectComposer | null = null;
+    if (highQuality()) {
+      composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      composer.addPass(new GTAOPass(scene, camera, el.clientWidth || 512, el.clientHeight || 512));
+      composer.addPass(new OutputPass());
+    }
     stage.current = s;
 
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = el;
       if (!w || !h) return;
       renderer.setSize(w, h);
+      composer?.setSize(w, h);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     };
@@ -220,9 +207,19 @@ export default function RoomCanvas(props: RoomCanvasProps) {
     canvas.addEventListener("pointermove", move);
     canvas.addEventListener("pointerup", up);
 
+    const toCamera = new THREE.Vector3();
     renderer.setAnimationLoop(() => {
       controls.update();
-      renderer.render(scene, camera);
+      // Doll's house: in the overview, walls between the camera and the room drop to a low cut, and the ceiling goes.
+      const walk = latest.current.walk;
+      for (const w of s.walls) {
+        const away = !walk && toCamera.copy(camera.position).sub(w.centre).dot(w.normal) < 0;
+        w.full.visible = !away;
+        w.low.visible = away;
+      }
+      s.ceiling.visible = walk;
+      if (composer) composer.render();
+      else renderer.render(scene, camera);
     });
     return () => {
       renderer.setAnimationLoop(null);
@@ -232,6 +229,7 @@ export default function RoomCanvas(props: RoomCanvasProps) {
       dispose(scene);
       scene.environment?.dispose();
       pmrem.dispose();
+      composer?.dispose();
       renderer.dispose();
       canvas.remove();
       stage.current = null;
@@ -244,12 +242,14 @@ export default function RoomCanvas(props: RoomCanvasProps) {
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
-    s.scene.remove(s.shell, s.items);
+    s.scene.remove(s.shell, s.builtIns, s.items);
     dispose(s.shell);
+    dispose(s.builtIns);
     dispose(s.items);
-    s.shell = buildShell(room, s.glass);
+    ({ group: s.shell, walls: s.walls, ceiling: s.ceiling } = buildShell(room, s.glass));
+    s.builtIns = buildBuiltIns(room);
     s.items = buildItems(room);
-    s.scene.add(s.shell, s.items);
+    s.scene.add(s.shell, s.builtIns, s.items);
   }, [room]);
 
   useEffect(() => {

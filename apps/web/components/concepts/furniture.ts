@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { FURNITURE, type FurnitureType, type Room } from "@veenix/shared";
+import { FURNITURE, type FurnitureType } from "@veenix/shared";
 
+const LEAF = "#5b8a4e";
 // ponytail: furniture is built from rounded boxes and cylinders, so there are no model files or licences.
 // It reads as an architectural model, not a photo; swap in GLB models per type if clients need more realism.
 
@@ -90,9 +91,9 @@ const BUILDERS: Record<FurnitureType, (g: THREE.Group, s: { w: number; d: number
     cyl(g, 0.06, s.w / 2, 0.22, c, 0, 0, 0, new THREE.MeshStandardMaterial({ color: c, emissive: "#ffd9a0", emissiveIntensity: 0.3, side: THREE.DoubleSide }));
   },
   plant: (g, s, c) => {
-    cyl(g, 0.17, 0.13, 0.32, "#d8d2c6", 0, 0, 0);
+    cyl(g, 0.17, 0.13, 0.32, c, 0, 0, 0); // the colour is the pot; leaves are always green
     for (const [x, y, z, r] of [[0, 0.75, 0, 0.26], [0.12, 0.95, 0.05, 0.2], [-0.1, 1.0, -0.04, 0.18], [0.02, 0.55, 0.1, 0.2]]) {
-      const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), mat(c, 0.9));
+      const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), mat(LEAF, 0.9));
       leaf.position.set(x, y, z);
       g.add(leaf);
     }
@@ -114,90 +115,4 @@ export function buildItem(type: FurnitureType, color: string): THREE.Group {
     }
   });
   return g;
-}
-
-/** A tiny seeded random, so a floor looks the same every time it's drawn. */
-function rand(seed: number) {
-  return () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
-}
-
-export const FLOOR_TILE_METRES = 2; // one texture covers 2 m × 2 m of floor
-const textures = new Map<string, THREE.CanvasTexture>();
-
-/** A procedural floor finish, drawn once per kind and shared. */
-export function floorTexture(kind: Room["floor"]): THREE.CanvasTexture {
-  const cached = textures.get(kind);
-  if (cached) return cached;
-  const size = 1024;
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const r = rand(kind.length * 97);
-  const shade = (hex: string, amount: number) => {
-    const c = new THREE.Color(hex).offsetHSL(0, 0, amount);
-    return `#${c.getHexString()}`;
-  };
-
-  if (kind === "light_oak" || kind === "walnut") {
-    const base = kind === "light_oak" ? "#c9a77c" : "#6b4a35";
-    const plank = size / 10; // 20 cm planks
-    for (let row = 0; row < 10; row++) {
-      let x = -r() * size;
-      while (x < size) {
-        const len = size * (0.35 + r() * 0.4);
-        ctx.fillStyle = shade(base, (r() - 0.5) * 0.08);
-        ctx.fillRect(x, row * plank, len, plank);
-        for (let i = 0; i < 6; i++) { // grain
-          ctx.strokeStyle = shade(base, -0.05 - r() * 0.05);
-          ctx.globalAlpha = 0.25;
-          ctx.beginPath();
-          const y = row * plank + r() * plank;
-          ctx.moveTo(x, y);
-          ctx.bezierCurveTo(x + len / 3, y + (r() - 0.5) * 6, x + (2 * len) / 3, y + (r() - 0.5) * 6, x + len, y);
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-        }
-        ctx.fillStyle = shade(base, -0.18);
-        ctx.fillRect(x, row * plank, 2, plank);
-        x += len;
-      }
-      ctx.fillStyle = shade(base, -0.2);
-      ctx.fillRect(0, row * plank, size, 2);
-    }
-  } else if (kind === "white_tile" || kind === "grey_tile") {
-    const base = kind === "white_tile" ? "#ecebe7" : "#9c9b98";
-    const tile = size / 3.33; // 60 cm tiles
-    ctx.fillStyle = shade(base, -0.12);
-    ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
-      ctx.fillStyle = shade(base, (r() - 0.5) * 0.03);
-      ctx.fillRect(i * tile + 2, j * tile + 2, tile - 4, tile - 4);
-    }
-  } else if (kind === "marble") {
-    ctx.fillStyle = "#f1efeb";
-    ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 14; i++) {
-      ctx.strokeStyle = `rgba(120,120,125,${0.15 + r() * 0.25})`;
-      ctx.lineWidth = 0.5 + r() * 2;
-      ctx.beginPath();
-      let [x, y] = [r() * size, r() * size];
-      ctx.moveTo(x, y);
-      for (let k = 0; k < 6; k++) ctx.quadraticCurveTo(x + (r() - 0.5) * 300, y + (r() - 0.5) * 300, (x += (r() - 0.3) * 250), (y += (r() - 0.5) * 250));
-      ctx.stroke();
-    }
-  } else {
-    const base = kind === "concrete" ? "#a7a49f" : "#cbbfae";
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 9000; i++) {
-      ctx.fillStyle = shade(base, (r() - 0.5) * (kind === "concrete" ? 0.12 : 0.06));
-      ctx.fillRect(r() * size, r() * size, 2 + r() * 3, 2 + r() * 3);
-    }
-  }
-  const t = new THREE.CanvasTexture(canvas);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  textures.set(kind, t);
-  return t;
 }
