@@ -1,8 +1,8 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import {
-  BUILT_IN_FINISHES, BUILT_IN_FINISH_KEYS, BUILT_IN_KINDS, FLOOR_FINISHES, FLOOR_FINISH_KEYS, FURNITURE, FURNITURE_TYPES, TOP_FINISHES, TOP_FINISH_KEYS,
-  WALL_FINISHES, WALL_FINISH_KEYS, WALLS, fitRoom, type BuiltInKind, type FurnitureType, type Room, type Wall,
+  BUILT_IN_FINISHES, BUILT_IN_FINISH_KEYS, BUILT_IN_KINDS, FLOOR_FINISHES, FLOOR_FINISH_KEYS, FURNITURE, FURNITURE_TYPES, TINTED_BUILT_INS, TOP_FINISHES, TOP_FINISH_KEYS,
+  WALL_FINISHES, WALL_FINISH_KEYS, WALLS, fitRoom, wallLength, type BuiltInKind, type FurnitureType, type Room, type Wall,
 } from "@veenix/shared";
 import { Minus, Plus, RotateCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,10 @@ const NEW_BUILT_IN: Record<BuiltInKind, [number, number, number, Room["builtIns"
   workstation: [2.8, 1.4, 1.2, "white_laminate", "oak"], dining_set: [2.4, 1.8, 0.75, "oak_veneer", "oak"], bed_set: [2.6, 2.1, 1.1, "oak_veneer", null],
   lounge_set: [2.8, 2.4, 0.85, "oak_veneer", null], wall_shelf: [1.2, 0.25, 0.7, "oak_veneer", null],
 };
+// Built-ins whose colour tints their soft parts (screens, upholstery, bedding, a fabric partition).
+const COLOURED: readonly BuiltInKind[] = ["workstation", "dining_set", "bed_set", "lounge_set", "partition"];
+const FREE: readonly BuiltInKind[] = ["island", "partition", "workstation", "dining_set", "lounge_set"]; // added in the middle of the room
+const SOFT = "#8f9f7d";
 const heading = "text-[11px] font-semibold uppercase tracking-wide text-white/50";
 const chip = (on: boolean) => cn("rounded-md px-2 py-1 text-xs", on ? "bg-white text-neutral-900" : "bg-white/10 hover:bg-white/20");
 
@@ -89,6 +93,7 @@ export function RoomEditor({ room, selected, onChange, onSelect }: { room: Room;
     onSelect(null);
     set({ [selected.kind]: room[selected.kind].filter((_, i) => i !== selected.index) });
   };
+  const setPanel = (index: number, patch: Partial<Room["panels"][number]>) => set({ panels: room.panels.map((p, i) => (i === index ? { ...p, ...patch } : p)) });
   const shown = room.walls[wall === "all" ? "back" : wall];
   const setWalls = (patch: Partial<Room["walls"][Wall]>) =>
     set({ walls: Object.fromEntries(WALLS.map((w) => [w, wall === "all" || wall === w ? { ...room.walls[w], ...patch } : room.walls[w]])) as Room["walls"] });
@@ -101,7 +106,7 @@ export function RoomEditor({ room, selected, onChange, onSelect }: { room: Room;
     } else if (kind === "built") {
       const k = name as BuiltInKind;
       const [length, depth, height, body, top] = NEW_BUILT_IN[k];
-      const free = k === "island" || k === "partition";
+      const free = FREE.includes(k);
       set({ builtIns: [...room.builtIns, { kind: k, x: 0, z: free ? 0 : -room.length / 2 + depth / 2, rotation: 0, length, depth, height, body, top, color: null }] });
       onSelect({ kind: "builtIns", index: room.builtIns.length });
     }
@@ -128,14 +133,30 @@ export function RoomEditor({ room, selected, onChange, onSelect }: { room: Room;
             <option value="" className="text-neutral-900">No top</option>
             {TOP_FINISH_KEYS.map((k) => <option key={k} value={k} className="text-neutral-900">{TOP_FINISHES[k].label}</option>)}
           </select>
-          <label className="block space-y-1 text-xs text-white/70">
-            Length (m)
-            <input
-              type="number" step={0.1} min={0.3} max={8} value={built.length}
-              onChange={(e) => { const v = Number(e.target.value); if (v >= 0.3 && v <= 8) setBuilt({ length: v }); }}
-              className="w-full rounded-md bg-white/10 px-2 py-1 text-sm text-white"
-            />
-          </label>
+          {(COLOURED.includes(built.kind) || TINTED_BUILT_INS.includes(built.body)) && (
+            <>
+              <p className={heading}>Colour</p>
+              <Swatches label="Colour" colours={WALL_COLOURS} value={built.color ?? SOFT} onPick={(color) => setBuilt({ color })} />
+            </>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block space-y-1 text-xs text-white/70">
+              Length (m)
+              <input
+                type="number" step={0.1} min={0.3} max={8} value={built.length}
+                onChange={(e) => { const v = Number(e.target.value); if (v >= 0.3 && v <= 8) setBuilt({ length: v }); }}
+                className="w-full rounded-md bg-white/10 px-2 py-1 text-sm text-white"
+              />
+            </label>
+            <label className="block space-y-1 text-xs text-white/70">
+              Depth (m)
+              <input
+                type="number" step={0.1} min={0.1} max={4} value={built.depth}
+                onChange={(e) => { const v = Number(e.target.value); if (v >= 0.1 && v <= 4) setBuilt({ depth: v }); }}
+                className="w-full rounded-md bg-white/10 px-2 py-1 text-sm text-white"
+              />
+            </label>
+          </div>
         </Selected>
       )}
 
@@ -144,6 +165,40 @@ export function RoomEditor({ room, selected, onChange, onSelect }: { room: Room;
         <Chips keys={["all", ...WALLS] as const} label="Which wall" value={wall} onPick={setWall} labelOf={(w) => (w === "all" ? "All" : w[0].toUpperCase() + w.slice(1))} />
         <Chips keys={WALL_FINISH_KEYS} label="Wall finish" value={wall === "all" && WALLS.some((w) => room.walls[w].finish !== shown.finish) ? null : shown.finish} onPick={(finish) => setWalls({ finish })} labelOf={(k) => WALL_FINISHES[k].label} />
         <Swatches label="Wall colour" colours={WALL_COLOURS} value={shown.color} onPick={(color) => setWalls({ color })} />
+        {wall === "all" ? (
+          <p className="text-xs text-white/50">Pick a wall to add a feature panel to it.</p>
+        ) : (
+          <div className="space-y-2">
+            {room.panels.map((p, i) => p.wall !== wall ? null : (
+              <div key={i} className="space-y-2 rounded-lg bg-white/5 p-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium">Panel</p>
+                  <button type="button" onClick={() => set({ panels: room.panels.filter((_, k) => k !== i) })} className="rounded-md p-1 text-red-300 hover:bg-white/10" aria-label="Remove panel">
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+                <Chips keys={WALL_FINISH_KEYS} label="Panel finish" value={p.finish} onPick={(finish) => setPanel(i, { finish })} labelOf={(k) => WALL_FINISHES[k].label} />
+                <label className="block space-y-1 text-xs text-white/70">
+                  Width (m)
+                  <input
+                    type="number" step={0.1} min={0.3} max={wallLength(room, wall)} value={p.width}
+                    onChange={(e) => { const v = Number(e.target.value); if (v >= 0.3 && v <= wallLength(room, wall)) setPanel(i, { width: v }); }}
+                    className="w-full rounded-md bg-white/10 px-2 py-1 text-sm text-white"
+                  />
+                </label>
+                <Swatches label="Panel colour" colours={WALL_COLOURS} value={p.color} onPick={(color) => setPanel(i, { color })} />
+              </div>
+            ))}
+            <button
+              type="button"
+              disabled={room.panels.length >= 6}
+              onClick={() => set({ panels: [...room.panels, { wall, at: wallLength(room, wall) / 2, width: 1.2, height: room.height, finish: "timber_slats", color: "#a87d55" }] })}
+              className={cn(chip(false), "disabled:opacity-40")}
+            >
+              Add panel
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="space-y-2">

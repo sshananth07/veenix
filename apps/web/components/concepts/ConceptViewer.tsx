@@ -3,9 +3,9 @@ import { Component, useEffect, useRef, useState, useTransition, type ReactNode }
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bookmark, BookmarkCheck, Box, Footprints, Image as ImageIcon, Loader2, Maximize, Minimize, Moon, Presentation, SlidersHorizontal, Sun } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, Box, Footprints, Image as ImageIcon, Loader2, Maximize, Minimize, Moon, Presentation, SlidersHorizontal, Sun, Undo2 } from "lucide-react";
 import { fitRoom, type ConceptDto, type Room } from "@veenix/shared";
-import { renderConcept, updateConcept } from "@/actions/concepts";
+import { matchRender, renderConcept, restoreRoom, updateConcept } from "@/actions/concepts";
 import { cn } from "@/lib/utils";
 import { BeforeAfter } from "./BeforeAfter";
 import { NOT_TO_SCALE } from "./ConceptCard";
@@ -72,11 +72,12 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
   const showRender = concept.status === "ready" && (canEdit || !!concept.renderUrl);
   const views = (["photo", "3d", "render"] as const).filter((m) => m === "photo" || (m === "3d" ? show3d : showRender));
   const VIEW = { photo: { label: "Photo", Icon: ImageIcon }, "3d": { label: "3D", Icon: Box }, render: { label: "Render", Icon: Presentation } };
-  const startRender = () => start(async () => {
-    const r = await renderConcept(concept.id);
+  const act = (fn: (id: string) => Promise<{ ok: true } | { ok: false; error: string }>) => start(async () => {
+    const r = await fn(concept.id);
     setError(r.ok ? null : r.error);
     if (r.ok) router.refresh();
   });
+  const startRender = () => act(renderConcept);
   // A drag is fitted like any other edit, so nothing ends up through a wall.
   const moveItem = (p: Pick, x: number, z: number) => room && setRoom(fitRoom({ ...room, [p.kind]: room[p.kind].map((it, k) => (k === p.index ? { ...it, x, z } : it)) }));
   const dirty = JSON.stringify(room) !== JSON.stringify(concept.room);
@@ -86,7 +87,8 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
   };
   const back = concept.projectId ? `/projects/${concept.projectId}` : concept.leadId ? `/leads/${concept.leadId}` : "/";
   const bar = "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium hover:bg-white/10 disabled:opacity-50";
-  const chip = (on: boolean) => cn("flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium backdrop-blur", on ? "bg-white text-neutral-900" : "bg-black/50 hover:bg-black/70");
+  const chip = (on: boolean) => cn("flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium backdrop-blur disabled:opacity-50", on ? "bg-white text-neutral-900" : "bg-black/50 hover:bg-black/70");
+  const unsaved = dirty ? "Save or reset your changes first" : undefined;
   return (
     <div ref={frame} className="fixed inset-0 z-50 flex flex-col bg-neutral-950 text-white">
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3">
@@ -151,6 +153,16 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
               {canEdit && (
                 <button type="button" aria-pressed={editing} onClick={() => setEditing(!editing)} className={chip(editing)}>
                   <SlidersHorizontal className="size-3.5" aria-hidden /> Edit
+                </button>
+              )}
+              {canEdit && concept.canMatchRender && (
+                <button type="button" disabled={pending || dirty} title={unsaved} onClick={() => act(matchRender)} className={chip(false)}>
+                  <Presentation className="size-3.5" aria-hidden /> Match render
+                </button>
+              )}
+              {canEdit && concept.canRestoreRoom && (
+                <button type="button" disabled={pending || dirty} title={unsaved} onClick={() => act(restoreRoom)} className={chip(false)}>
+                  <Undo2 className="size-3.5" aria-hidden /> Undo match
                 </button>
               )}
             </div>
