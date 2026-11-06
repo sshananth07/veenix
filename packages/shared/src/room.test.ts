@@ -200,6 +200,11 @@ describe("plan 18 fields", () => {
     expect(up.builtIns[0].color).toBeNull();
   });
 
+  it("takes a set's whole footprint, deeper than any cabinet run", () => {
+    const lounge = { kind: "lounge_set", x: 0, z: 0, rotation: 0, length: 2.8, depth: 2.4, height: 0.85, body: "oak_veneer", top: null, color: null };
+    expect(roomSchema.safeParse(room({ builtIns: [lounge as Room["builtIns"][number]] })).success).toBe(true);
+  });
+
   it("clamps panels and nibs to their wall", () => {
     const r = fitRoom(room({
       panels: [{ wall: "back", at: 3.9, width: 6, height: 4, finish: "timber_slats", color: "#a87d55" }],

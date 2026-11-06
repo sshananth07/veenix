@@ -105,9 +105,12 @@ const BUILDERS: Record<FurnitureType, (g: THREE.Group, s: { w: number; d: number
 };
 
 /** One catalogue item, its origin on the floor at the centre of its footprint, its front facing +z. */
-export function buildItem(type: FurnitureType, color: string): THREE.Group {
+export const buildItem = (type: FurnitureType, color: string) => buildSized(type, FURNITURE[type], color);
+
+/** A catalogue piece at a size other than the catalogue's (a set's bed, sofa or table). */
+export function buildSized(type: FurnitureType, size: { w: number; d: number; h: number }, color: string): THREE.Group {
   const g = new THREE.Group();
-  BUILDERS[type](g, FURNITURE[type], color);
+  BUILDERS[type](g, size, color);
   g.traverse((o) => {
     if (o instanceof THREE.Mesh) {
       o.castShadow = type !== "rug";

@@ -77,7 +77,7 @@ const panels = z.array(panel).max(6);
 const builtIn = {
   kind: z.enum(BUILT_IN_KINDS),
   length: z.number().min(0.3).max(8), // along its front
-  depth: z.number().min(0.1).max(1.5),
+  depth: z.number().min(0.1).max(4), // a set (lounge, dining, bed) is its whole footprint
   height: z.number().min(0.3).max(3),
   body: z.enum(BUILT_IN_FINISH_KEYS),
   top: z.enum(TOP_FINISH_KEYS).nullable(),
