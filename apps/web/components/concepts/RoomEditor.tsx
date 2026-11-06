@@ -56,9 +56,9 @@ function Chips<K extends string>({ keys, label, value, onPick, labelOf }: { keys
 function Selected({ title, onRotate, onDelete, children }: { title: string; onRotate: () => void; onDelete: () => void; children: ReactNode }) {
   return (
     <section className="space-y-2 rounded-lg bg-white/10 p-3">
-      <div className="flex items-center justify-between">
-        <p className="font-medium">{title}</p>
-        <div className="flex gap-1">
+      <div className="flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate font-medium" title={title}>{title}</p>
+        <div className="flex shrink-0 gap-1">
           <button type="button" onClick={onRotate} className="rounded-md p-1.5 hover:bg-white/10" aria-label="Rotate 90 degrees">
             <RotateCw className="size-4" />
           </button>
