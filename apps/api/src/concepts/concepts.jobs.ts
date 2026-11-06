@@ -41,19 +41,21 @@ registerJob<GenerateJob>(
 export async function generateConcept(id: Types.ObjectId) {
   const c = await DesignConceptModel.findById(id).lean();
   if (!c || c.status !== "generating") return;
-  const ext = extname(c.sourceKey).toLowerCase();
-  const photo = await getObject(c.sourceKey);
+  const originals = await Promise.all([c.sourceKey, ...(c.extraKeys ?? [])].map(async (k) => ({ photo: await getObject(k), ext: extname(k).toLowerCase() })));
 
-  if (!c.imageKey) {
+  let restyled: Buffer;
+  if (c.imageKey) restyled = await getObject(c.imageKey);
+  else {
+    restyled = await restyle(originals[0].photo, originals[0].ext, c.brief);
     const key = newKey("concepts", ".jpg");
-    await putObject(key, await restyle(photo, ext, c.brief), "image/jpeg");
+    await putObject(key, restyled, "image/jpeg");
     await DesignConceptModel.updateOne({ _id: id }, { $set: { imageKey: key } });
   }
 
   // The image alone is a usable concept, so a bad room description isn't retried.
   let room: Room | null = null;
   try {
-    room = fitRoom(roomSchema.parse(await describeRoom(photo, ext, c.brief)));
+    room = fitRoom(roomSchema.parse(await describeRoom(restyled, originals, c.brief, c.layout ?? null)));
   } catch (e) {
     log.warn(`Concept ${id} has no 3D room: ${e instanceof Error ? e.message : e}`);
   }

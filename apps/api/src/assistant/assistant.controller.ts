@@ -77,9 +77,11 @@ export async function deleteConversation(id: Types.ObjectId) {
     // Concepts are read with the raw driver: one on a project this member no longer sees still needs its photo.
     const [updates, concepts] = await Promise.all([
       SiteUpdateModel.find({ "photos.path": { $in: keys } }).select("photos.path").lean(),
-      mongoose.connection.collection("design_concepts").find({ orgId: ctx().orgId, sourceKey: { $in: keys } }, { projection: { sourceKey: 1 } }).toArray(),
+      mongoose.connection.collection("design_concepts")
+        .find({ orgId: ctx().orgId, $or: [{ sourceKey: { $in: keys } }, { extraKeys: { $in: keys } }] }, { projection: { sourceKey: 1, extraKeys: 1 } })
+        .toArray(),
     ]);
-    const kept = new Set([...updates.flatMap((u) => u.photos.map((p) => p.path)), ...concepts.map((c) => c.sourceKey as string)]);
+    const kept = new Set([...updates.flatMap((u) => u.photos.map((p) => p.path)), ...concepts.flatMap((c) => [c.sourceKey as string, ...((c.extraKeys as string[]) ?? [])])]);
     await Promise.all([
       AssistantMessageModel.deleteMany({ conversationId: conversation._id }),
       AssistantToolCallModel.deleteMany({ conversationId: conversation._id }),

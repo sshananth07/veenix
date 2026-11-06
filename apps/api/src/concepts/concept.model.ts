@@ -10,7 +10,9 @@ const conceptSchema = new Schema(
     projectId: { type: ObjectId, default: null }, // exactly one of projectId and leadId
     leadId: { type: ObjectId, default: null },
     sourceKey: { type: String, required: true }, // the photo the user sent
-    brief: { type: String, required: true },
+    extraKeys: { type: [String], default: [] }, // more photos of the same room, for the 3D
+    brief: { type: String, required: true }, // the style: goes to the image edit
+    layout: { type: String, default: null }, // sizes and positions: goes to the room description only
     name: { type: String, required: true },
     status: { type: String, enum: ["generating", "ready", "failed"], default: "generating" },
     imageKey: { type: String, default: null },

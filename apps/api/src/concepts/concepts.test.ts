@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { convertLeadInput, conceptPatchInput, FURNITURE, type Room } from "@veenix/shared";
 import "../assistant/tools.concepts";
 import "./concepts.jobs";
@@ -46,12 +46,20 @@ const ROOM: Room = {
 function tc(attachments = [{ key: photoKey, name: "room.jpg", kind: "photo" as const }]) {
   return { conversationId: conv, messageId: newId(), attachments };
 }
-async function start(input: Partial<{ projectId: string | null; leadId: string | null; brief: string; photoIndex: number | null; fromConceptId: string | null }> = {}, c = tc(), o = org) {
+type StartInput = { projectId: string | null; leadId: string | null; style: string; layout: string | null; photoIndexes: number[] | null; fromConceptId: string | null };
+async function start(input: Partial<StartInput> = {}, c = tc(), o = org) {
   return asOwner(() => executeTool(c, {
     id: callId(), name: "generate_room_concept",
-    input: { projectId: String(project), leadId: null, brief: "Japandi, light oak", photoIndex: null, fromConceptId: null, ...input },
+    input: { projectId: String(project), leadId: null, style: "Japandi, light oak", layout: null, photoIndexes: null, fromConceptId: null, ...input },
   }), o);
 }
+/** Stores a small JPEG under the org's assistant photos and returns its key. */
+const storePhoto = (byte: number) => asOwner(async () => {
+  const key = newKey("assistant", ".jpg");
+  await putObject(key, Buffer.from([0xff, 0xd8, 0xff, 0xe0, byte]), "image/jpeg");
+  return key;
+});
+const photos = (keys: string[]) => keys.map((key) => ({ key, name: "r.jpg", kind: "photo" as const }));
 const latest = () => asOwner(() => DesignConceptModel.findOne().sort({ _id: -1 }).lean());
 /** Runs the queued concept jobs now, however far their retry was pushed back. */
 async function runJobs() {
@@ -72,7 +80,9 @@ beforeAll(async () => {
   });
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  // Earlier tests' concepts move out of the 24-hour quota window (the quota test uses its own org).
+  await mongoose.connection.collection("design_concepts").updateMany({ orgId: org }, { $set: { createdAt: new Date(Date.now() - 2 * 86_400_000) } });
   vi.mocked(restyle).mockReset().mockResolvedValue(RESTYLED);
   vi.mocked(describeRoom).mockReset().mockResolvedValue(ROOM);
 });
@@ -97,7 +107,7 @@ describe("generate_room_concept", () => {
   it("another style reuses the earlier concept's photo", async () => {
     await start();
     const first = (await latest())!;
-    const r = await start({ brief: "Industrial", fromConceptId: String(first._id) }, tc([]));
+    const r = await start({ style: "Industrial", fromConceptId: String(first._id) }, tc([]));
     expect(r.isError).toBe(false);
     expect(await latest()).toMatchObject({ sourceKey: photoKey, brief: "Industrial" });
   });
@@ -118,10 +128,35 @@ describe("generate_room_concept", () => {
   it("a retried tool call doesn't start a second concept", async () => {
     const before = await asOwner(() => DesignConceptModel.countDocuments());
     const c = tc();
-    const use = { id: callId(), name: "generate_room_concept", input: { projectId: String(project), leadId: null, brief: "Once", photoIndex: null, fromConceptId: null } };
+    const use = { id: callId(), name: "generate_room_concept", input: { projectId: String(project), leadId: null, style: "Once", layout: null, photoIndexes: null, fromConceptId: null } };
     await asOwner(() => executeTool(c, use));
     await asOwner(() => executeTool(c, use));
     expect(await asOwner(() => DesignConceptModel.countDocuments())).toBe(before + 1);
+  });
+
+  it("uses a photo from an earlier message when this one has none", async () => {
+    const chat = (await asOwner(() => AssistantConversationModel.create([{ userId: owner, channel: "app" }])))[0]._id;
+    const key = await storePhoto(1);
+    await asOwner(() => AssistantMessageModel.create([{ conversationId: chat, role: "user", text: "the room", attachments: photos([key]) }]));
+    const r = await start({}, { ...tc([]), conversationId: chat });
+    expect(r.isError).toBe(false);
+    expect(await latest()).toMatchObject({ sourceKey: key });
+  });
+
+  it("uses up to three photos, the first as the before image", async () => {
+    const keys = await Promise.all([1, 2, 3, 4].map(storePhoto));
+    await start({}, tc(photos(keys)));
+    expect(await latest()).toMatchObject({ sourceKey: keys[0], extraKeys: keys.slice(1, 3) });
+    await start({ photoIndexes: [2, 0] }, tc(photos(keys)));
+    expect(await latest()).toMatchObject({ sourceKey: keys[2], extraKeys: [keys[0]] });
+  });
+
+  it("another style keeps the earlier concept's photos and layout", async () => {
+    const keys = await Promise.all([5, 6].map(storePhoto));
+    await start({ layout: "door on the back wall" }, tc(photos(keys)));
+    const first = (await latest())!;
+    await start({ style: "Industrial", fromConceptId: String(first._id) }, tc([]));
+    expect(await latest()).toMatchObject({ brief: "Industrial", layout: "door on the back wall", sourceKey: keys[0], extraKeys: [keys[1]] });
   });
 });
 
@@ -139,6 +174,34 @@ describe("concept.generate job", () => {
     expect(dto).toMatchObject({ status: "ready", room: { width: 4 } });
     expect(dto.imageUrl).toContain(c.imageKey!);
     expect(JSON.stringify(dto)).not.toContain("openai");
+  });
+
+  it("sends only the style to the image edit and the layout to the room description", async () => {
+    await start({ style: "biophilic office", layout: "desks against the left wall" });
+    await runJobs();
+    expect(vi.mocked(restyle).mock.calls[0][2]).toBe("biophilic office");
+    const [, , style, layout] = vi.mocked(describeRoom).mock.calls[0];
+    expect([style, layout]).toEqual(["biophilic office", "desks against the left wall"]);
+  });
+
+  it("describes the room from the restyled photo, then the originals", async () => {
+    const keys = await Promise.all([7, 8].map(storePhoto));
+    await start({}, tc(photos(keys)));
+    await runJobs();
+    const [restyled, originals] = vi.mocked(describeRoom).mock.calls[0];
+    expect(restyled).toEqual(RESTYLED);
+    expect(originals).toEqual(await Promise.all(keys.map(async (k) => ({ photo: await getObject(k), ext: ".jpg" }))));
+  });
+
+  it("a retry after the image is stored describes the stored image", async () => {
+    await start();
+    await runJobs();
+    const c = (await latest())!;
+    await asOwner(() => DesignConceptModel.updateOne({ _id: c._id }, { $set: { status: "generating", room: null } }));
+    await asOwner(() => JobModel.create([{ orgId: org, type: "concept.generate", payload: { conceptId: String(c._id), userId: String(owner) } }]));
+    vi.mocked(describeRoom).mockClear();
+    await runJobs();
+    expect(vi.mocked(describeRoom).mock.calls[0][0]).toEqual(RESTYLED);
   });
 
   it("a retried job doesn't pay for the image twice once it's stored", async () => {
@@ -306,6 +369,16 @@ describe("review fixes", () => {
     await asOwner(() => deleteConversation(chat));
     await new Promise((r) => setTimeout(r, 100)); // removal runs after commit
     await expect(getObject(key)).resolves.toBeInstanceOf(Buffer);
+  });
+
+  it("deleting the chat keeps every photo a concept uses, not just the first", async () => {
+    const chat = (await asOwner(() => AssistantConversationModel.create([{ userId: owner, channel: "app" }])))[0]._id;
+    const keys = await Promise.all([10, 11].map(storePhoto));
+    await asOwner(() => AssistantMessageModel.create([{ conversationId: chat, role: "user", text: "room", attachments: photos(keys) }]));
+    await start({}, { ...tc(photos(keys)), conversationId: chat });
+    await asOwner(() => deleteConversation(chat));
+    await new Promise((r) => setTimeout(r, 100)); // removal runs after commit
+    await expect(getObject(keys[1])).resolves.toBeInstanceOf(Buffer);
   });
 
   it("the room schema is accepted by OpenAI strict mode", () => {

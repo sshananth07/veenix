@@ -14,7 +14,10 @@ export const DAILY_CONCEPTS = 20; // per organisation, in any 24 hours; failures
 const canReadLeads = () => can(ctx().role as Role, "lead:read");
 
 /** Saves a concept and its job, inside the caller's transaction. No OpenAI call happens here. */
-export async function startConcept(input: { projectId: Types.ObjectId | null; leadId: Types.ObjectId | null; brief: string; sourceKey: string }, conversationId: Types.ObjectId) {
+export async function startConcept(
+  input: { projectId: Types.ObjectId | null; leadId: Types.ObjectId | null; brief: string; layout?: string | null; sourceKey: string; extraKeys?: string[] },
+  conversationId: Types.ObjectId,
+) {
   if (!input.projectId === !input.leadId) throw rule("Say which project or lead this is for.");
   if (input.projectId) await loadProject(input.projectId); // 404 outside scope
   else if (!canReadLeads() || !(await LeadModel.exists({ _id: input.leadId }))) throw notFound("Lead");

@@ -56,7 +56,7 @@
   - Tool `generate_room_concept` input: `{ projectId, leadId, style: string (1–1000), layout: string (0–1000) | null, photoIndexes: int[] | null, fromConceptId }`. `photoIndexes` null means every photo, at most 3.
     - The tool description tells the model what goes where: *style* is finishes, materials, colours, plants and lighting; *layout* is sizes, which wall the door is on, and where things go.
     - Photo lookup: this message's photos; if none, the photos of the latest earlier user message in the conversation that has any. Never a URL. "Attach a room photo first." only when neither has one.
-  - `DesignConceptModel`: `style` (replaces `brief`; old documents read `brief` as `style`), `layout: string | null`, `extraKeys: string[]` (photos after the first). `sourceKey` stays the first photo and the "before" image.
+  - `DesignConceptModel`: `brief` keeps its name and holds the style (ruling: no DTO or web rename), `layout: string | null`, `extraKeys: string[]` (photos after the first). `sourceKey` stays the first photo and the "before" image. Deleting a chat keeps every photo a concept uses.
   - `ai.ts`:
     - `restyle(photo, ext, style)`: same prompt as before, with the style only.
     - `describeRoom(restyled: Buffer, originals: { photo: Buffer; ext: string }[], style, layout)`: `detail: "high"`, the restyled image first, then the originals. The prompt says the restyled photo decides finishes and furniture, and the originals show the walls it can't see.
@@ -70,7 +70,8 @@ it("uses a photo from an earlier message when this one has none", ...);
 it("uses up to three photos, the first as the before image", ...);
 it("describes the room from the restyled photo, then the originals", ...);
 it("another style keeps the earlier concept's photos and layout", ...);
-it("an old concept with only brief still reads as its style", ...);
+it("a retry after the image is stored describes the stored image", ...);
+it("deleting the chat keeps every photo a concept uses, not just the first", ...);
 ```
 
 - [ ] **Step 2: Implement, then run the tests**

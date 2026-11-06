@@ -10,9 +10,10 @@ import { strictSchema } from "../assistant/tools";
 // If it moves walls or windows, swap restyle() for a depth-guided interior model; nothing else changes.
 const IMAGE_MODEL = "gpt-image-2";
 
-const ROOM_PROMPT = `You turn a room photo and a design brief into a simple 3D room plan.
-Estimate the room's size in metres from the photo (Malaysian homes: bedrooms about 3-4 m, living rooms 4-6 m, ceilings about 2.8 m).
-The photo faces the back wall. Coordinates: origin at the room's centre, x across the width (left negative), z along the length (back wall at z = -length/2, the camera's side positive).
+const ROOM_PROMPT = `You turn room photos and a design brief into a simple 3D room plan.
+The first photo is the room already redesigned: take the finishes, colours and furniture from it. Any further photos show the same room before the redesign, from other angles: use them for walls, doors and windows the first photo doesn't show.
+Estimate the room's size in metres from the photos (Malaysian homes: bedrooms about 3-4 m, living rooms 4-6 m, ceilings about 2.8 m). Layout notes from the designer override your estimate.
+The first photo faces the back wall. Coordinates: origin at the room's centre, x across the width (left negative), z along the length (back wall at z = -length/2, the camera's side positive).
 Place the windows and doors you can see; "at" is the opening's centre in metres from the wall's left end, seen from inside the room.
 Furnish it to the brief using only the catalogue types, with colours that suit the style. Keep walkways clear and put furniture against walls where it belongs.
 Rotation is in degrees; 0 means the item's front faces the camera's side (+z).`;
@@ -38,12 +39,14 @@ export async function restyle(photo: Buffer, ext: string, brief: string): Promis
   return Buffer.from(b64, "base64");
 }
 
-/** The model's room description, unchecked: the caller parses it with roomSchema and fits it. */
-export async function describeRoom(photo: Buffer, ext: string, brief: string): Promise<unknown> {
+/** The model's room description from the restyled photo and the originals, unchecked: the caller parses it with roomSchema and fits it. */
+export async function describeRoom(restyled: Buffer, originals: { photo: Buffer; ext: string }[], brief: string, layout: string | null): Promise<unknown> {
+  const text = `Design brief: ${brief}${layout ? `\nLayout notes: ${layout}` : ""}`;
+  const images = [{ photo: restyled, ext: ".jpg" }, ...originals].map((p) => ({ type: "input_image" as const, detail: "high" as const, image_url: dataUrl(p.photo, p.ext) }));
   const response = await createMessage({
     model: env.OPENAI_MODEL,
     instructions: ROOM_PROMPT,
-    input: [{ role: "user", content: [{ type: "input_text", text: `Design brief: ${brief}` }, { type: "input_image", detail: "low", image_url: dataUrl(photo, ext) }] }],
+    input: [{ role: "user", content: [{ type: "input_text", text }, ...images] }],
     text: { format: { type: "json_schema", name: "room", strict: true, schema: strictSchema(roomSchema) } },
     reasoning: { effort: "low" },
     store: false,
