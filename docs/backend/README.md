@@ -171,11 +171,11 @@ Concretely:
 - [ ] 17.8 Furniture library coverage test (gates the furniture library, plan 19)
 
 ### 18 Copilot room concepts, 3D that matches the render
-- [ ] 18.1 Room schema: sets, built-in colour, panels, nibs, contents (with tests)
-- [ ] 18.2 Lay out the 3D room from the render (with tests)
-- [ ] 18.3 Lighting: coves in the overview, area lights, Studio
-- [ ] 18.4 Slats and fabric with depth, wall panels, nibs
-- [ ] 18.5 Sets and wall shelves
-- [ ] 18.6 The editor and Match render
-- [ ] 18.7 glTF props
+- [x] 18.1 Room schema: sets, built-in colour, panels, nibs, contents (with tests)
+- [x] 18.2 Lay out the 3D room from the render (with tests)
+- [x] 18.3 Lighting: coves in the overview, area lights, Studio
+- [x] 18.4 Slats and fabric with depth, wall panels, nibs
+- [x] 18.5 Sets and wall shelves
+- [x] 18.6 The editor and Match render
+- [x] 18.7 glTF props
 - [ ] 18.8 Owner check on real photos (needs OPENAI_API_KEY)
