@@ -1,6 +1,7 @@
 import * as THREE from "three";
-import { FLOOR_FINISHES, TINTED_FINISHES, WALL_FACING, WALL_FINISHES, WALLS, wallLength, wallPieces, wallPoint, type Room, type Wall } from "@veenix/shared";
+import { FLOOR_FINISHES, TINTED_FINISHES, WALL_FACING, WALL_FINISHES, WALLS, panelPieces, wallLength, wallPieces, wallPoint, type Room, type Wall } from "@veenix/shared";
 import { material, metreBox, metreUVs, plain } from "./materials";
+import { DEEP_FINISHES, RELIEF, surface } from "./surfaces";
 
 export const WALL_T = 0.12; // wall thickness
 export const CUT = 1.0; // the height near walls drop to in the overview, so the room reads as a doll's house
@@ -24,7 +25,10 @@ function mesh(geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number
   return o;
 }
 
-/** One wall `h` high: solid pieces around the openings (so reveals come free), its finish on the inside, a dark cap, skirting. */
+/**
+ * One wall `h` high: solid pieces around the openings (so reveals come free), its finish on the inside (with real depth for
+ * slats and fabric), a dark cap, skirting, then its panels and nibs.
+ */
 function buildWall(room: Room, side: Wall, h: number, glass: THREE.Material) {
   const g = new THREE.Group();
   const len = wallLength(room, side);
@@ -32,13 +36,34 @@ function buildWall(room: Room, side: Wall, h: number, glass: THREE.Material) {
   const { finish, color } = room.walls[side];
   const skin = material(`wall:${finish}`, WALL_FINISHES[finish], TINTED_FINISHES.includes(finish) ? color : undefined);
   const openings = room.openings.filter((o) => o.wall === side);
+  const deep = DEEP_FINISHES.includes(finish);
+  const relief = deep ? RELIEF : 0; // skirting and door trims sit on the slats, not inside them
 
   for (const [x0, x1, y0, y1] of wallPieces(len, h, openings)) {
     const [bx0, bx1] = [x0 === 0 ? -ext : x0, x1 === len ? len + ext : x1];
     g.add(mesh(metreBox(bx1 - bx0, y1 - y0, WALL_T), plain(EXTERIOR, 0.9), (bx0 + bx1) / 2, (y0 + y1) / 2, -WALL_T / 2));
-    g.add(mesh(metreUVs(new THREE.PlaneGeometry(x1 - x0, y1 - y0), x1 - x0, y1 - y0, x0, y0), skin, (x0 + x1) / 2, (y0 + y1) / 2, 0.002, false));
+    if (deep) {
+      const patch = surface(finish, color, x1 - x0, y1 - y0);
+      patch.position.set(x0, y0, 0);
+      g.add(patch);
+    } else g.add(mesh(metreUVs(new THREE.PlaneGeometry(x1 - x0, y1 - y0), x1 - x0, y1 - y0, x0, y0), skin, (x0 + x1) / 2, (y0 + y1) / 2, 0.002, false));
     if (y1 >= h) g.add(mesh(new THREE.BoxGeometry(bx1 - bx0, 0.012, WALL_T + 0.002), plain(CAP, 0.8), (bx0 + bx1) / 2, h + 0.006, -WALL_T / 2, false));
-    if (y0 === 0) g.add(mesh(new THREE.BoxGeometry(x1 - x0, 0.08, 0.012), plain("#f2f0ec", 0.6), (x0 + x1) / 2, 0.04, 0.008, false));
+    if (y0 === 0) g.add(mesh(new THREE.BoxGeometry(x1 - x0, 0.08, 0.012), plain("#f2f0ec", 0.6), (x0 + x1) / 2, 0.04, 0.008 + relief, false));
+  }
+
+  // Panels stand just off the wall, their doors and windows left open; cut down with the wall.
+  for (const p of room.panels.filter((pn) => pn.wall === side)) {
+    const start = p.at - p.width / 2;
+    for (const [x0, x1, y0, y1] of panelPieces(room, { ...p, height: Math.min(p.height, h) })) {
+      const patch = surface(p.finish, p.color, x1 - x0, y1 - y0);
+      patch.position.set(start + x0, y0, 0.003);
+      g.add(patch);
+    }
+  }
+  // Nibs: full-height boxes standing into the room in the wall's finish, with the dark cut top.
+  for (const n of room.nibs.filter((nb) => nb.wall === side)) {
+    g.add(mesh(metreBox(n.width, h, n.depth), skin, n.at, h / 2, n.depth / 2));
+    g.add(mesh(new THREE.BoxGeometry(n.width, 0.012, n.depth), plain(CAP, 0.8), n.at, h + 0.006, n.depth / 2, false));
   }
 
   for (const o of openings) {
@@ -50,8 +75,8 @@ function buildWall(room: Room, side: Wall, h: number, glass: THREE.Material) {
     } else {
       g.add(mesh(new THREE.PlaneGeometry(o.width - 0.04, top - 0.01), plain("#8a6a4f", 0.6), o.at, top / 2, -WALL_T * 0.75, false));
       const trim = plain("#f4f2ee", 0.5);
-      for (const x of [o.at - o.width / 2 - 0.025, o.at + o.width / 2 + 0.025]) g.add(mesh(new THREE.BoxGeometry(0.05, top, 0.015), trim, x, top / 2, 0.008, false));
-      if (o.sill + o.height <= h) g.add(mesh(new THREE.BoxGeometry(o.width + 0.1, 0.05, 0.015), trim, o.at, o.sill + o.height + 0.025, 0.008, false));
+      for (const x of [o.at - o.width / 2 - 0.025, o.at + o.width / 2 + 0.025]) g.add(mesh(new THREE.BoxGeometry(0.05, top, 0.015), trim, x, top / 2, 0.008 + relief, false));
+      if (o.sill + o.height <= h) g.add(mesh(new THREE.BoxGeometry(o.width + 0.1, 0.05, 0.015), trim, o.at, o.sill + o.height + 0.025, 0.008 + relief, false));
     }
   }
 

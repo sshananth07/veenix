@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BUILT_IN_FINISHES, TOP_FINISHES, type Room } from "@veenix/shared";
+import { BUILT_IN_FINISHES, TINTED_BUILT_INS, TOP_FINISHES, type Room } from "@veenix/shared";
 import { buildItem } from "./furniture";
 import { material, metreBox, plain } from "./materials";
 
@@ -31,7 +31,7 @@ function grooves(g: THREE.Group, w: number, y0: number, h: number, d: number, dr
  */
 export function buildBuiltIn(b: BuiltIn, roomHeight: number): THREE.Group {
   const g = new THREE.Group();
-  const body = material(`body:${b.body}`, BUILT_IN_FINISHES[b.body]);
+  const body = material(`body:${b.body}`, BUILT_IN_FINISHES[b.body], TINTED_BUILT_INS.includes(b.body) ? (b.color ?? undefined) : undefined);
   const top = b.top ? material(`top:${b.top}`, TOP_FINISHES[b.top]) : null;
   const { length: w, depth: d, height: h } = b;
 
