@@ -20,39 +20,39 @@ const FAILED = "The room concept didn't work. Please try again.";
 
 type GenerateJob = { conceptId: string; userId: string };
 
-registerJob<GenerateJob>(
-  "concept.generate",
-  async (p) => {
-    const r = await runAsMember(ctx().orgId, new Types.ObjectId(p.userId), () => generateConcept(new Types.ObjectId(p.conceptId)));
-    if (r === "not_a_member") log.warn(`Dropped concept ${p.conceptId}: ${p.userId} is no longer a member`);
-  },
-  {
-    lockMs: 300_000, // the image edit alone can take a few minutes
-    retryDelayMs: (attempts) => [30_000, 120_000][attempts - 1] ?? 120_000,
-    maxAttempts: 3,
-    onGiveUp: async (p) => {
-      const c = await DesignConceptModel.findOneAndUpdate({ _id: p.conceptId, status: "generating" }, { $set: { status: "failed", error: FAILED } }, { new: true }).lean();
-      if (c) await conceptFinished(c as DesignConcept);
-    },
-  },
-);
+/** OpenAI refused the request itself (bad parameters, safety): a retry sends the same request, so give up at once. */
+const rejected = (e: unknown) => (e as { status?: number } | null)?.status === 400;
 
-registerJob<GenerateJob>(
-  "concept.render",
-  async (p) => {
-    const r = await runAsMember(ctx().orgId, new Types.ObjectId(p.userId), () => renderConcept(new Types.ObjectId(p.conceptId)));
-    if (r === "not_a_member") log.warn(`Dropped render ${p.conceptId}: ${p.userId} is no longer a member`);
-  },
-  {
-    lockMs: 300_000, // a high-quality image with several inputs can take minutes
-    retryDelayMs: (attempts) => [30_000, 120_000][attempts - 1] ?? 120_000,
-    maxAttempts: 3,
-    onGiveUp: async (p) => {
-      const c = await DesignConceptModel.findOneAndUpdate({ _id: p.conceptId, renderStatus: "generating" }, { $set: { renderStatus: "failed" } }, { new: true }).lean();
-      if (c) changed({ kind: "assistant", userId: String(c.createdBy) });
-    },
-  },
-);
+async function failConcept(p: GenerateJob) {
+  const c = await DesignConceptModel.findOneAndUpdate({ _id: p.conceptId, status: "generating" }, { $set: { status: "failed", error: FAILED } }, { new: true }).lean();
+  if (c) await conceptFinished(c as DesignConcept);
+}
+async function failRender(p: GenerateJob) {
+  const c = await DesignConceptModel.findOneAndUpdate({ _id: p.conceptId, renderStatus: "generating" }, { $set: { renderStatus: "failed" } }, { new: true }).lean();
+  if (c) changed({ kind: "assistant", userId: String(c.createdBy) });
+}
+
+/** Runs a concept step as the member who asked; a request OpenAI rejects fails it now instead of being retried. */
+function asMember(what: string, step: (id: Types.ObjectId) => Promise<void>, fail: (p: GenerateJob) => Promise<void>) {
+  return async (p: GenerateJob) => {
+    try {
+      const r = await runAsMember(ctx().orgId, new Types.ObjectId(p.userId), () => step(new Types.ObjectId(p.conceptId)));
+      if (r === "not_a_member") log.warn(`Dropped ${what} ${p.conceptId}: ${p.userId} is no longer a member`);
+    } catch (e) {
+      if (!rejected(e)) throw e;
+      log.warn(`${what} ${p.conceptId} rejected by OpenAI, not retried: ${e instanceof Error ? e.message : e}`);
+      await fail(p);
+    }
+  };
+}
+
+const retries = {
+  lockMs: 300_000, // a high-quality image with several inputs can take minutes
+  retryDelayMs: (attempts: number) => [30_000, 120_000][attempts - 1] ?? 120_000,
+  maxAttempts: 3,
+};
+registerJob<GenerateJob>("concept.generate", asMember("concept", (id) => generateConcept(id), failConcept), { ...retries, onGiveUp: failConcept });
+registerJob<GenerateJob>("concept.render", asMember("render", (id) => renderConcept(id), failRender), { ...retries, onGiveUp: failRender });
 
 const photosOf = (c: Pick<DesignConcept, "sourceKey" | "extraKeys">) =>
   Promise.all([c.sourceKey, ...(c.extraKeys ?? [])].map(async (k) => ({ photo: await getObject(k), ext: extname(k).toLowerCase() })));

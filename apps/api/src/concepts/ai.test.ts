@@ -4,10 +4,11 @@ import { asOrg, newId } from "../../test/ctx";
 import { imageCostMicros, spendKey } from "../assistant/limits";
 import { createMessage } from "../assistant/llm";
 
+const edit = vi.fn();
 const usage = { input_tokens: 1300, input_tokens_details: { text_tokens: 100, image_tokens: 1200 }, output_tokens: 4000, total_tokens: 5300 };
 vi.mock("openai", () => ({
   default: class {
-    images = { edit: vi.fn().mockResolvedValue({ data: [{ b64_json: Buffer.from([0xff, 0xd8, 1]).toString("base64") }], usage }) };
+    images = { edit: edit.mockResolvedValue({ data: [{ b64_json: Buffer.from([0xff, 0xd8, 1]).toString("base64") }], usage }) };
   },
   toFile: vi.fn(async (b: Buffer) => b),
 }));
@@ -33,5 +34,17 @@ describe("room description", () => {
     const { describeRoom } = await import("./ai");
     await asOrg(newId(), () => describeRoom(Buffer.from([0xff, 0xd8]), [], "Japandi", null));
     expect(vi.mocked(createMessage).mock.calls[0][0].max_output_tokens).toBeGreaterThanOrEqual(8_000);
+  });
+});
+
+describe("presentation render", () => {
+  it("draws with the render model on an opaque background", async () => {
+    const { dollhouse } = await import("./ai");
+    edit.mockClear();
+    await asOrg(newId(), () => dollhouse(Buffer.from([0xff, 0xd8]), [{ photo: Buffer.from([0xff, 0xd8]), ext: ".jpg" }], "Japandi"));
+    const args = edit.mock.calls[0][0];
+    expect(args.model).toBe("gpt-image-2.6-sunburst");
+    expect(args.background).not.toBe("transparent");
+    expect(args.image).toHaveLength(2);
   });
 });

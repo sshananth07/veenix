@@ -251,6 +251,16 @@ describe("concept.generate job", () => {
     expect(describeRoom).toHaveBeenCalledTimes(1);
   });
 
+  it("a restyle OpenAI rejects fails the concept at once, without retrying it", async () => {
+    vi.mocked(restyle).mockRejectedValue(Object.assign(new Error("400 Your request was rejected by the safety system."), { status: 400 }));
+    await start();
+    const id = (await latest())!._id;
+    await runJobs();
+    await runJobs();
+    expect(restyle).toHaveBeenCalledTimes(1);
+    expect(await asOwner(() => DesignConceptModel.findById(id).lean())).toMatchObject({ status: "failed" });
+  });
+
   it("after the last attempt it's failed, the conversation is told, and the quota returns", async () => {
     vi.mocked(restyle).mockRejectedValue(new Error("timeout"));
     await start();
@@ -314,6 +324,17 @@ describe("presentation render", () => {
     // A failed render can be tried again.
     vi.mocked(dollhouse).mockResolvedValue(RENDER);
     expect(await asOwner(() => svc.render(c._id))).toMatchObject({ renderStatus: "generating" });
+  });
+
+  it("a request OpenAI rejects fails the render at once, without retrying it", async () => {
+    vi.mocked(dollhouse).mockRejectedValue(Object.assign(new Error("400 Transparent background is not supported for this model."), { status: 400 }));
+    const c = await readyConcept();
+    vi.mocked(dollhouse).mockClear(); // the earlier test leaves a render queued, which ran just now
+    await asOwner(() => svc.render(c._id));
+    await runJobs();
+    await runJobs();
+    expect(dollhouse).toHaveBeenCalledTimes(1);
+    expect(await latest()).toMatchObject({ status: "ready", renderStatus: "failed" });
   });
 
   it("refuses a render over the daily cap", async () => {

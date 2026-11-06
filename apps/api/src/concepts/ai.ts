@@ -9,6 +9,8 @@ import { strictSchema } from "../assistant/tools";
 // ponytail: OpenAI's image edit, chosen without a spike (same vendor as the assistant). Task 16.5 checks it on real photos.
 // If it moves walls or windows, swap restyle() for a depth-guided interior model; nothing else changes.
 const IMAGE_MODEL = "gpt-image-2";
+// ponytail: the presentation render's model, owner's pick (2026-11-06); priced as gpt-image-2 until its price is published. ⚠ Verify.
+const RENDER_MODEL = "gpt-image-2.6-sunburst";
 
 const ROOM_PROMPT = `You turn room photos and a design brief into a 3D room plan.
 The first photo is the room already redesigned: take the finishes, colours and furniture from it. Any further photos show the same room before the redesign, from other angles: use them for walls, doors and windows the first photo doesn't show.
@@ -44,21 +46,21 @@ export async function restyle(photo: Buffer, ext: string, brief: string): Promis
   return Buffer.from(b64, "base64");
 }
 
-/** A photoreal dollhouse cut-away of the redesigned room, as WebP on a transparent background. Every photo is sent as bytes. */
+/** A photoreal dollhouse cut-away of the redesigned room, as WebP on a plain light grey background. Every photo is sent as bytes. */
 export async function dollhouse(restyled: Buffer, originals: { photo: Buffer; ext: string }[], brief: string): Promise<Buffer> {
   if (!env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not set, so room concepts can't be made");
   client ??= new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: 180_000, maxRetries: 0 });
   const images = await Promise.all([{ photo: restyled, ext: ".jpg" }, ...originals].map((p, i) => toFile(p.photo, `room${i}${p.ext}`, { type: CONTENT_TYPES[p.ext] })));
   const r = await client.images.edit({
-    model: IMAGE_MODEL,
+    model: RENDER_MODEL,
     image: images,
     prompt:
       `Turn this room into a 3D dollhouse cut-away view from a high three-quarter angle with the ceiling removed. Design: ${brief}. ` +
       "The first image is the redesigned room: keep its finishes, colours, furniture and lighting. The other images show the same room before; use them for walls the first image doesn't show. " +
-      "Keep every wall, door, window and piece of furniture where the photos show them. Thick walls with clean dark cut tops, realistic textures, soft daylight, architectural visualisation quality. Do not change the layout.",
+      "Keep every wall, door, window and piece of furniture where the photos show them. Thick walls with clean dark cut tops, realistic textures, soft daylight, architectural visualisation quality, on a plain light grey studio background. Do not change the layout.",
     quality: "high",
     size: "auto",
-    background: "transparent", // in preview for gpt-image-2
+    background: "opaque", // gpt-image-2 refused "transparent" (400) on 2026-11-06
     output_format: "webp",
   });
   if (r.usage) await addSpend(String(ctx().orgId), imageCostMicros(r.usage));
