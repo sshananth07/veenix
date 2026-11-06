@@ -15,6 +15,11 @@ export function costMicros(u: OpenAI.Responses.ResponseUsage): number {
   return Math.ceil((u.input_tokens - cached - written) * 2 + cached * 0.1 + written * 2.5 + u.output_tokens * 10);
 }
 
+// ponytail: priced for gpt-image-2 from third-party listings (US$ per 1M tokens: 5 text in, 8 image in, 30 out). ⚠ Verify on OpenAI's pricing page; update with IMAGE_MODEL.
+export function imageCostMicros(u: OpenAI.ImagesResponse.Usage): number {
+  return Math.ceil(u.input_tokens_details.text_tokens * 5 + u.input_tokens_details.image_tokens * 8 + u.output_tokens * 30);
+}
+
 export const spendKey = (orgId: string) => `llm:spend:${orgId}:${new Date().toISOString().slice(0, 10)}`;
 
 export async function addSpend(orgId: string, micros: number) {

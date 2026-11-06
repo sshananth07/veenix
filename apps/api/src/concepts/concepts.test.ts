@@ -19,6 +19,8 @@ import { sendCtaUrl, sendTemplate, sendText } from "../whatsapp/client";
 import { WhatsAppLinkModel } from "../whatsapp/link.model";
 import { env } from "../config/env";
 import { asOrg, newId } from "../../test/ctx";
+import { redis } from "../common/redis";
+import { DAILY_SPEND_CAP_MICROS, spendKey } from "../assistant/limits";
 import { describeRoom, restyle } from "./ai";
 import { DesignConceptModel } from "./concept.model";
 import { ConceptsService } from "./concepts.service";
@@ -132,6 +134,17 @@ describe("generate_room_concept", () => {
     await asOwner(() => executeTool(c, use));
     await asOwner(() => executeTool(c, use));
     expect(await asOwner(() => DesignConceptModel.countDocuments())).toBe(before + 1);
+  });
+
+  it("refuses a new concept over the daily cap without a paid call", async () => {
+    const before = await asOwner(() => DesignConceptModel.countDocuments());
+    await redis.set(spendKey(String(org)), DAILY_SPEND_CAP_MICROS);
+    try {
+      expect(await start()).toMatchObject({ isError: true, content: "Today's AI budget for this organisation is used up. Try again tomorrow." });
+    } finally {
+      await redis.del(spendKey(String(org)));
+    }
+    expect(await asOwner(() => DesignConceptModel.countDocuments())).toBe(before);
   });
 
   it("uses a photo from an earlier message when this one has none", async () => {

@@ -3,7 +3,7 @@ import { CONTENT_TYPES, roomSchema } from "@veenix/shared";
 import { ctx } from "../common/context";
 import { env } from "../config/env";
 import { createMessage } from "../assistant/llm";
-import { addSpend, costMicros } from "../assistant/limits";
+import { addSpend, costMicros, imageCostMicros } from "../assistant/limits";
 import { strictSchema } from "../assistant/tools";
 
 // ponytail: OpenAI's image edit, chosen without a spike (same vendor as the assistant). Task 16.5 checks it on real photos.
@@ -34,6 +34,7 @@ export async function restyle(photo: Buffer, ext: string, brief: string): Promis
     size: "auto",
     output_format: "jpeg",
   });
+  if (r.usage) await addSpend(String(ctx().orgId), imageCostMicros(r.usage));
   const b64 = r.data?.[0]?.b64_json;
   if (!b64) throw new Error("The image edit returned no image");
   return Buffer.from(b64, "base64");
