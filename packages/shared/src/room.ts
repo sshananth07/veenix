@@ -34,7 +34,11 @@ export const FURNITURE_TYPES = Object.keys(FURNITURE) as [FurnitureType, ...Furn
 
 export const WALLS = ["back", "left", "right", "front"] as const;
 export type Wall = (typeof WALLS)[number];
-export const BUILT_IN_KINDS = ["base_run", "tall_run", "wall_run", "island", "bar", "counter", "shelving", "banquette", "partition", "planter_box"] as const;
+// The sets (workstation to wall_shelf) are groups the model sizes and code assembles, so their pieces always line up.
+export const BUILT_IN_KINDS = [
+  "base_run", "tall_run", "wall_run", "island", "bar", "counter", "shelving", "banquette", "partition", "planter_box",
+  "workstation", "dining_set", "bed_set", "lounge_set", "wall_shelf",
+] as const;
 export type BuiltInKind = (typeof BUILT_IN_KINDS)[number];
 export const CEILING_UNITS = ["ac_cassette", "ac_wall", "ceiling_fan"] as const;
 
@@ -64,7 +68,12 @@ const shell = {
     units: z.array(z.strictObject({ kind: z.enum(CEILING_UNITS), wall: z.enum(WALLS).nullable(), along: z.number().min(0).max(15) })).max(4),
   }),
   openings: z.array(opening).max(8),
+  // Full-height columns and wall returns, measured along their wall like openings.
+  nibs: z.array(z.strictObject({ wall: z.enum(WALLS), at: z.number().min(0).max(15), width: z.number().min(0.2).max(2), depth: z.number().min(0.1).max(1) })).max(4),
 };
+// A feature on part of a wall (slats behind a TV, a fabric headboard wall), from the floor up, on the wall's inside.
+const panel = z.strictObject({ wall: z.enum(WALLS), at: z.number().min(0).max(15), width: z.number().min(0.3).max(15), height: z.number().min(0.3).max(4.5), finish: z.enum(WALL_FINISH_KEYS), color: hex });
+const panels = z.array(panel).max(6);
 const builtIn = {
   kind: z.enum(BUILT_IN_KINDS),
   length: z.number().min(0.3).max(8), // along its front
@@ -72,6 +81,7 @@ const builtIn = {
   height: z.number().min(0.3).max(3),
   body: z.enum(BUILT_IN_FINISH_KEYS),
   top: z.enum(TOP_FINISH_KEYS).nullable(),
+  color: hex.nullable(), // tints the soft parts (screens, upholstery, bedding) and a fabric body; null keeps the finish's colour
 };
 const item = { type: z.enum(FURNITURE_TYPES), description: z.string().max(80), color: hex };
 // Against a wall: `along` is the centre in metres from the wall's left end seen from inside, `out` the gap from the wall,
@@ -83,6 +93,7 @@ const placed = { x: z.number().min(-8).max(8), z: z.number().min(-8).max(8), rot
 /** What the model returns: items and built-ins placed by wall. `resolveRoom` turns it into a `Room`. */
 export const roomDescriptionSchema = z.strictObject({
   ...shell,
+  panels,
   builtIns: z.array(z.strictObject({ ...builtIn, ...described })).max(12),
   items: z.array(z.strictObject({ ...item, ...described })).max(40),
 });
@@ -96,10 +107,15 @@ export type RoomDescription = z.infer<typeof roomDescriptionSchema>;
 export const roomSchema = z.strictObject({
   version: z.literal(2),
   ...shell,
-  builtIns: z.array(z.strictObject({ ...builtIn, ...placed })).max(12),
+  nibs: shell.nibs.default([]), // rooms stored before plan 18 have no nibs, panels or built-in colours
+  panels: panels.default([]),
+  builtIns: z.array(z.strictObject({ ...builtIn, color: builtIn.color.default(null), ...placed })).max(12),
   items: z.array(z.strictObject({ ...item, ...placed })).max(40),
 });
 export type Room = z.infer<typeof roomSchema>;
+/** What the model returns when it lays out a room from its presentation render: the contents only, inside a fixed shell. */
+export const roomContentsSchema = roomDescriptionSchema.pick({ panels: true, builtIns: true, items: true });
+export type RoomContents = z.infer<typeof roomContentsSchema>;
 
 const clamp = (v: number, lo: number, hi: number) => (lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, v)));
 const rad = (d: number) => (d * Math.PI) / 180;
@@ -110,8 +126,13 @@ function extent(w: number, d: number, rotation: number) {
 }
 export const wallLength = (room: { width: number; length: number }, wall: Wall) => (wall === "back" || wall === "front" ? room.width : room.length);
 
-/** Pulls every item and built-in inside the walls (by its rotated footprint) and every opening inside its wall. */
+/** Pulls every item and built-in inside the walls (by its rotated footprint), and every opening, panel and nib inside its wall. */
 export function fitRoom(room: Room): Room {
+  const onWall = <T extends { wall: Wall; at: number; width: number }>(o: T): T => {
+    const len = wallLength(room, o.wall);
+    const width = Math.min(o.width, len);
+    return { ...o, width, at: clamp(o.at, width / 2, len - width / 2) };
+  };
   const halfW = room.width / 2;
   const halfL = room.length / 2;
   const inside = <T extends { x: number; z: number; rotation: number }>(it: T, w: number, d: number): T => {
@@ -123,11 +144,11 @@ export function fitRoom(room: Room): Room {
     items: room.items.map((it) => inside(it, FURNITURE[it.type].w, FURNITURE[it.type].d)),
     builtIns: room.builtIns.map((b) => inside(b, b.length, b.depth)),
     openings: room.openings.map((o) => {
-      const len = wallLength(room, o.wall);
-      const width = Math.min(o.width, len);
       const height = Math.min(o.height, room.height);
-      return { ...o, width, height, at: clamp(o.at, width / 2, len - width / 2), sill: Math.min(o.sill, room.height - height) };
+      return { ...onWall(o), height, sill: Math.min(o.sill, room.height - height) };
     }),
+    panels: room.panels.map((p) => ({ ...onWall(p), height: Math.min(p.height, room.height) })),
+    nibs: room.nibs.map(onWall),
   };
 }
 
@@ -229,7 +250,7 @@ export function resolveRoom(d: RoomDescription): Room {
   const split = <T extends Described>({ wall, along, out, rotation, ...rest }: T) => [{ wall, along, out, rotation }, rest] as const;
   const room = fitRoom({
     version: 2,
-    width: d.width, length: d.length, height: d.height, floor: d.floor, walls: d.walls, ceiling: d.ceiling, openings: d.openings,
+    width: d.width, length: d.length, height: d.height, floor: d.floor, walls: d.walls, ceiling: d.ceiling, openings: d.openings, nibs: d.nibs, panels: d.panels,
     builtIns: d.builtIns.map((b) => {
       const [p, rest] = split(b);
       return { ...rest, ...place(p, b.length, b.depth) };
@@ -245,6 +266,18 @@ export function resolveRoom(d: RoomDescription): Room {
     builtIns: clearDoors(room, room.builtIns, onWall(d.builtIns), (b) => [b.length, b.depth], (b, length) => ({ ...b, length })),
     items: clearDoors(room, room.items, onWall(d.items), (it) => [FURNITURE[it.type].w, FURNITURE[it.type].d]),
   });
+}
+
+/** The room with its contents replaced by `contents` (laid out from the render): the shell stays, the new contents are fitted to it. */
+export function withContents(room: Room, contents: RoomContents): Room {
+  const { version: _v, panels: _p, builtIns: _b, items: _i, ...shell } = room;
+  return resolveRoom({ ...shell, ...contents });
+}
+
+/** A panel's solid parts in its own coordinates (x from its left end, y from the floor), leaving its wall's doors and windows open. */
+export function panelPieces(room: Room, p: Room["panels"][number]) {
+  const start = p.at - p.width / 2;
+  return wallPieces(p.width, p.height, room.openings.filter((o) => o.wall === p.wall).map((o) => ({ ...o, at: o.at - start })));
 }
 
 // The room format concepts were stored in before plan 17, kept only so they still open.
@@ -264,7 +297,7 @@ export function upgradeRoom(r: unknown): Room | null {
   const { wallColor, items, ...rest } = v1.data;
   const wall = { finish: "paint" as const, color: wallColor };
   return {
-    version: 2, ...rest,
+    version: 2, ...rest, nibs: [], panels: [],
     walls: { back: wall, left: wall, right: wall, front: wall },
     ceiling: { color: "#f7f6f2", drops: [], cove: false, downlights: 0, units: [] },
     builtIns: [],

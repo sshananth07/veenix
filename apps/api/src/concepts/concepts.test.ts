@@ -46,10 +46,11 @@ const SHELL = {
   walls: { back: paint, left: paint, right: paint, front: paint },
   ceiling: { color: "#f7f6f2", drops: [], cove: true, downlights: 4, units: [] },
   openings: [{ wall: "back" as const, kind: "window" as const, at: 2, width: 1.5, height: 1.4, sill: 0.9 }],
+  nibs: [],
 };
 /** What the model returns: a sofa placed free-standing, inside the schema but outside a 4 m room. */
-const DESCRIBED: RoomDescription = { ...SHELL, builtIns: [], items: [{ type: "sofa", description: "linen sofa", wall: null, along: 7, out: 0, rotation: 0, color: "#c8b8a0" }] };
-const ROOM: Room = { version: 2, ...SHELL, builtIns: [], items: [{ type: "sofa", description: "linen sofa", x: 7, z: 0, rotation: 0, color: "#c8b8a0" }] };
+const DESCRIBED: RoomDescription = { ...SHELL, panels: [], builtIns: [], items: [{ type: "sofa", description: "linen sofa", wall: null, along: 7, out: 0, rotation: 0, color: "#c8b8a0" }] };
+const ROOM: Room = { version: 2, ...SHELL, panels: [], builtIns: [], items: [{ type: "sofa", description: "linen sofa", x: 7, z: 0, rotation: 0, color: "#c8b8a0" }] };
 
 function tc(attachments = [{ key: photoKey, name: "room.jpg", kind: "photo" as const }]) {
   return { conversationId: conv, messageId: newId(), attachments };

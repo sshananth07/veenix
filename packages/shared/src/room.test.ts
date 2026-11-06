@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FURNITURE, WALL_FACING, fitRoom, resolveRoom, roomSchema, upgradeRoom, wallPieces, wallPoint, type Room, type RoomDescription } from "./room";
+import { FURNITURE, WALL_FACING, fitRoom, panelPieces, resolveRoom, roomSchema, upgradeRoom, wallPieces, wallPoint, withContents, type Room, type RoomDescription } from "./room";
 
 const paint = { finish: "paint" as const, color: "#f4f1ea" };
 const shell = {
@@ -7,12 +7,13 @@ const shell = {
   walls: { back: paint, left: paint, right: paint, front: paint },
   ceiling: { color: "#f7f6f2", drops: [], cove: false, downlights: 0, units: [] },
   openings: [] as Room["openings"],
+  nibs: [] as Room["nibs"],
 };
-const room = (over: Partial<Room> = {}): Room => ({ version: 2, ...shell, builtIns: [], items: [], ...over });
-const described = (over: Partial<RoomDescription> = {}): RoomDescription => ({ ...shell, builtIns: [], items: [], ...over });
+const room = (over: Partial<Room> = {}): Room => ({ version: 2, ...shell, panels: [], builtIns: [], items: [], ...over });
+const described = (over: Partial<RoomDescription> = {}): RoomDescription => ({ ...shell, panels: [], builtIns: [], items: [], ...over });
 const item = (over: Partial<RoomDescription["items"][number]>) => ({ type: "bookshelf" as const, description: "oak bookshelf", wall: null, along: 0, out: 0, rotation: 0, color: "#c9a77c", ...over });
 const builtIn = (over: Partial<RoomDescription["builtIns"][number]>) => ({
-  kind: "base_run" as const, wall: "back" as const, along: 2, out: 0, rotation: 0, length: 1.2, depth: 0.6, height: 0.9, body: "white_laminate" as const, top: "quartz_white" as const, ...over,
+  kind: "base_run" as const, wall: "back" as const, along: 2, out: 0, rotation: 0, length: 1.2, depth: 0.6, height: 0.9, body: "white_laminate" as const, top: "quartz_white" as const, color: null, ...over,
 });
 
 describe("fitRoom", () => {
@@ -186,5 +187,61 @@ describe("roomSchema", () => {
     expect(roomSchema.safeParse(room({ builtIns: Array(13).fill({ kind: "base_run", x: 0, z: 0, rotation: 0, length: 1, depth: 0.6, height: 0.9, body: "white_laminate", top: null }) })).success).toBe(false);
     expect(roomSchema.safeParse(room({ width: Number.NaN })).success).toBe(false);
     expect(roomSchema.safeParse(room()).success).toBe(true);
+  });
+});
+
+describe("plan 18 fields", () => {
+  it("opens a v2 room stored before plan 18 with no nibs, panels or built-in colours", () => {
+    const { nibs: _, ...oldShell } = shell;
+    const old = { version: 2, ...oldShell, builtIns: [{ kind: "base_run", x: 0, z: -2.2, rotation: 0, length: 1.2, depth: 0.6, height: 0.9, body: "white_laminate", top: null }], items: [] };
+    const up = upgradeRoom(old)!;
+    expect(up.nibs).toEqual([]);
+    expect(up.panels).toEqual([]);
+    expect(up.builtIns[0].color).toBeNull();
+  });
+
+  it("clamps panels and nibs to their wall", () => {
+    const r = fitRoom(room({
+      panels: [{ wall: "back", at: 3.9, width: 6, height: 4, finish: "timber_slats", color: "#a87d55" }],
+      nibs: [{ wall: "left", at: 0, width: 0.6, depth: 0.4 }],
+    }));
+    expect(r.panels[0]).toMatchObject({ width: 4, at: 2, height: 2.8 });
+    expect(r.nibs[0]).toMatchObject({ at: 0.3, width: 0.6 });
+  });
+
+  it("withContents keeps the shell and resolves the new contents inside it, off the doors", () => {
+    const base = room({
+      openings: [{ wall: "back", kind: "door", at: 2, width: 0.9, height: 2.1, sill: 0 }],
+      nibs: [{ wall: "right", at: 1, width: 0.4, depth: 0.3 }],
+      builtIns: [{ kind: "base_run", x: 1, z: -2.2, rotation: 0, length: 1, depth: 0.6, height: 0.9, body: "white_laminate", top: null, color: null }],
+    });
+    const r = withContents(base, {
+      panels: [{ wall: "left", at: 2, width: 1.2, height: 2.4, finish: "timber_slats", color: "#a87d55" }],
+      builtIns: [builtIn({ kind: "workstation", along: 2, length: 1.4, depth: 0.7, height: 1.2, color: "#8f9f7d" })],
+      items: [item({ wall: null, along: 9, out: 9 })],
+    });
+    expect({ ...r, panels: [], builtIns: [], items: [] }).toEqual({ ...base, builtIns: [] });
+    expect(r.panels).toHaveLength(1);
+    const [desk] = r.builtIns;
+    expect(desk).toMatchObject({ kind: "workstation", color: "#8f9f7d" });
+    const doorRight = -2 + 2 + 0.45, doorLeft = -2 + 2 - 0.45;
+    expect(desk.x - 0.7 >= doorRight - 1e-9 || desk.x + 0.7 <= doorLeft + 1e-9).toBe(true);
+    expect(r.items[0].x).toBeLessThanOrEqual(2);
+    expect(r.items[0].z).toBeLessThanOrEqual(2.5);
+  });
+
+  it("panelPieces leaves a door and a window under a panel open", () => {
+    const r = room({
+      openings: [
+        { wall: "back", kind: "door", at: 1.5, width: 0.9, height: 2.1, sill: 0 },
+        { wall: "back", kind: "window", at: 3, width: 0.8, height: 1, sill: 1 },
+        { wall: "left", kind: "window", at: 2, width: 1, height: 1, sill: 1 }, // another wall: ignored
+      ],
+    });
+    const pieces = panelPieces(r, { wall: "back", at: 2, width: 3, height: 2.8, finish: "timber_slats", color: "#a87d55" });
+    const holes = [[0.55, 1.45, 0, 2.1], [2.1, 2.9, 1, 2]]; // in the panel's coordinates (it starts 0.5 m along the wall)
+    for (const [x0, x1, y0, y1] of pieces) for (const [a0, a1, b0, b1] of holes) expect(x0 < a1 - 1e-9 && x1 > a0 + 1e-9 && y0 < b1 - 1e-9 && y1 > b0 + 1e-9).toBe(false);
+    const area = pieces.reduce((s, [x0, x1, y0, y1]) => s + (x1 - x0) * (y1 - y0), 0);
+    expect(area).toBeCloseTo(3 * 2.8 - 0.9 * 2.1 - 0.8 * 1);
   });
 });

@@ -14,12 +14,15 @@ const LIMITS = { width: [2, 15], length: [2, 15], height: [2.4, 4.5] } as const;
 export const BUILT_IN_LABELS: Record<BuiltInKind, string> = {
   base_run: "Base cabinets", tall_run: "Tall cabinets", wall_run: "Wall cabinets", island: "Island", bar: "Bar", counter: "Counter",
   shelving: "Shelving", banquette: "Banquette", partition: "Partition", planter_box: "Planter box",
+  workstation: "Workstations", dining_set: "Dining set", bed_set: "Bed set", lounge_set: "Lounge set", wall_shelf: "Wall shelves",
 };
 // What a newly added built-in starts as: length, depth, height, body, top.
 const NEW_BUILT_IN: Record<BuiltInKind, [number, number, number, Room["builtIns"][number]["body"], Room["builtIns"][number]["top"]]> = {
   base_run: [2.4, 0.6, 0.9, "white_laminate", "quartz_white"], tall_run: [0.6, 0.6, 2.2, "white_laminate", null], wall_run: [2.4, 0.35, 0.7, "white_laminate", null],
   island: [1.8, 0.9, 0.9, "oak_veneer", "quartz_white"], bar: [1.8, 0.5, 1.05, "oak_veneer", "oak"], counter: [2, 0.6, 1, "white_laminate", "quartz_white"],
   shelving: [1.2, 0.35, 1.9, "oak_veneer", null], banquette: [1.8, 0.6, 0.9, "matte_green", null], partition: [1.6, 0.06, 1.2, "glass", null], planter_box: [1.2, 0.4, 0.5, "oak_veneer", null],
+  workstation: [2.8, 1.4, 1.2, "white_laminate", "oak"], dining_set: [2.4, 1.8, 0.75, "oak_veneer", "oak"], bed_set: [2.6, 2.1, 1.1, "oak_veneer", null],
+  lounge_set: [2.8, 2.4, 0.85, "oak_veneer", null], wall_shelf: [1.2, 0.25, 0.7, "oak_veneer", null],
 };
 const heading = "text-[11px] font-semibold uppercase tracking-wide text-white/50";
 const chip = (on: boolean) => cn("rounded-md px-2 py-1 text-xs", on ? "bg-white text-neutral-900" : "bg-white/10 hover:bg-white/20");
@@ -99,7 +102,7 @@ export function RoomEditor({ room, selected, onChange, onSelect }: { room: Room;
       const k = name as BuiltInKind;
       const [length, depth, height, body, top] = NEW_BUILT_IN[k];
       const free = k === "island" || k === "partition";
-      set({ builtIns: [...room.builtIns, { kind: k, x: 0, z: free ? 0 : -room.length / 2 + depth / 2, rotation: 0, length, depth, height, body, top }] });
+      set({ builtIns: [...room.builtIns, { kind: k, x: 0, z: free ? 0 : -room.length / 2 + depth / 2, rotation: 0, length, depth, height, body, top, color: null }] });
       onSelect({ kind: "builtIns", index: room.builtIns.length });
     }
   };

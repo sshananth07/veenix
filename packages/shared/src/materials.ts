@@ -46,6 +46,7 @@ export const BUILT_IN_FINISHES = {
   black_metal: { label: "Black metal", tile: 1, color: "#26272a", rough: 0.4 },
   glass: { label: "Glass", tile: 1, color: "#cfe0e6", rough: 0.05 },
   rattan: { label: "Rattan", tile: 0.5, color: "#c7a477", rough: 0.85, texture: "Wicker013" },
+  fabric: { label: "Fabric", tile: 0.8, color: "#8f9f7d", rough: 1, texture: "Fabric061" },
 } as const satisfies Record<string, Finish>;
 
 export const TOP_FINISHES = {
@@ -70,3 +71,5 @@ export const TOP_FINISH_KEYS = keys(TOP_FINISHES);
 
 /** Wall finishes the wall's colour tints; the rest keep their own colour. */
 export const TINTED_FINISHES: readonly WallFinish[] = ["paint", "fabric_panel", "linen_wallpaper"];
+/** Built-in finishes the built-in's colour tints. */
+export const TINTED_BUILT_INS: readonly BuiltInFinish[] = ["fabric"];
