@@ -22,6 +22,7 @@ This folder holds the design and the step-by-step build guide for moving Veenix 
 | [plan/14-copilot-whatsapp.md](plan/14-copilot-whatsapp.md) | Phone linking, webhook, sending, voice notes and buttons |
 | [plan/15-copilot-proactive.md](plan/15-copilot-proactive.md) | Morning summary, task reminders, audio retention |
 | [plan/16-copilot-room-concepts.md](plan/16-copilot-room-concepts.md) | Room concepts: restyled photo and a hand-built 3D room (no paid 3D vendor), WhatsApp delivery, chat card and full-screen viewer |
+| [plan/17-copilot-room-3d.md](plan/17-copilot-room-3d.md) | Realistic 3D: split style and layout, every photo, image costs in the cap, on-demand presentation render, room v2 (finishes, ceilings, built-ins), dollhouse renderer; furniture library test gates Phase 2 |
 
 ## How to use the plan
 
@@ -156,4 +157,14 @@ Concretely:
 - [x] 16.2 WhatsApp delivery (with tests)
 - [x] 16.3 Chat card and the concept page
 - [x] 16.4 The 3D room (viewer and editor)
-- [ ] 16.5 Owner check on real photos (needs OPENAI_API_KEY)
+- [ ] 16.5 Owner check on real photos (needs OPENAI_API_KEY); replaced by 17.7
+
+### 17 Copilot room concepts, realistic 3D
+- [ ] 17.1 Split style and layout, every photo, describe the restyled photo (with tests)
+- [ ] 17.2 Image costs against the daily cap (with tests)
+- [ ] 17.3 On-demand presentation render (with tests)
+- [ ] 17.4 Room v2: finishes, ceilings, built-ins, wall placement (with tests)
+- [ ] 17.5 The renderer: thick walls, cut-away, materials, ceilings, built-ins
+- [ ] 17.6 The editor for v2
+- [ ] 17.7 Owner check on real photos (needs OPENAI_API_KEY)
+- [ ] 17.8 Furniture library coverage test (gates Phase 2)
