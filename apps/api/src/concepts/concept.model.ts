@@ -17,6 +17,8 @@ const conceptSchema = new Schema(
     status: { type: String, enum: ["generating", "ready", "failed"], default: "generating" },
     imageKey: { type: String, default: null },
     room: { type: Mixed, default: null }, // a fitted Room; null when image-only
+    renderKey: { type: String, default: null }, // the on-demand presentation render (dollhouse image)
+    renderStatus: { type: String, enum: ["none", "generating", "ready", "failed"], default: "none" },
     error: { type: String, default: null },
     conversationId: { type: ObjectId, required: true },
     createdBy: { type: ObjectId, required: true },

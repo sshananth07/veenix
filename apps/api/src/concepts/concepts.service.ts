@@ -3,6 +3,8 @@ import mongoose, { Types } from "mongoose";
 import { can, fitRoom, type ConceptDto, type ConceptPatchInput, type Role, type Room } from "@veenix/shared";
 import { ctx } from "../common/context";
 import { notFound, rule } from "../common/errors";
+import { tx } from "../common/tx";
+import { OVER_CAP, overSpendCap } from "../assistant/limits";
 import { enqueue } from "../jobs/jobs";
 import { LeadModel } from "../leads/lead.model";
 import { loadProject } from "../projects/project.model";
@@ -41,6 +43,8 @@ export async function toDto(c: DesignConcept): Promise<ConceptDto> {
     photoUrl: await downloadUrl(c.sourceKey, "photo"),
     imageUrl: c.imageKey ? await downloadUrl(c.imageKey, `${c.name}.jpg`) : null,
     room: (c.room as Room | null) ?? null, saved: c.saved, createdAt: c.createdAt,
+    renderStatus: (c.renderStatus ?? "none") as ConceptDto["renderStatus"],
+    renderUrl: c.renderKey && c.renderStatus === "ready" ? await downloadUrl(c.renderKey, `${c.name} render.webp`) : null,
   };
 }
 
@@ -60,6 +64,19 @@ export class ConceptsService {
   async update(id: Types.ObjectId, patch: ConceptPatchInput) {
     await this.load(id);
     await DesignConceptModel.updateOne({ _id: id }, { $set: { ...patch, ...(patch.room ? { room: fitRoom(patch.room) } : {}) } });
+    return this.get(id);
+  }
+
+  /** Starts the presentation render once per concept; a failed one can be tried again. */
+  async render(id: Types.ObjectId) {
+    const c = await this.load(id);
+    if (c.status !== "ready") throw rule("The concept isn't ready yet.");
+    if (c.renderStatus === "generating" || c.renderStatus === "ready") return toDto(c);
+    if (await overSpendCap(String(ctx().orgId))) throw rule(OVER_CAP);
+    await tx(async () => {
+      const r = await DesignConceptModel.updateOne({ _id: id, renderStatus: { $nin: ["generating", "ready"] } }, { $set: { renderStatus: "generating" } });
+      if (r.modifiedCount) await enqueue("concept.render", { conceptId: String(id), userId: String(ctx().userId) });
+    });
     return this.get(id);
   }
 

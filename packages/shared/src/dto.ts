@@ -237,6 +237,8 @@ export interface AssistantMessageDto {
 export interface ConceptDto {
   id: Id; name: string; brief: string; status: "generating" | "ready" | "failed"; error: string | null;
   projectId: Id | null; leadId: Id | null; photoUrl: string; imageUrl: string | null; room: Room | null; saved: boolean; createdAt: Date;
+  /** The on-demand presentation render (a still dollhouse image). */
+  renderStatus: "none" | "generating" | "ready" | "failed"; renderUrl: string | null;
 }
 export interface AssistantConversationDto { id: Id; title: string; projectId: Id | null; projectName: string | null; messages: AssistantMessageDto[]; busy: boolean }
 export interface AssistantConversationListItemDto { id: Id; title: string; projectId: Id | null; projectName: string | null; lastMessageAt: Date }

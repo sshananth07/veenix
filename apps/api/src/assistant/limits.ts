@@ -7,6 +7,7 @@ export const INBOUND_PER_MINUTE = 20; // per sender
 export const MAX_OUTPUT_TOKENS = 2_000; // per response, reasoning included
 export const HISTORY_EXCHANGES = 5; // earlier messages the model sees, counted in user messages
 export const DAILY_SPEND_CAP_MICROS = 5_000_000; // US$5 per organisation per day
+export const OVER_CAP = "Today's AI budget for this organisation is used up. Try again tomorrow.";
 
 // ponytail: priced for gpt-6.1-sol (US$ per 1M tokens: 2 in, 0.10 cached, 2.50 cache write, 10 out). Update with OPENAI_MODEL.
 export function costMicros(u: OpenAI.Responses.ResponseUsage): number {

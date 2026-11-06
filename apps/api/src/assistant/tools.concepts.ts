@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import { z } from "zod";
 import { ctx } from "../common/context";
 import { rule } from "../common/errors";
-import { overSpendCap } from "./limits";
+import { OVER_CAP, overSpendCap } from "./limits";
 import { DesignConceptModel } from "../concepts/concept.model";
 import { startConcept } from "../concepts/concepts.service";
 import { AssistantMessageModel } from "./models";
@@ -11,7 +11,6 @@ import { defineTool, type ToolContext } from "./tools";
 const id = z.string().regex(/^[a-f\d]{24}$/i, "Use an id from a tool result");
 const oid = (s: string | null) => (s ? new Types.ObjectId(s) : null);
 const MAX_PHOTOS = 3;
-export const OVER_CAP = "Today's AI budget for this organisation is used up. Try again tomorrow.";
 
 /** This message's photos, or else the latest earlier message's in the same chat. Never a URL. */
 async function photoKeys(c: ToolContext) {

@@ -40,6 +40,29 @@ export async function restyle(photo: Buffer, ext: string, brief: string): Promis
   return Buffer.from(b64, "base64");
 }
 
+/** A photoreal dollhouse cut-away of the redesigned room, as WebP on a transparent background. Every photo is sent as bytes. */
+export async function dollhouse(restyled: Buffer, originals: { photo: Buffer; ext: string }[], brief: string): Promise<Buffer> {
+  if (!env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not set, so room concepts can't be made");
+  client ??= new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: 180_000, maxRetries: 0 });
+  const images = await Promise.all([{ photo: restyled, ext: ".jpg" }, ...originals].map((p, i) => toFile(p.photo, `room${i}${p.ext}`, { type: CONTENT_TYPES[p.ext] })));
+  const r = await client.images.edit({
+    model: IMAGE_MODEL,
+    image: images,
+    prompt:
+      `Turn this room into a 3D dollhouse cut-away view from a high three-quarter angle with the ceiling removed. Design: ${brief}. ` +
+      "The first image is the redesigned room: keep its finishes, colours, furniture and lighting. The other images show the same room before; use them for walls the first image doesn't show. " +
+      "Keep every wall, door, window and piece of furniture where the photos show them. Thick walls with clean dark cut tops, realistic textures, soft daylight, architectural visualisation quality. Do not change the layout.",
+    quality: "high",
+    size: "auto",
+    background: "transparent", // in preview for gpt-image-2
+    output_format: "webp",
+  });
+  if (r.usage) await addSpend(String(ctx().orgId), imageCostMicros(r.usage));
+  const b64 = r.data?.[0]?.b64_json;
+  if (!b64) throw new Error("The image edit returned no image");
+  return Buffer.from(b64, "base64");
+}
+
 /** The model's room description from the restyled photo and the originals, unchecked: the caller parses it with roomSchema and fits it. */
 export async function describeRoom(restyled: Buffer, originals: { photo: Buffer; ext: string }[], brief: string, layout: string | null): Promise<unknown> {
   const text = `Design brief: ${brief}${layout ? `\nLayout notes: ${layout}` : ""}`;

@@ -3,9 +3,9 @@ import { Component, useEffect, useRef, useState, useTransition, type ReactNode }
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bookmark, BookmarkCheck, Box, Footprints, Image as ImageIcon, Loader2, Maximize, Minimize, Moon, SlidersHorizontal, Sun } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, Box, Footprints, Image as ImageIcon, Loader2, Maximize, Minimize, Moon, Presentation, SlidersHorizontal, Sun } from "lucide-react";
 import type { ConceptDto, Room } from "@veenix/shared";
-import { updateConcept } from "@/actions/concepts";
+import { renderConcept, updateConcept } from "@/actions/concepts";
 import { cn } from "@/lib/utils";
 import { BeforeAfter } from "./BeforeAfter";
 import { NOT_TO_SCALE } from "./ConceptCard";
@@ -40,7 +40,7 @@ class Fallback extends Component<{ onError: () => void; children: ReactNode }, {
 export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEdit: boolean }) {
   const router = useRouter();
   const frame = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<"photo" | "3d">(concept.room ? "3d" : "photo");
+  const [mode, setMode] = useState<"photo" | "3d" | "render">(concept.room ? "3d" : "photo");
   const [no3d, setNo3d] = useState(false);
   const [full, setFull] = useState(false);
   const [room, setRoom] = useState<Room | null>(concept.room);
@@ -53,11 +53,12 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
 
   useEffect(() => setRoom(concept.room), [concept.room]);
   // ponytail: polls while generating; the chat's live event doesn't reach this page.
+  const waiting = concept.status === "generating" || concept.renderStatus === "generating";
   useEffect(() => {
-    if (concept.status !== "generating") return;
+    if (!waiting) return;
     const t = setInterval(() => router.refresh(), 5000);
     return () => clearInterval(t);
-  }, [concept.status, router]);
+  }, [waiting, router]);
   useEffect(() => {
     const onChange = () => setFull(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onChange);
@@ -65,6 +66,14 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
   }, []);
 
   const show3d = !!room && !no3d;
+  const showRender = concept.status === "ready" && (canEdit || !!concept.renderUrl);
+  const views = (["photo", "3d", "render"] as const).filter((m) => m === "photo" || (m === "3d" ? show3d : showRender));
+  const VIEW = { photo: { label: "Photo", Icon: ImageIcon }, "3d": { label: "3D", Icon: Box }, render: { label: "Render", Icon: Presentation } };
+  const startRender = () => start(async () => {
+    const r = await renderConcept(concept.id);
+    setError(r.ok ? null : r.error);
+    if (r.ok) router.refresh();
+  });
   const moveItem = (i: number, x: number, z: number) => room && setRoom({ ...room, items: room.items.map((it, k) => (k === i ? { ...it, x, z } : it)) });
   const dirty = JSON.stringify(room) !== JSON.stringify(concept.room);
   const fail3d = () => {
@@ -81,14 +90,17 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
           <ArrowLeft className="size-4" aria-hidden />
         </Link>
         <h1 className="min-w-0 flex-1 truncate text-sm font-semibold">{concept.name}</h1>
-        {show3d && (
+        {views.length > 1 && (
           <div className="flex rounded-lg bg-white/10 p-0.5" role="group" aria-label="View">
-            {(["photo", "3d"] as const).map((m) => (
-              <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)} className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm", mode === m && "bg-white text-neutral-900")}>
-                {m === "photo" ? <ImageIcon className="size-4" aria-hidden /> : <Box className="size-4" aria-hidden />}
-                {m === "photo" ? "Photo" : "3D"}
-              </button>
-            ))}
+            {views.map((m) => {
+              const { label, Icon } = VIEW[m];
+              return (
+                <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)} className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm", mode === m && "bg-white text-neutral-900")}>
+                  <Icon className="size-4" aria-hidden />
+                  <span className={cn(m !== mode && "hidden sm:inline")}>{label}</span>
+                </button>
+              );
+            })}
           </div>
         )}
         {canEdit && concept.status === "ready" && (
@@ -166,6 +178,30 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
               </aside>
             )}
           </>
+        )}
+        {concept.status === "ready" && mode === "render" && (
+          concept.renderUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- short-lived storage URLs
+            <img src={concept.renderUrl} alt={`Presentation render of ${concept.name}`} className="h-full w-full bg-[radial-gradient(ellipse_at_center,#3a3a3a,#141414)] object-contain p-4" />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center" role="status">
+              {concept.renderStatus === "generating" ? (
+                <p className="flex items-center gap-2 text-white/70"><Loader2 className="size-5 animate-spin" aria-hidden /> Making the presentation render…</p>
+              ) : (
+                <>
+                  <p className="max-w-sm text-sm text-white/70">
+                    {concept.renderStatus === "failed" ? "The last render didn't work. You can try again." : "A photoreal dollhouse view of this design, for presenting to the client."}
+                  </p>
+                  <button type="button" disabled={pending} onClick={startRender} className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-50">
+                    {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Presentation className="size-4" aria-hidden />}
+                    Make presentation render
+                  </button>
+                  <p className="text-xs text-white/50">Takes about a minute</p>
+                  {error && <p className="text-xs text-red-300">{error}</p>}
+                </>
+              )}
+            </div>
+          )
         )}
         {no3d && <p className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md bg-black/60 px-2 py-1 text-xs">3D isn&apos;t available on this device, so here&apos;s the photo.</p>}
         <span className="pointer-events-none absolute bottom-3 left-3 rounded-md bg-black/60 px-2 py-1 text-xs font-medium">{NOT_TO_SCALE}</span>

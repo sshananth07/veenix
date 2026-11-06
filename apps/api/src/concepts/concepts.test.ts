@@ -21,11 +21,11 @@ import { env } from "../config/env";
 import { asOrg, newId } from "../../test/ctx";
 import { redis } from "../common/redis";
 import { DAILY_SPEND_CAP_MICROS, spendKey } from "../assistant/limits";
-import { describeRoom, restyle } from "./ai";
+import { describeRoom, dollhouse, restyle } from "./ai";
 import { DesignConceptModel } from "./concept.model";
 import { ConceptsService } from "./concepts.service";
 
-vi.mock("./ai", () => ({ restyle: vi.fn(), describeRoom: vi.fn() }));
+vi.mock("./ai", () => ({ restyle: vi.fn(), describeRoom: vi.fn(), dollhouse: vi.fn() }));
 vi.mock("../whatsapp/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../whatsapp/client")>()),
   sendCtaUrl: vi.fn().mockResolvedValue({}),
@@ -39,6 +39,7 @@ const svc = new ConceptsService();
 const asOwner = <T>(fn: () => Promise<T>, o = org) => asOrg(o, fn, { userId: owner });
 const callId = () => String(newId());
 const RESTYLED = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+const RENDER = Buffer.from("RIFF0000WEBPVP8 ");
 const ROOM: Room = {
   width: 4, length: 5, height: 2.8, wallColor: "#f4f1ea", floor: "light_oak",
   openings: [{ wall: "back", kind: "window", at: 2, width: 1.5, height: 1.4, sill: 0.9 }],
@@ -65,7 +66,7 @@ const photos = (keys: string[]) => keys.map((key) => ({ key, name: "r.jpg", kind
 const latest = () => asOwner(() => DesignConceptModel.findOne().sort({ _id: -1 }).lean());
 /** Runs the queued concept jobs now, however far their retry was pushed back. */
 async function runJobs() {
-  await JobModel.updateMany({ type: "concept.generate", status: "pending" }, { $set: { runAt: new Date(0) } });
+  await JobModel.updateMany({ type: { $in: ["concept.generate", "concept.render"] }, status: "pending" }, { $set: { runAt: new Date(0) } });
   await runDue();
 }
 
@@ -87,6 +88,7 @@ beforeEach(async () => {
   await mongoose.connection.collection("design_concepts").updateMany({ orgId: org }, { $set: { createdAt: new Date(Date.now() - 2 * 86_400_000) } });
   vi.mocked(restyle).mockReset().mockResolvedValue(RESTYLED);
   vi.mocked(describeRoom).mockReset().mockResolvedValue(ROOM);
+  vi.mocked(dollhouse).mockReset().mockResolvedValue(RENDER);
 });
 
 describe("generate_room_concept", () => {
@@ -245,6 +247,71 @@ describe("concept.generate job", () => {
     expect(await asOwner(() => DesignConceptModel.findById(id).lean())).toMatchObject({ status: "failed", error: "The room concept didn't work. Please try again." });
     const notes = (await asOwner(() => AssistantConversationModel.findById(conv).lean()))!.notes;
     expect(notes.some((n) => n.includes(String(id)) && n.includes("didn't work"))).toBe(true);
+  });
+});
+
+describe("presentation render", () => {
+  async function readyConcept() {
+    await start();
+    await runJobs();
+    return (await latest())!;
+  }
+  const renderJobs = (id: Types.ObjectId) => asOwner(() => JobModel.countDocuments({ type: "concept.render", "payload.conceptId": String(id) }));
+
+  it("starts a render only for a ready concept, and only once", async () => {
+    await start();
+    const generating = (await latest())!;
+    await expect(asOwner(() => svc.render(generating._id))).rejects.toThrow("isn't ready");
+
+    const c = await readyConcept();
+    expect(await asOwner(() => svc.render(c._id))).toMatchObject({ renderStatus: "generating", renderUrl: null });
+    await asOwner(() => svc.render(c._id));
+    expect(await renderJobs(c._id)).toBe(1);
+
+    await runJobs();
+    const dto = await asOwner(() => svc.get(c._id));
+    expect(dto.renderStatus).toBe("ready");
+    const stored = (await latest())!;
+    expect(stored.renderKey).toMatch(new RegExp(`^orgs/${org}/concepts/.+\\.webp$`));
+    expect(await getObject(stored.renderKey!)).toEqual(RENDER);
+    expect(dto.renderUrl).toContain(stored.renderKey!);
+    const [restyled, originals, style] = vi.mocked(dollhouse).mock.calls[0];
+    expect([restyled, originals.length, style]).toEqual([RESTYLED, 1, "Japandi, light oak"]);
+    await asOwner(() => svc.render(c._id));
+    expect(await renderJobs(c._id)).toBe(1);
+  });
+
+  it("a retried render job doesn't pay for the image twice", async () => {
+    const c = await readyConcept();
+    await asOwner(() => svc.render(c._id));
+    await runJobs();
+    await asOwner(() => DesignConceptModel.updateOne({ _id: c._id }, { $set: { renderStatus: "generating" } }));
+    await asOwner(() => JobModel.create([{ orgId: org, type: "concept.render", payload: { conceptId: String(c._id), userId: String(owner) } }]));
+    await runJobs();
+    expect(dollhouse).toHaveBeenCalledTimes(1);
+    expect((await latest())!.renderStatus).toBe("ready");
+  });
+
+  it("a failed render leaves the concept ready and the render failed", async () => {
+    vi.mocked(dollhouse).mockRejectedValue(new Error("timeout"));
+    const c = await readyConcept();
+    await asOwner(() => svc.render(c._id));
+    for (let i = 0; i < 3; i++) await runJobs();
+    expect(await latest()).toMatchObject({ status: "ready", renderStatus: "failed", renderKey: null });
+    // A failed render can be tried again.
+    vi.mocked(dollhouse).mockResolvedValue(RENDER);
+    expect(await asOwner(() => svc.render(c._id))).toMatchObject({ renderStatus: "generating" });
+  });
+
+  it("refuses a render over the daily cap", async () => {
+    const c = await readyConcept();
+    await redis.set(spendKey(String(org)), DAILY_SPEND_CAP_MICROS);
+    try {
+      await expect(asOwner(() => svc.render(c._id))).rejects.toThrow("AI budget");
+    } finally {
+      await redis.del(spendKey(String(org)));
+    }
+    expect(await renderJobs(c._id)).toBe(0);
   });
 });
 

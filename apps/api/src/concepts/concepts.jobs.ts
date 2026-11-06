@@ -12,7 +12,7 @@ import { AssistantConversationModel } from "../assistant/models";
 import { inWindow, sendCtaUrl, sendTemplate, sendText } from "../whatsapp/client";
 import { WhatsAppLinkModel } from "../whatsapp/link.model";
 import { addConversationNote } from "../assistant/turn";
-import { describeRoom, restyle } from "./ai";
+import { describeRoom, dollhouse, restyle } from "./ai";
 import { DesignConceptModel, type DesignConcept } from "./concept.model";
 
 const log = new Logger("Concepts");
@@ -37,11 +37,44 @@ registerJob<GenerateJob>(
   },
 );
 
+registerJob<GenerateJob>(
+  "concept.render",
+  async (p) => {
+    const r = await runAsMember(ctx().orgId, new Types.ObjectId(p.userId), () => renderConcept(new Types.ObjectId(p.conceptId)));
+    if (r === "not_a_member") log.warn(`Dropped render ${p.conceptId}: ${p.userId} is no longer a member`);
+  },
+  {
+    lockMs: 300_000, // a high-quality image with several inputs can take minutes
+    retryDelayMs: (attempts) => [30_000, 120_000][attempts - 1] ?? 120_000,
+    maxAttempts: 3,
+    onGiveUp: async (p) => {
+      const c = await DesignConceptModel.findOneAndUpdate({ _id: p.conceptId, renderStatus: "generating" }, { $set: { renderStatus: "failed" } }, { new: true }).lean();
+      if (c) changed({ kind: "assistant", userId: String(c.createdBy) });
+    },
+  },
+);
+
+const photosOf = (c: Pick<DesignConcept, "sourceKey" | "extraKeys">) =>
+  Promise.all([c.sourceKey, ...(c.extraKeys ?? [])].map(async (k) => ({ photo: await getObject(k), ext: extname(k).toLowerCase() })));
+
+/** The on-demand presentation render. A stored render is never paid for again on a retry. */
+export async function renderConcept(id: Types.ObjectId) {
+  const c = await DesignConceptModel.findById(id).lean();
+  if (!c || c.renderStatus !== "generating" || !c.imageKey) return;
+  if (!c.renderKey) {
+    const key = newKey("concepts", ".webp");
+    await putObject(key, await dollhouse(await getObject(c.imageKey), await photosOf(c), c.brief), "image/webp");
+    await DesignConceptModel.updateOne({ _id: id }, { $set: { renderKey: key } });
+  }
+  await DesignConceptModel.updateOne({ _id: id, renderStatus: "generating" }, { $set: { renderStatus: "ready" } });
+  changed({ kind: "assistant", userId: String(c.createdBy) });
+}
+
 /** Restyles the photo, then describes the room. A stored image is never paid for again on a retry. */
 export async function generateConcept(id: Types.ObjectId) {
   const c = await DesignConceptModel.findById(id).lean();
   if (!c || c.status !== "generating") return;
-  const originals = await Promise.all([c.sourceKey, ...(c.extraKeys ?? [])].map(async (k) => ({ photo: await getObject(k), ext: extname(k).toLowerCase() })));
+  const originals = await photosOf(c);
 
   let restyled: Buffer;
   if (c.imageKey) restyled = await getObject(c.imageKey);
