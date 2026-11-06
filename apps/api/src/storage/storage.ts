@@ -15,6 +15,9 @@ const s3 = new S3Client({
   region: env.S3_REGION,
   forcePathStyle: env.S3_FORCE_PATH_STYLE,
   credentials: { accessKeyId: env.S3_ACCESS_KEY_ID, secretAccessKey: env.S3_SECRET_ACCESS_KEY },
+  // Otherwise presigned PUTs carry a CRC32 of the empty body and the real upload gets a 400.
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
 });
 const Bucket = env.S3_BUCKET;
 
