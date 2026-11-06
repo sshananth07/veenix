@@ -6,14 +6,15 @@ export const WALL_T = 0.12; // wall thickness
 export const CUT = 1.0; // the height near walls drop to in the overview, so the room reads as a doll's house
 const EXTERIOR = "#e8e5df";
 const CAP = "#2a2a2a"; // the dark cut top of every wall
-const GLOW = "#ffe2b8";
+export const GLOW = "#ffe2b8"; // cove strips and their light
 // Where each wall's group sits and turns, so its local x runs from the wall's left end (seen from inside) and +z faces in.
 const PLACE: Record<Wall, (W: number, L: number) => [number, number]> = {
   back: (W, L) => [-W / 2, -L / 2], left: (W, L) => [-W / 2, L / 2], right: (W, L) => [W / 2, -L / 2], front: (W, L) => [W / 2, L / 2],
 };
 const INWARD: Record<Wall, THREE.Vector3> = { back: new THREE.Vector3(0, 0, 1), left: new THREE.Vector3(1, 0, 0), right: new THREE.Vector3(-1, 0, 0), front: new THREE.Vector3(0, 0, -1) };
 
-export type WallPart = { side: Wall; full: THREE.Group; low: THREE.Group; normal: THREE.Vector3; centre: THREE.Vector3 };
+/** A wall at full height and cut down, and its trim (drop band, cove strip, wall AC), shown with the full wall. */
+export type WallPart = { side: Wall; full: THREE.Group; low: THREE.Group; trim: THREE.Group; normal: THREE.Vector3; centre: THREE.Vector3 };
 
 function mesh(geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number, shadows = true) {
   const o = new THREE.Mesh(geo, m);
@@ -73,9 +74,13 @@ export function downlightSpots(room: Room): [number, number][] {
   return spots.slice(0, n);
 }
 
-/** The ceiling and everything on it: lowered bands, cove glow, downlights, AC units and fans. Shown only when walking in. */
+/**
+ * The ceiling and everything on it. The main board, downlights, cassettes and fans are shown only when walking in; each
+ * wall's trim (its lowered band, cove glow and wall AC) stays with that wall in the overview, so the glow reads from above.
+ */
 function buildCeiling(room: Room) {
   const g = new THREE.Group();
+  const trims = Object.fromEntries(WALLS.map((w) => [w, new THREE.Group()])) as Record<Wall, THREE.Group>;
   const { width: W, length: L, height: H, ceiling: c } = room;
   const board = plain(c.color, 1);
   const glow = new THREE.MeshBasicMaterial({ color: GLOW });
@@ -87,7 +92,7 @@ function buildCeiling(room: Room) {
     const len = wallLength(room, side);
     const [x, z] = wallPoint(room, side, len / 2, inset);
     const across = side === "back" || side === "front";
-    g.add(mesh(new THREE.BoxGeometry(across ? len : depth, thick, across ? depth : len), m, x, y, z, false));
+    trims[side].add(mesh(new THREE.BoxGeometry(across ? len : depth, thick, across ? depth : len), m, x, y, z, false));
   };
   for (const d of c.drops) {
     for (const side of d.wall === "all" ? WALLS : [d.wall]) {
@@ -125,9 +130,15 @@ function buildCeiling(room: Room) {
     }
     unit.position.set(x, 0, z);
     if (u.wall) unit.rotation.y = (WALL_FACING[u.wall] * Math.PI) / 180;
-    g.add(unit);
+    (u.kind === "ac_wall" && u.wall ? trims[u.wall] : g).add(unit);
   }
-  return g;
+  return { ceiling: g, trims };
+}
+
+/** Where a wall's cove light sits: the underside of its lowered band (or just under the ceiling), this far in from the wall. */
+export function coveLine(room: Room, side: Wall): { y: number; inset: number } {
+  const drop = room.ceiling.drops.find((d) => d.wall === side || d.wall === "all");
+  return drop ? { y: room.height - drop.gap, inset: drop.depth + 0.1 } : { y: room.height - 0.03, inset: 0.1 };
 }
 
 /** The floor on a plinth, every wall at full height and cut down (the canvas shows one of each), and the ceiling. */
@@ -139,16 +150,16 @@ export function buildShell(room: Room, glass: THREE.Material) {
   floor.rotation.x = -Math.PI / 2;
   g.add(floor, mesh(new THREE.BoxGeometry(W + 2 * WALL_T, 0.08, L + 2 * WALL_T), plain(EXTERIOR, 0.9), 0, -0.041, 0, false));
 
+  const { ceiling, trims } = buildCeiling(room);
+  ceiling.visible = false;
+  g.add(ceiling);
   const walls: WallPart[] = WALLS.map((side) => {
     const full = buildWall(room, side, H, glass);
     const low = buildWall(room, side, Math.min(CUT, H), glass);
     low.visible = false;
-    g.add(full, low);
+    g.add(full, low, trims[side]);
     const [x, z] = wallPoint(room, side, wallLength(room, side) / 2, 0);
-    return { side, full, low, normal: INWARD[side], centre: new THREE.Vector3(x, 0, z) };
+    return { side, full, low, trim: trims[side], normal: INWARD[side], centre: new THREE.Vector3(x, 0, z) };
   });
-  const ceiling = buildCeiling(room);
-  ceiling.visible = false;
-  g.add(ceiling);
   return { group: g, walls, ceiling };
 }

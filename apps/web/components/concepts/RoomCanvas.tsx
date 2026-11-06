@@ -3,14 +3,15 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import type { Room } from "@veenix/shared";
+import { coveSides, wallLength, wallPoint, type Room } from "@veenix/shared";
 import { buildBuiltIn } from "./builtins";
 import { buildItem } from "./furniture";
-import { buildShell, downlightSpots, type WallPart } from "./shell";
+import { GLOW, buildShell, coveLine, downlightSpots, type WallPart } from "./shell";
 
 export type Light = "day" | "evening";
 /** What's selected: an item or a built-in, by its index in the room. */
@@ -69,13 +70,14 @@ function buildItems(room: Room) {
 function buildLights(room: Room, light: Light, scene: THREE.Scene, glass: THREE.MeshStandardMaterial) {
   const g = new THREE.Group();
   const { width: W, length: L, height: H } = room;
-  const day = light === "day";
-  scene.environmentIntensity = day ? 0.55 : 0.12;
+  const day = light === "day"; // "Studio": light grey, soft, like the presentation render
+  scene.background = new THREE.Color(day ? "#e6e5e2" : "#16181b");
+  scene.environmentIntensity = day ? 0.7 : 0.12;
   glass.color.set(day ? "#cfe3f2" : "#0e1320"); // night outside the window
   glass.emissive.set(day ? "#d8ecff" : "#141b2e");
   glass.emissiveIntensity = day ? 1 : 0.4;
-  g.add(new THREE.HemisphereLight(day ? "#ffffff" : "#33406a", day ? "#b8a48c" : "#1a1410", day ? 0.8 : 0.15));
-  const sun = new THREE.DirectionalLight(day ? "#fff4e2" : "#9fb3ff", day ? 2.2 : 0.12);
+  g.add(new THREE.HemisphereLight(day ? "#ffffff" : "#33406a", day ? "#b8a48c" : "#1a1410", day ? 1.0 : 0.15));
+  const sun = new THREE.DirectionalLight(day ? "#fff4e2" : "#9fb3ff", day ? 1.2 : 0.12);
   sun.position.set(W * 0.6, H * 3, L * 0.8);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -83,6 +85,23 @@ function buildLights(room: Room, light: Light, scene: THREE.Scene, glass: THREE.
   const r = Math.max(W, L);
   Object.assign(sun.shadow.camera, { left: -r, right: r, top: r, bottom: -r, near: 0.1, far: H * 8 });
   g.add(sun, sun.target);
+  // The room's soft shadow on the studio floor around it.
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(r * 3, r * 3), new THREE.ShadowMaterial({ opacity: day ? 0.2 : 0 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.082; // just under the plinth
+  ground.receiveShadow = true;
+  g.add(ground);
+  // Cove strips wash their walls with light: one area light per wall (four at most), no shadows.
+  for (const side of coveSides(room)) {
+    const len = wallLength(room, side);
+    const { y, inset } = coveLine(room, side);
+    const strip = new THREE.RectAreaLight(GLOW, day ? 6 : 12, Math.max(0.2, len - 0.2), 0.05);
+    const [x, z] = wallPoint(room, side, len / 2, inset);
+    const [wx, wz] = wallPoint(room, side, len / 2, 0);
+    strip.position.set(x, y, z);
+    strip.lookAt(wx, y - 1, wz); // at the wall, 1 m below the strip
+    g.add(strip);
+  }
   if (!day) {
     const lamps = room.items.filter((it) => it.type === "floor_lamp" || it.type === "pendant_light");
     const spots = [
@@ -129,6 +148,7 @@ export default function RoomCanvas(props: RoomCanvasProps) {
     };
     canvas.addEventListener("webglcontextlost", lost);
 
+    RectAreaLightUniformsLib.init(); // once is enough; it only fills shared uniforms
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#16181b");
     const pmrem = new THREE.PMREMGenerator(renderer);
@@ -221,7 +241,7 @@ export default function RoomCanvas(props: RoomCanvasProps) {
       const walk = latest.current.walk;
       for (const w of s.walls) {
         const away = !walk && toCamera.copy(camera.position).sub(w.centre).dot(w.normal) < 0;
-        w.full.visible = !away;
+        w.full.visible = w.trim.visible = !away;
         w.low.visible = away;
       }
       s.ceiling.visible = walk;
@@ -263,6 +283,7 @@ export default function RoomCanvas(props: RoomCanvasProps) {
     const s = stage.current;
     if (!s) return;
     s.scene.remove(s.lights);
+    dispose(s.lights); // the ground plane
     s.lights = buildLights(room, light, s.scene, s.glass);
     s.scene.add(s.lights);
   }, [room, light]);

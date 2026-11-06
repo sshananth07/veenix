@@ -146,7 +146,7 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
               </button>
               <button type="button" onClick={() => setLight(light === "day" ? "evening" : "day")} className={chip(false)}>
                 {light === "day" ? <Moon className="size-3.5" aria-hidden /> : <Sun className="size-3.5" aria-hidden />}
-                {light === "day" ? "Evening" : "Day"}
+                {light === "day" ? "Evening" : "Studio"}
               </button>
               {canEdit && (
                 <button type="button" aria-pressed={editing} onClick={() => setEditing(!editing)} className={chip(editing)}>
