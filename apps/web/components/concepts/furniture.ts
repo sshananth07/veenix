@@ -106,7 +106,7 @@ const BUILDERS: Record<FurnitureType, (g: THREE.Group, s: { w: number; d: number
 };
 
 // The catalogue types drawn with a CC0 model (plan 18); the rest stay procedural.
-const PROPS_OF: Partial<Record<FurnitureType, PropName>> = { plant: "plant", office_chair: "office_chair", dining_chair: "dining_chair" };
+const PROPS_OF: Partial<Record<FurnitureType, PropName>> = { plant: "plant", dining_chair: "dining_chair" };
 
 /** One catalogue item, its origin on the floor at the centre of its footprint, its front facing +z. */
 export const buildItem = (type: FurnitureType, color: string) => buildSized(type, FURNITURE[type], color);

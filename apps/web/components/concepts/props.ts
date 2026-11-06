@@ -1,22 +1,23 @@
 import * as THREE from "three";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-export type PropName = "plant" | "plant_small" | "office_chair" | "dining_chair" | "books" | "frame";
+// ponytail: no office chair; Poly Haven has no CC0 task chair (owner, 2026-11-06), so it stays procedural.
+export type PropName = "plant" | "plant_small" | "dining_chair" | "books" | "frame";
 
 /**
  * CC0 models in public/models (sources in its LICENSE.md), one per prop. `facing` is the degrees that turn the model's
  * front to +z; `tint` is the name of the material the item's colour replaces (a plant's pot, a chair's seat), or null.
  */
 export const PROPS: Record<PropName, { file: string; facing: number; tint: string | null }> = {
-  plant: { file: "plant.glb", facing: 0, tint: null },
+  plant: { file: "plant.glb", facing: 0, tint: "potted_plant_02_pot" },
   plant_small: { file: "plant_small.glb", facing: 0, tint: null },
-  office_chair: { file: "office_chair.glb", facing: 0, tint: null },
-  dining_chair: { file: "dining_chair.glb", facing: 0, tint: null },
+  dining_chair: { file: "dining_chair.glb", facing: 0, tint: null }, // one material: tinting it would tint the wood too
   books: { file: "books.glb", facing: 0, tint: null },
   frame: { file: "frame.glb", facing: 0, tint: null },
 };
 
-const loader = new GLTFLoader();
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder); // the models are meshopt-compressed (gltf-transform optimize)
 const models = new Map<PropName, Promise<THREE.Object3D | null>>();
 const tints = new Map<string, THREE.Material>();
 
@@ -34,7 +35,10 @@ function load(name: PropName) {
         });
         return gltf.scene;
       },
-      () => null, // missing or broken: the procedural shape stays
+      (e) => {
+        console.warn(`Model ${name} didn't load; keeping its shape`, e); // the procedural shape stays
+        return null;
+      },
     );
     models.set(name, p);
   }
