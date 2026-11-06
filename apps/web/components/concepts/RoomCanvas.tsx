@@ -37,7 +37,7 @@ const WARM = "#ffb36b";
 function dispose(o: THREE.Object3D) {
   o.traverse((m) => {
     if (!(m instanceof THREE.Mesh)) return;
-    m.geometry.dispose();
+    if (!m.geometry.userData.shared) m.geometry.dispose(); // model geometry is shared by every copy
     for (const material of [m.material].flat()) if (!material.userData.shared) material.dispose(); // finishes are shared and cached
   });
 }

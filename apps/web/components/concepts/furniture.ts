@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { FURNITURE, type FurnitureType } from "@veenix/shared";
+import { withProp, type PropName } from "./props";
 
 const LEAF = "#5b8a4e";
 // ponytail: furniture is built from rounded boxes and cylinders, so there are no model files or licences.
@@ -104,6 +105,9 @@ const BUILDERS: Record<FurnitureType, (g: THREE.Group, s: { w: number; d: number
   vanity: (g, s, c) => { cabinet(g, s.w, s.d, s.h - 0.04, c, 2); box(g, s.w, 0.04, s.d, "#f2f2f0", 0, s.h - 0.04, 0, 0.005); cyl(g, 0.18, 0.15, 0.12, "#ffffff", 0, s.h, 0.02); },
 };
 
+// The catalogue types drawn with a CC0 model (plan 18); the rest stay procedural.
+const PROPS_OF: Partial<Record<FurnitureType, PropName>> = { plant: "plant", office_chair: "office_chair", dining_chair: "dining_chair" };
+
 /** One catalogue item, its origin on the floor at the centre of its footprint, its front facing +z. */
 export const buildItem = (type: FurnitureType, color: string) => buildSized(type, FURNITURE[type], color);
 
@@ -111,6 +115,8 @@ export const buildItem = (type: FurnitureType, color: string) => buildSized(type
 export function buildSized(type: FurnitureType, size: { w: number; d: number; h: number }, color: string): THREE.Group {
   const g = new THREE.Group();
   BUILDERS[type](g, size, color);
+  const prop = PROPS_OF[type];
+  if (prop) withProp(g, prop, size, color); // the shape stays until the model loads, and if it can't
   g.traverse((o) => {
     if (o instanceof THREE.Mesh) {
       o.castShadow = type !== "rug";

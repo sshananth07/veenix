@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { BUILT_IN_FINISHES, FURNITURE, TINTED_BUILT_INS, TOP_FINISHES, bedSet, diningChairs, workstationSeats, type Room } from "@veenix/shared";
 import { buildItem, buildSized } from "./furniture";
 import { material, metreBox, plain } from "./materials";
+import { withProp } from "./props";
 import { GLOW } from "./shell";
 
 type BuiltIn = Room["builtIns"][number];
@@ -95,17 +96,24 @@ const SETS: Partial<Record<Room["builtIns"][number]["kind"], SetBuilder>> = {
       const strip = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, 0.006, 0.01), glow);
       strip.position.set(0, y - 0.003, d / 2 - 0.02);
       g.add(strip);
-      // ponytail: procedural decor, one kind a board in turn; Task 18.7 swaps in CC0 models.
+      // Decor, one kind a board in turn: CC0 models, with these shapes until they load (or if they can't).
+      const decor = new THREE.Group();
       const kind = i % 3;
       if (kind === 0) {
-        BOOKS.forEach((c, k) => box(g, 0.035, 0.2 + (k % 2) * 0.03, d * 0.7, plain(c, 0.8), -w / 2 + 0.1 + k * 0.04, y + 0.03 + (0.2 + (k % 2) * 0.03) / 2, 0));
+        BOOKS.forEach((c, k) => box(decor, 0.035, 0.2 + (k % 2) * 0.03, d * 0.7, plain(c, 0.8), -0.08 + k * 0.04, (0.2 + (k % 2) * 0.03) / 2, 0));
+        withProp(decor, "books", { w: 0.2, d: d * 0.7, h: 0.23 }, BOOKS[0]);
+        put(g, decor, -w / 2 + 0.18, 0, 0, y + 0.03);
       } else if (kind === 1) {
         const plant = buildItem("plant", "#d8cbb5");
         plant.scale.setScalar(0.28);
-        put(g, plant, -w / 4, 0, 0, y + 0.03);
+        decor.add(plant);
+        withProp(decor, "plant_small", { w: 0.2, d: 0.2, h: 0.3 }, "#d8cbb5");
+        put(g, decor, -w / 4, 0, 0, y + 0.03);
       } else {
-        box(g, 0.3, 0.36, 0.02, plain("#2b2a28", 0.6), -w / 4, y + 0.03 + 0.18, -d / 2 + 0.03); // a frame against the wall
-        box(g, 0.26, 0.32, 0.005, plain("#e8e0d0", 0.9), -w / 4, y + 0.03 + 0.18, -d / 2 + 0.042);
+        box(decor, 0.3, 0.36, 0.02, plain("#2b2a28", 0.6), 0, 0.18, 0); // a frame against the wall
+        box(decor, 0.26, 0.32, 0.005, plain("#e8e0d0", 0.9), 0, 0.18, 0.012);
+        withProp(decor, "frame", { w: 0.3, d: 0.05, h: 0.36 }, "#2b2a28");
+        put(g, decor, -w / 4, -d / 2 + 0.05, 0, y + 0.03);
       }
     }
   },
