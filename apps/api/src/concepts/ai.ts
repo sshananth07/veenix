@@ -1,5 +1,5 @@
 import OpenAI, { toFile } from "openai";
-import { CONTENT_TYPES, roomSchema } from "@veenix/shared";
+import { CONTENT_TYPES, roomDescriptionSchema } from "@veenix/shared";
 import { ctx } from "../common/context";
 import { env } from "../config/env";
 import { createMessage } from "../assistant/llm";
@@ -10,13 +10,17 @@ import { strictSchema } from "../assistant/tools";
 // If it moves walls or windows, swap restyle() for a depth-guided interior model; nothing else changes.
 const IMAGE_MODEL = "gpt-image-2";
 
-const ROOM_PROMPT = `You turn room photos and a design brief into a simple 3D room plan.
+const ROOM_PROMPT = `You turn room photos and a design brief into a 3D room plan.
 The first photo is the room already redesigned: take the finishes, colours and furniture from it. Any further photos show the same room before the redesign, from other angles: use them for walls, doors and windows the first photo doesn't show.
 Estimate the room's size in metres from the photos (Malaysian homes: bedrooms about 3-4 m, living rooms 4-6 m, ceilings about 2.8 m). Layout notes from the designer override your estimate.
-The first photo faces the back wall. Coordinates: origin at the room's centre, x across the width (left negative), z along the length (back wall at z = -length/2, the camera's side positive).
-Place the windows and doors you can see; "at" is the opening's centre in metres from the wall's left end, seen from inside the room.
-Furnish it to the brief using only the catalogue types, with colours that suit the style. Keep walkways clear and put furniture against walls where it belongs.
-Rotation is in degrees; 0 means the item's front faces the camera's side (+z).`;
+The first photo faces the back wall; "front" is the wall behind the camera, "left" and "right" as seen in the photo.
+Walls: give each wall a finish from the list and a colour (the colour tints paint, fabric panels and wallpaper). Match what the redesigned photo shows; walls it doesn't show suit the style.
+Ceiling: lowered bands ("drops", with how deep they come in and how far below the ceiling), cove lighting, the number of downlights, and AC units or fans you can see.
+Openings: windows and doors you can see; "at" is the opening's centre in metres from the wall's left end, seen from inside the room.
+Built-ins: anything fixed or made to measure (kitchen and cabinet runs, wall cabinets, islands, bars, counters, shelving, banquettes, partitions, planter boxes), each with its length, depth, height, body finish and top.
+Items: loose furniture only, each with a short description of what it really is ("curved boucle accent chair") and the nearest catalogue type.
+Placing built-ins and items: against a wall, give the wall, "along" (the centre in metres from that wall's left end, seen from inside), "out" (the gap from the wall, usually 0) and a rotation relative to facing into the room (usually 0). Free-standing (islands, rugs, chairs in the middle): wall null, "along" and "out" are x and z from the room's centre (x left negative, z towards the camera positive), with rotation 0 facing the camera.
+Keep doorways and walkways clear. Rotation is in degrees.`;
 
 let client: OpenAI | undefined;
 
@@ -63,7 +67,7 @@ export async function dollhouse(restyled: Buffer, originals: { photo: Buffer; ex
   return Buffer.from(b64, "base64");
 }
 
-/** The model's room description from the restyled photo and the originals, unchecked: the caller parses it with roomSchema and fits it. */
+/** The model's room description from the restyled photo and the originals, unchecked: the caller parses it with roomDescriptionSchema and resolves it. */
 export async function describeRoom(restyled: Buffer, originals: { photo: Buffer; ext: string }[], brief: string, layout: string | null): Promise<unknown> {
   const text = `Design brief: ${brief}${layout ? `\nLayout notes: ${layout}` : ""}`;
   const images = [{ photo: restyled, ext: ".jpg" }, ...originals].map((p) => ({ type: "input_image" as const, detail: "high" as const, image_url: dataUrl(p.photo, p.ext) }));
@@ -71,7 +75,7 @@ export async function describeRoom(restyled: Buffer, originals: { photo: Buffer;
     model: env.OPENAI_MODEL,
     instructions: ROOM_PROMPT,
     input: [{ role: "user", content: [{ type: "input_text", text }, ...images] }],
-    text: { format: { type: "json_schema", name: "room", strict: true, schema: strictSchema(roomSchema) } },
+    text: { format: { type: "json_schema", name: "room", strict: true, schema: strictSchema(roomDescriptionSchema) } },
     reasoning: { effort: "low" },
     store: false,
     max_output_tokens: 4_000,

@@ -1,7 +1,7 @@
 import { extname } from "node:path";
 import { Logger } from "@nestjs/common";
 import { Types } from "mongoose";
-import { fitRoom, roomSchema, type Room } from "@veenix/shared";
+import { resolveRoom, roomDescriptionSchema, type Room } from "@veenix/shared";
 import { runAsMember } from "../auth/member-ctx";
 import { ctx } from "../common/context";
 import { registerJob } from "../jobs/jobs";
@@ -88,7 +88,7 @@ export async function generateConcept(id: Types.ObjectId) {
   // The image alone is a usable concept, so a bad room description isn't retried.
   let room: Room | null = null;
   try {
-    room = fitRoom(roomSchema.parse(await describeRoom(restyled, originals, c.brief, c.layout ?? null)));
+    room = resolveRoom(roomDescriptionSchema.parse(await describeRoom(restyled, originals, c.brief, c.layout ?? null)));
   } catch (e) {
     log.warn(`Concept ${id} has no 3D room: ${e instanceof Error ? e.message : e}`);
   }

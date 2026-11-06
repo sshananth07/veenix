@@ -1,12 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import mongoose, { Types } from "mongoose";
-import { convertLeadInput, conceptPatchInput, FURNITURE, type Room } from "@veenix/shared";
+import { convertLeadInput, conceptPatchInput, FURNITURE, type Room, type RoomDescription } from "@veenix/shared";
 import "../assistant/tools.concepts";
 import "./concepts.jobs";
 import { executeTool } from "../assistant/tools";
 import { deleteConversation, getConversation } from "../assistant/assistant.controller";
 import { strictSchema } from "../assistant/tools";
-import { roomSchema } from "@veenix/shared";
+import { roomDescriptionSchema } from "@veenix/shared";
 import { AssistantConversationModel, AssistantMessageModel } from "../assistant/models";
 import { JobModel } from "../jobs/job.model";
 import { runDue } from "../jobs/jobs";
@@ -40,11 +40,16 @@ const asOwner = <T>(fn: () => Promise<T>, o = org) => asOrg(o, fn, { userId: own
 const callId = () => String(newId());
 const RESTYLED = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
 const RENDER = Buffer.from("RIFF0000WEBPVP8 ");
-const ROOM: Room = {
-  width: 4, length: 5, height: 2.8, wallColor: "#f4f1ea", floor: "light_oak",
-  openings: [{ wall: "back", kind: "window", at: 2, width: 1.5, height: 1.4, sill: 0.9 }],
-  items: [{ type: "sofa", x: 7, z: 0, rotation: 0, color: "#c8b8a0" }], // inside the schema, outside a 4 m room
+const paint = { finish: "paint" as const, color: "#f4f1ea" };
+const SHELL = {
+  width: 4, length: 5, height: 2.8, floor: "light_oak" as const,
+  walls: { back: paint, left: paint, right: paint, front: paint },
+  ceiling: { color: "#f7f6f2", drops: [], cove: true, downlights: 4, units: [] },
+  openings: [{ wall: "back" as const, kind: "window" as const, at: 2, width: 1.5, height: 1.4, sill: 0.9 }],
 };
+/** What the model returns: a sofa placed free-standing, inside the schema but outside a 4 m room. */
+const DESCRIBED: RoomDescription = { ...SHELL, builtIns: [], items: [{ type: "sofa", description: "linen sofa", wall: null, along: 7, out: 0, rotation: 0, color: "#c8b8a0" }] };
+const ROOM: Room = { version: 2, ...SHELL, builtIns: [], items: [{ type: "sofa", description: "linen sofa", x: 7, z: 0, rotation: 0, color: "#c8b8a0" }] };
 
 function tc(attachments = [{ key: photoKey, name: "room.jpg", kind: "photo" as const }]) {
   return { conversationId: conv, messageId: newId(), attachments };
@@ -87,7 +92,7 @@ beforeEach(async () => {
   // Earlier tests' concepts move out of the 24-hour quota window (the quota test uses its own org).
   await mongoose.connection.collection("design_concepts").updateMany({ orgId: org }, { $set: { createdAt: new Date(Date.now() - 2 * 86_400_000) } });
   vi.mocked(restyle).mockReset().mockResolvedValue(RESTYLED);
-  vi.mocked(describeRoom).mockReset().mockResolvedValue(ROOM);
+  vi.mocked(describeRoom).mockReset().mockResolvedValue(DESCRIBED);
   vi.mocked(dollhouse).mockReset().mockResolvedValue(RENDER);
 });
 
@@ -176,7 +181,7 @@ describe("generate_room_concept", () => {
 });
 
 describe("concept.generate job", () => {
-  it("stores the image in our bucket and the room after fitRoom", async () => {
+  it("stores the image in our bucket and the resolved, fitted room", async () => {
     await start();
     await runJobs();
     const c = (await latest())!;
@@ -340,7 +345,7 @@ describe("access", () => {
   it("PATCH stores a fitted room and refuses junk", async () => {
     await start();
     const id = (await latest())!._id;
-    expect(conceptPatchInput.safeParse({ room: { ...ROOM, wallColor: "red" } }).success).toBe(false);
+    expect(conceptPatchInput.safeParse({ room: { ...ROOM, walls: { ...ROOM.walls, back: { finish: "paint", color: "red" } } } }).success).toBe(false);
     await asOwner(() => svc.update(id, { name: "Living room", saved: true, room: ROOM }));
     const c = (await latest())!;
     expect(c).toMatchObject({ name: "Living room", saved: true });
@@ -462,6 +467,6 @@ describe("review fixes", () => {
   });
 
   it("the room schema is accepted by OpenAI strict mode", () => {
-    expect(() => strictSchema(roomSchema)).not.toThrow();
+    expect(() => strictSchema(roomDescriptionSchema)).not.toThrow();
   });
 });

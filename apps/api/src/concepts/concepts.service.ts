@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import mongoose, { Types } from "mongoose";
-import { can, fitRoom, type ConceptDto, type ConceptPatchInput, type Role, type Room } from "@veenix/shared";
+import { can, fitRoom, upgradeRoom, type ConceptDto, type ConceptPatchInput, type Role } from "@veenix/shared";
 import { ctx } from "../common/context";
 import { notFound, rule } from "../common/errors";
 import { tx } from "../common/tx";
@@ -42,7 +42,7 @@ export async function toDto(c: DesignConcept): Promise<ConceptDto> {
     projectId: c.projectId ? String(c.projectId) : null, leadId: c.leadId ? String(c.leadId) : null,
     photoUrl: await downloadUrl(c.sourceKey, "photo"),
     imageUrl: c.imageKey ? await downloadUrl(c.imageKey, `${c.name}.jpg`) : null,
-    room: (c.room as Room | null) ?? null, saved: c.saved, createdAt: c.createdAt,
+    room: upgradeRoom(c.room), saved: c.saved, createdAt: c.createdAt,
     renderStatus: (c.renderStatus ?? "none") as ConceptDto["renderStatus"],
     renderUrl: c.renderKey && c.renderStatus === "ready" ? await downloadUrl(c.renderKey, `${c.name} render.webp`) : null,
   };

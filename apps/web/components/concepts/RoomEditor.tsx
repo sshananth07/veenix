@@ -1,13 +1,10 @@
 "use client";
-import { FLOORS, FURNITURE, FURNITURE_TYPES, fitRoom, type FurnitureType, type Room } from "@veenix/shared";
+import { FLOOR_FINISHES, FLOOR_FINISH_KEYS, FURNITURE, FURNITURE_TYPES, fitRoom, type FurnitureType, type Room } from "@veenix/shared";
 import { RotateCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const WALL_COLOURS = ["#f4f1ea", "#efe8dc", "#d9d3c7", "#b7c4ad", "#b8c4cf", "#d4a58a", "#4a4a4a", "#ffffff"];
 const ITEM_COLOURS = ["#d8cbb5", "#b9a88c", "#7a5c3e", "#3b2f2a", "#e8e0d0", "#6f7d6a", "#4f6b77", "#2b2b2b"];
-const FLOOR_LABELS: Record<Room["floor"], string> = {
-  light_oak: "Light oak", walnut: "Walnut", white_tile: "White tile", grey_tile: "Grey tile", marble: "Marble", concrete: "Concrete", carpet: "Carpet",
-};
 const LIMITS = { width: [2, 15], length: [2, 15], height: [2.4, 4.5] } as const;
 
 function Swatches({ colours, value, onPick, label }: { colours: string[]; value: string; onPick: (c: string) => void; label: string }) {
@@ -65,15 +62,15 @@ export function RoomEditor({ room, selected, onChange, onSelect }: { room: Room;
 
       <section className="space-y-2">
         <p className={heading}>Walls</p>
-        <Swatches label="Wall colour" colours={WALL_COLOURS} value={room.wallColor} onPick={(wallColor) => set({ wallColor })} />
+        <Swatches label="Wall colour" colours={WALL_COLOURS} value={room.walls.back.color} onPick={(color) => set({ walls: { back: { ...room.walls.back, color }, left: { ...room.walls.left, color }, right: { ...room.walls.right, color }, front: { ...room.walls.front, color } } })} />
       </section>
 
       <section className="space-y-2">
         <p className={heading}>Floor</p>
         <div className="flex flex-wrap gap-1.5">
-          {FLOORS.map((f) => (
+          {FLOOR_FINISH_KEYS.map((f) => (
             <button key={f} type="button" aria-pressed={room.floor === f} onClick={() => set({ floor: f })} className={cn("rounded-md px-2 py-1 text-xs", room.floor === f ? "bg-white text-neutral-900" : "bg-white/10 hover:bg-white/20")}>
-              {FLOOR_LABELS[f]}
+              {FLOOR_FINISHES[f].label}
             </button>
           ))}
         </div>
@@ -111,7 +108,7 @@ export function RoomEditor({ room, selected, onChange, onSelect }: { room: Room;
           onChange={(e) => {
             const type = e.target.value as FurnitureType;
             if (!type) return;
-            set({ items: [...room.items, { type, x: 0, z: 0, rotation: 0, color: ITEM_COLOURS[0] }] });
+            set({ items: [...room.items, { type, description: FURNITURE[type].label, x: 0, z: 0, rotation: 0, color: ITEM_COLOURS[0] }] });
             onSelect(room.items.length);
           }}
           className="w-full rounded-md bg-white/10 px-2 py-1.5 text-sm text-white"

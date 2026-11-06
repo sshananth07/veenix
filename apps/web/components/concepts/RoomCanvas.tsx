@@ -35,7 +35,7 @@ function dispose(o: THREE.Object3D) {
 function buildShell(room: Room, glass: THREE.Material) {
   const g = new THREE.Group();
   const { width: W, length: L, height: H } = room;
-  const wallMat = new THREE.MeshStandardMaterial({ color: room.wallColor, roughness: 0.92 });
+  // ponytail: one colour per wall until the material renderer (Task 17.5).
   const place: Record<(typeof WALLS)[number], [number, number, number]> = { back: [-W / 2, -L / 2, 0], left: [-W / 2, L / 2, Math.PI / 2], right: [W / 2, -L / 2, -Math.PI / 2], front: [W / 2, L / 2, Math.PI] };
   for (const side of WALLS) {
     const len = side === "back" || side === "front" ? W : L;
@@ -56,7 +56,7 @@ function buildShell(room: Room, glass: THREE.Material) {
         wall.add(sill);
       }
     }
-    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), wallMat);
+    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshStandardMaterial({ color: room.walls[side].color, roughness: 0.92 }));
     mesh.receiveShadow = true;
     wall.add(mesh);
     const [x, z, rot] = place[side];
