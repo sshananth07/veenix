@@ -13,13 +13,16 @@ import { buildItem } from "./furniture";
 import { buildShell, downlightSpots, type WallPart } from "./shell";
 
 export type Light = "day" | "evening";
+/** What's selected: an item or a built-in, by its index in the room. */
+export type Pick = { kind: "items" | "builtIns"; index: number };
+const same = (a: Pick | null | undefined, b: Pick | null | undefined) => !!a && !!b && a.kind === b.kind && a.index === b.index;
 export type RoomCanvasProps = {
   room: Room;
   light: Light;
   walk: boolean;
-  selected: number | null;
-  onSelect: (index: number | null) => void;
-  onMove: (index: number, x: number, z: number) => void;
+  selected: Pick | null;
+  onSelect: (pick: Pick | null) => void;
+  onMove: (pick: Pick, x: number, z: number) => void;
   onError: () => void;
 };
 type Stage = {
@@ -40,7 +43,11 @@ function dispose(o: THREE.Object3D) {
 
 function buildBuiltIns(room: Room) {
   const g = new THREE.Group();
-  for (const b of room.builtIns) g.add(buildBuiltIn(b, room.height));
+  room.builtIns.forEach((b, index) => {
+    const built = buildBuiltIn(b, room.height);
+    built.userData.pick = { kind: "builtIns", index } satisfies Pick;
+    g.add(built);
+  });
   return g;
 }
 
@@ -53,7 +60,7 @@ function buildItems(room: Room) {
     const item = buildItem(it.type, it.color);
     item.position.set(it.x, it.type === "pendant_light" ? room.height - 0.62 : 0, it.z);
     item.rotation.y = (it.rotation * Math.PI) / 180;
-    item.userData.index = index;
+    item.userData.pick = { kind: "items", index } satisfies Pick;
     g.add(item);
   });
   return g;
@@ -93,7 +100,7 @@ function buildLights(room: Room, light: Light, scene: THREE.Scene, glass: THREE.
   return g;
 }
 
-/** The room in 3D: drag to rotate, scroll or pinch to zoom, tap an item to select it, drag a selected item to move it. */
+/** The room in 3D: drag to rotate, scroll or pinch to zoom, tap an item or built-in to select it, drag a selected one to move it. */
 export default function RoomCanvas(props: RoomCanvasProps) {
   const host = useRef<HTMLDivElement>(null);
   const stage = useRef<Stage | null>(null);
@@ -165,8 +172,8 @@ export default function RoomCanvas(props: RoomCanvasProps) {
       ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
     };
     const itemUnder = () => {
-      let o: THREE.Object3D | null = ray.intersectObjects(s.items.children, true)[0]?.object ?? null;
-      while (o && o.userData.index === undefined) o = o.parent;
+      let o: THREE.Object3D | null = ray.intersectObjects([...s.items.children, ...s.builtIns.children], true)[0]?.object ?? null;
+      while (o && o.userData.pick === undefined) o = o.parent;
       return o;
     };
     const onFloor = () => ray.ray.intersectPlane(floorPlane, new THREE.Vector3());
@@ -176,7 +183,7 @@ export default function RoomCanvas(props: RoomCanvasProps) {
       const hit = itemUnder();
       press = { x: e.clientX, y: e.clientY, drag: null, offset: new THREE.Vector3() };
       const p = onFloor();
-      if (hit && p && hit.userData.index === latest.current.selected) {
+      if (hit && p && same(hit.userData.pick, latest.current.selected)) {
         press.drag = hit;
         press.offset = hit.position.clone().sub(p);
         controls.enabled = false;
@@ -196,10 +203,10 @@ export default function RoomCanvas(props: RoomCanvasProps) {
       const moved = Math.hypot(e.clientX - press.x, e.clientY - press.y) > 4;
       if (press.drag) {
         controls.enabled = true;
-        if (moved) latest.current.onMove(press.drag.userData.index, press.drag.position.x, press.drag.position.z);
+        if (moved) latest.current.onMove(press.drag.userData.pick, press.drag.position.x, press.drag.position.z);
       } else if (!moved) {
         aim(e);
-        latest.current.onSelect((itemUnder()?.userData.index as number | undefined) ?? null);
+        latest.current.onSelect((itemUnder()?.userData.pick as Pick | undefined) ?? null);
       }
       press = null;
     };
@@ -283,7 +290,7 @@ export default function RoomCanvas(props: RoomCanvasProps) {
     if (!s) return;
     if (s.helper) s.scene.remove(s.helper);
     s.helper?.dispose();
-    const item = selected === null ? undefined : s.items.children.find((c) => c.userData.index === selected);
+    const item = selected ? s[selected.kind].children.find((c) => same(c.userData.pick, selected)) : undefined;
     s.helper = item ? new THREE.BoxHelper(item, 0xffffff) : null;
     if (s.helper) s.scene.add(s.helper);
   }, [selected, room]);

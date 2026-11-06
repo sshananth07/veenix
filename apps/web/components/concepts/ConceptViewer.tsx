@@ -4,13 +4,13 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bookmark, BookmarkCheck, Box, Footprints, Image as ImageIcon, Loader2, Maximize, Minimize, Moon, Presentation, SlidersHorizontal, Sun } from "lucide-react";
-import type { ConceptDto, Room } from "@veenix/shared";
+import { fitRoom, type ConceptDto, type Room } from "@veenix/shared";
 import { renderConcept, updateConcept } from "@/actions/concepts";
 import { cn } from "@/lib/utils";
 import { BeforeAfter } from "./BeforeAfter";
 import { NOT_TO_SCALE } from "./ConceptCard";
 import { RoomEditor } from "./RoomEditor";
-import type { Light, RoomCanvasProps } from "./RoomCanvas";
+import type { Light, Pick, RoomCanvasProps } from "./RoomCanvas";
 
 // Three.js loads only here, in its own chunk, and never on the server.
 const RoomCanvas = dynamic<RoomCanvasProps>(() => import("./RoomCanvas"), {
@@ -44,7 +44,7 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
   const [no3d, setNo3d] = useState(false);
   const [full, setFull] = useState(false);
   const [room, setRoom] = useState<Room | null>(concept.room);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<Pick | null>(null);
   const [light, setLight] = useState<Light>("day");
   const [walk, setWalk] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -74,7 +74,8 @@ export function ConceptViewer({ concept, canEdit }: { concept: ConceptDto; canEd
     setError(r.ok ? null : r.error);
     if (r.ok) router.refresh();
   });
-  const moveItem = (i: number, x: number, z: number) => room && setRoom({ ...room, items: room.items.map((it, k) => (k === i ? { ...it, x, z } : it)) });
+  // A drag is fitted like any other edit, so nothing ends up through a wall.
+  const moveItem = (p: Pick, x: number, z: number) => room && setRoom(fitRoom({ ...room, [p.kind]: room[p.kind].map((it, k) => (k === p.index ? { ...it, x, z } : it)) }));
   const dirty = JSON.stringify(room) !== JSON.stringify(concept.room);
   const fail3d = () => {
     setNo3d(true);

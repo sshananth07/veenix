@@ -346,6 +346,10 @@ describe("access", () => {
     await start();
     const id = (await latest())!._id;
     expect(conceptPatchInput.safeParse({ room: { ...ROOM, walls: { ...ROOM.walls, back: { finish: "paint", color: "red" } } } }).success).toBe(false);
+    expect(conceptPatchInput.safeParse({ room: { ...ROOM, walls: { ...ROOM.walls, back: { finish: "gold_leaf", color: "#ffffff" } } } }).success).toBe(false);
+    const run = { kind: "base_run", x: 0, z: 0, rotation: 0, length: 2, depth: 0.6, height: 0.9, body: "white_laminate", top: null };
+    expect(conceptPatchInput.safeParse({ room: { ...ROOM, builtIns: Array(100).fill(run) } }).success).toBe(false);
+    expect(conceptPatchInput.safeParse({ room: { ...ROOM, builtIns: [run] } }).success).toBe(true);
     await asOwner(() => svc.update(id, { name: "Living room", saved: true, room: ROOM }));
     const c = (await latest())!;
     expect(c).toMatchObject({ name: "Living room", saved: true });
